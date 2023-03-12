@@ -3,6 +3,8 @@ package org.example.lexer;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.Reader;
+import java.math.BigDecimal;
+import java.math.MathContext;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Objects;
@@ -25,7 +27,7 @@ public class LexerImpl implements Lexer, Closeable {
 	private static final String UNDERSCORE = "_";
 	private static final String QUOTATION_MARK = "\"";
 	private static final int END_OF_FILE = -1;
-	private static final int BASE_TEN = 10;
+	private static final BigDecimal BASE_TEN = BigDecimal.valueOf(10);
 	private static final int MAX_IDENTIFIER_LENGTH = 100;
 	private static final int MAX_COMMENT_LENGTH = 1_000;
 	private static final Map<String, TokenType> KEYWORDS = EnumSet.allOf(TokenType.class)
@@ -141,39 +143,41 @@ public class LexerImpl implements Lexer, Closeable {
 
 			var fractionalPart = parseFloatingPoint();
 
-			var value = integerPart + fractionalPart;
-			tokenBuilder.type(TokenType.FLOATING_POINT_CONSTANT).floatingPointValue(value);
+			var value = integerPart.add(fractionalPart);
+			tokenBuilder.type(TokenType.FLOATING_POINT_CONSTANT).numericalValue(value);
 		} else {
-			tokenBuilder.type(TokenType.INTEGER_CONSTANT).integerValue(integerPart);
+			tokenBuilder.type(TokenType.INTEGER_CONSTANT).numericalValue(integerPart);
 		}
 	}
 
-	private int parseInteger() {
-		var number = Integer.parseInt(currentCharacter);
+	private BigDecimal parseInteger() {
+		var number = BigDecimal.valueOf(Integer.parseInt(currentCharacter));
 
 		while (StringUtils.isNumeric(nextCharacter())) {
-			var currentValue = Integer.parseInt(currentCharacter);
-			number = BASE_TEN * number + currentValue;
+			var integerValue = Integer.parseInt(currentCharacter);
+			var currentValue = BigDecimal.valueOf(integerValue);
+			number = number.multiply(BASE_TEN).add(currentValue);
 		}
 
 		return number;
 	}
 
-	private double parseFloatingPoint() {
+	private BigDecimal parseFloatingPoint() {
 		if (!StringUtils.isNumeric(currentCharacter)) {
 			throw new UnexpectedCharacterException(currentCharacter, getTokenPosition());
 		}
 
-		var nominator = Integer.parseInt(currentCharacter);
+		var nominator = BigDecimal.valueOf(Integer.parseInt(currentCharacter));
 		var denominator = BASE_TEN;
 
 		while (StringUtils.isNumeric(nextCharacter())) {
-			var currentValue = Integer.parseInt(currentCharacter);
-			nominator = BASE_TEN * nominator + currentValue;
-			denominator = BASE_TEN * denominator;
+			var integerValue = Integer.parseInt(currentCharacter);
+			var currentValue = BigDecimal.valueOf(integerValue);
+			nominator = BASE_TEN.multiply(nominator).add(currentValue);
+			denominator = BASE_TEN.multiply(denominator);
 		}
 
-		return (double) nominator / (double) denominator;
+		return nominator.divide(denominator, MathContext.UNLIMITED);
 	}
 
 	private void processSymbol() {

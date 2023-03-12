@@ -143,7 +143,7 @@ class LexerTest extends Specification {
 		expect:
 		var token = lexer.nextToken()
 		token.getType() == TokenType.INTEGER_CONSTANT
-		token.getIntegerValue() == value
+		token.getNumericalValue() == BigDecimal.valueOf(value)
 
 		where:
 		content    || value
@@ -158,7 +158,7 @@ class LexerTest extends Specification {
 		expect:
 		var token = lexer.nextToken()
 		token.getType() == TokenType.FLOATING_POINT_CONSTANT
-		token.getFloatingPointValue() == value
+		token.getNumericalValue() == BigDecimal.valueOf(value)
 
 		where:
 		content  || value

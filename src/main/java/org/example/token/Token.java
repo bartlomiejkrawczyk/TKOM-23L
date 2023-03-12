@@ -1,5 +1,6 @@
 package org.example.token;
 
+import java.math.BigDecimal;
 import lombok.Builder;
 import lombok.Value;
 
@@ -9,8 +10,6 @@ public class Token {
 	TokenType type;
 	Position position;
 
-
-	Double floatingPointValue;
-	Integer integerValue;
+	BigDecimal numericalValue;
 	String stringValue;
 }
