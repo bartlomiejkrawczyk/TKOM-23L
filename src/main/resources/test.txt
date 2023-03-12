@@ -1,0 +1,15 @@
+
+fun hello(world: String) {
+	// Print value of variable world to standard output
+	print(world);
+}
+
+/**
+ * Program that prints "Hello, World!"
+ */
+fun main() {
+	hello("Hello, World!");
+
+	x = 3;
+	pi = 3.14159265358979;
+}
