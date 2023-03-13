@@ -1,4 +1,4 @@
-package org.example.error;
+package org.example.lexer.error;
 
 import org.example.token.Position;
 

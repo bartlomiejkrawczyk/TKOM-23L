@@ -1,4 +1,4 @@
-package org.example.error;
+package org.example.lexer.error;
 
 import lombok.AccessLevel;
 import lombok.Getter;
