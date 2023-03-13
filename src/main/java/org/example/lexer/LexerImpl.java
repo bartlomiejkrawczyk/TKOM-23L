@@ -24,12 +24,13 @@ public class LexerImpl implements Lexer, Closeable {
 	private static final String DOT = ".";
 	private static final String SINGLE_LINE_COMMENT_CLOSE = "\n";
 	private static final String MULTILINE_COMMENT_CLOSE = "*/";
+	private static final String SPACE = " ";
 	private static final String UNDERSCORE = "_";
 	private static final String QUOTATION_MARK = "\"";
 	private static final int END_OF_FILE = -1;
 	private static final BigDecimal BASE_TEN = BigDecimal.valueOf(10);
 	private static final int MAX_IDENTIFIER_LENGTH = 100;
-	private static final int MAX_COMMENT_LENGTH = 1_000;
+	private static final int MAX_STRING_LENGTH = 1_000;
 	private static final Map<String, TokenType> KEYWORDS = EnumSet.allOf(TokenType.class)
 			.stream()
 			.filter(it -> StringUtils.isNotBlank(it.getKeyword()))
@@ -41,8 +42,7 @@ public class LexerImpl implements Lexer, Closeable {
 			.collect(Collectors.toMap(TokenType::getKeyword, Function.identity()));
 
 	private Token.TokenBuilder tokenBuilder;
-	private String currentCharacter = StringUtils.EMPTY;
-	private boolean endOfFile = false;
+	private String currentCharacter = SPACE;
 	private final PositionalReader reader;
 
 	public LexerImpl(Reader reader) {
@@ -55,7 +55,7 @@ public class LexerImpl implements Lexer, Closeable {
 
 		tokenBuilder = Token.builder().position(getPosition());
 
-		if (endOfFile) {
+		if (StringUtils.isEmpty(currentCharacter)) {
 			processEndOfFile();
 		} else if (StringUtils.equals(currentCharacter, QUOTATION_MARK)) {
 			processString();
@@ -78,7 +78,6 @@ public class LexerImpl implements Lexer, Closeable {
 
 		if (value == END_OF_FILE) {
 			currentCharacter = StringUtils.EMPTY;
-			endOfFile = true;
 		} else {
 			currentCharacter = Character.toString(value);
 		}
@@ -103,7 +102,7 @@ public class LexerImpl implements Lexer, Closeable {
 	}
 
 	private void skipWhitespaces() {
-		while (!endOfFile && StringUtils.isBlank(currentCharacter)) {
+		while (StringUtils.isBlank(currentCharacter) && StringUtils.isNotEmpty(currentCharacter)) {
 			nextCharacter();
 		}
 	}
@@ -232,7 +231,7 @@ public class LexerImpl implements Lexer, Closeable {
 			builder.append(currentCharacter);
 			nextCharacter();
 
-			if (builder.length() > MAX_COMMENT_LENGTH) {
+			if (builder.length() > MAX_STRING_LENGTH) {
 				throw new TokenTooLongException(builder.toString(), getTokenPosition());
 			}
 
