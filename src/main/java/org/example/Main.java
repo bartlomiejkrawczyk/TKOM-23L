@@ -3,6 +3,7 @@ package org.example;
 import java.io.InputStreamReader;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.example.lexer.CommentFilterLexer;
 import org.example.lexer.LexerImpl;
 import org.example.token.Token;
 import org.example.token.TokenType;
@@ -16,14 +17,15 @@ public class Main {
 		assert file != null;
 		var reader = new InputStreamReader(file);
 		var lexer = new LexerImpl(reader);
+		var filter = new CommentFilterLexer(lexer);
 
 		Token token;
 		do {
-			token = lexer.nextToken();
+			token = filter.nextToken();
 			log.info("Token = {}", token);
 		} while (token.getType() != TokenType.END_OF_FILE);
 
-		lexer.close();
+		filter.close();
 	}
 
 }
