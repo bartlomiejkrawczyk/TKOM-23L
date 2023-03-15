@@ -25,7 +25,7 @@ public class Main {
 			log.info("Token = {}", token);
 		} while (token.getType() != TokenType.END_OF_FILE);
 
-		filter.close();
+		file.close();
 	}
 
 }

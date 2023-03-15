@@ -1,6 +1,5 @@
 package org.example.lexer;
 
-import java.io.IOException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.example.token.Token;
@@ -24,10 +23,5 @@ public class CommentFilterLexer implements Lexer {
 		} while (COMMENTS.contains(token.getType()));
 
 		return token;
-	}
-
-	@Override
-	public void close() throws IOException {
-		lexer.close();
 	}
 }

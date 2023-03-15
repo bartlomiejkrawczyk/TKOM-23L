@@ -1,7 +1,5 @@
 package org.example.lexer;
 
-import java.io.Closeable;
-import java.io.IOException;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.math.MathContext;
@@ -12,6 +10,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.StringUtils;
+import org.example.error.ErrorHandler;
+import org.example.error.ErrorHandlerImpl;
 import org.example.lexer.error.TokenTooLongException;
 import org.example.lexer.error.UnexpectedCharacterException;
 import org.example.lexer.error.UnknownTypeException;
@@ -19,7 +19,7 @@ import org.example.token.Position;
 import org.example.token.Token;
 import org.example.token.TokenType;
 
-public class LexerImpl implements Lexer, Closeable {
+public class LexerImpl implements Lexer {
 
 	private static final String DOT = ".";
 	private static final String SINGLE_LINE_COMMENT_CLOSE = "\n";
@@ -43,10 +43,12 @@ public class LexerImpl implements Lexer, Closeable {
 
 	private Token.TokenBuilder tokenBuilder;
 	private String currentCharacter = SPACE;
-	private final PositionalReader reader;
+	private final PositionalReaderImpl reader;
+	private final ErrorHandler errorHandler; // TODO: add errorHandler
 
 	public LexerImpl(Reader reader) {
-		this.reader = new PositionalReader(reader);
+		this.reader = new PositionalReaderImpl(reader);
+		this.errorHandler = new ErrorHandlerImpl();
 	}
 
 	@Override
@@ -150,6 +152,7 @@ public class LexerImpl implements Lexer, Closeable {
 	}
 
 	private BigDecimal parseInteger() {
+		// TODO: Do not use parseInt !!!
 		var number = BigDecimal.valueOf(Integer.parseInt(currentCharacter));
 
 		while (StringUtils.isNumeric(nextCharacter())) {
@@ -234,6 +237,7 @@ public class LexerImpl implements Lexer, Closeable {
 			if (builder.length() > MAX_STRING_LENGTH) {
 				throw new TokenTooLongException(builder.toString(), getTokenPosition());
 			}
+			// TODO: escape values like \n
 
 			var start = Math.max(0, builder.length() - patternLength);
 			match = builder.substring(start, builder.length());
@@ -241,10 +245,5 @@ public class LexerImpl implements Lexer, Closeable {
 
 
 		return builder.substring(0, builder.length() - patternLength);
-	}
-
-	@Override
-	public void close() throws IOException {
-		reader.close();
 	}
 }
