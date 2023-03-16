@@ -44,14 +44,19 @@ public enum TokenType {
 	TIMES("*"),
 	DIVIDE("/"),
 
-	SINGLE_LINE_COMMENT("//"),
-	MULTI_LINE_COMMENT("/*"),
+	SINGLE_LINE_COMMENT("//", "\n"),
+	MULTI_LINE_COMMENT("/*", "*/"),
 
 	IDENTIFIER,
 	INTEGER_CONSTANT,
 	FLOATING_POINT_CONSTANT,
-	STRING_CONSTANT,
+	STRING_CONSTANT("\"", "\""),
 	;
 
+	TokenType(String keyword) {
+		this.keyword = keyword;
+	}
+
 	private String keyword;
+	private String enclosingKeyword;
 }
