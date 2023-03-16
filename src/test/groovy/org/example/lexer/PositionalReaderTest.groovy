@@ -60,6 +60,7 @@ class PositionalReaderTest extends Specification {
 		" "           | 1
 		" \n "        | 3
 		" \n \n "     | 5
+		" \r\n \r "   | 5
 		" \r\n \r\n " | 5
 		" \n\r \n\r " | 5
 		"Ę\n\rą\n\rŁ" | 5
