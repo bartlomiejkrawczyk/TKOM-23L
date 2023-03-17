@@ -2,7 +2,6 @@ package org.example.lexer
 
 import org.example.token.Position
 import org.example.token.TokenType
-import org.junit.platform.commons.util.StringUtils
 import spock.lang.Specification
 
 
@@ -40,7 +39,7 @@ class LexerTest extends Specification {
 		expect:
 		var token = lexer.nextToken()
 		token.getType() == TokenType.IDENTIFIER
-		token.getStringValue() == value
+		token.getValue() as String == value
 
 		where:
 		content              || value
@@ -81,11 +80,35 @@ class LexerTest extends Specification {
 		token.getType() == type
 
 		where:
-		type << EnumSet.allOf(TokenType.class)
+		type << LexerUtility.KEYWORDS.values()
+	}
+
+	def 'Should detect all operators correctly'() {
+		given:
+		var content = type.getKeyword()
+		var lexer = toLexer(content)
+
+		expect:
+		var token = lexer.nextToken()
+		token.getType() == type
+
+		where:
+		type << LexerUtility.OPERATORS.values()
+	}
+
+	def 'Should detect all symbols correctly'() {
+		given:
+		var content = type.getKeyword()
+		var lexer = toLexer(content)
+
+		expect:
+		var token = lexer.nextToken()
+		token.getType() == type
+
+		where:
+		type << LexerUtility.SYMBOLS.values()
 				.stream()
-				.filter { StringUtils.isNotBlank(it.getKeyword()) }
-				.filter { it != TokenType.SINGLE_LINE_COMMENT }
-				.filter { it != TokenType.MULTI_LINE_COMMENT }
+				.filter { it.enclosingKeyword == null }
 				.toList()
 	}
 
@@ -96,7 +119,7 @@ class LexerTest extends Specification {
 		expect:
 		var token = lexer.nextToken()
 		token.getType() == TokenType.SINGLE_LINE_COMMENT
-		token.getStringValue() == value
+		token.getValue() as String == value
 
 		where:
 		content                                            || value
@@ -112,7 +135,7 @@ class LexerTest extends Specification {
 		expect:
 		var token = lexer.nextToken()
 		token.getType() == TokenType.MULTI_LINE_COMMENT
-		token.getStringValue() == value
+		token.getValue() as String == value
 
 		where:
 		content                                                 || value
@@ -127,8 +150,8 @@ class LexerTest extends Specification {
 
 		expect:
 		var token = lexer.nextToken()
-		token.getType() == TokenType.STRING_CONSTANT
-		token.getStringValue() == value
+		token.getType() == TokenType.STRING_DOUBLE_QUOTE_CONSTANT
+		token.getValue() as String == value
 
 		where:
 		content                            || value
@@ -143,7 +166,7 @@ class LexerTest extends Specification {
 		expect:
 		var token = lexer.nextToken()
 		token.getType() == TokenType.INTEGER_CONSTANT
-		token.getNumericalValue() == BigDecimal.valueOf(value)
+		token.getValue() as Integer == value
 
 		where:
 		content    || value
@@ -158,7 +181,7 @@ class LexerTest extends Specification {
 		expect:
 		var token = lexer.nextToken()
 		token.getType() == TokenType.FLOATING_POINT_CONSTANT
-		token.getNumericalValue() == BigDecimal.valueOf(value)
+		token.getValue() as Double == value
 
 		where:
 		content  || value
