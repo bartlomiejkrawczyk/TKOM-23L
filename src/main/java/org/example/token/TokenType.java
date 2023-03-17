@@ -1,13 +1,10 @@
 package org.example.token;
 
-
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor
-@AllArgsConstructor
 public enum TokenType {
 	END_OF_FILE,
 
@@ -30,19 +27,19 @@ public enum TokenType {
 	NOT("not"),
 	OR("or"),
 
-	EQUALITY("=="),
-	INEQUALITY("!="),
-	GREATER(">"),
-	LESS("<"),
-	GREATER_EQUAL(">="),
-	LESS_EQUAL("<="),
+	EQUALITY("==", 10),
+	INEQUALITY("!=", 10),
+	GREATER(">", 10),
+	LESS("<", 10),
+	GREATER_EQUAL(">=", 10),
+	LESS_EQUAL("<=", 10),
 
 	EQUALS("="),
 
-	PLUS("+"),
-	MINUS("-"),
-	TIMES("*"),
-	DIVIDE("/"),
+	PLUS("+", 20),
+	MINUS("-", 20),
+	TIMES("*", 40),
+	DIVIDE("/", 40),
 
 	SINGLE_LINE_COMMENT("//", "\n"),
 	MULTI_LINE_COMMENT("/*", "*/"),
@@ -58,6 +55,17 @@ public enum TokenType {
 		this.keyword = keyword;
 	}
 
+	TokenType(String keyword, String enclosingKeyword) {
+		this.keyword = keyword;
+		this.enclosingKeyword = enclosingKeyword;
+	}
+
+	TokenType(String keyword, int precedence) {
+		this.keyword = keyword;
+		this.precedence = precedence;
+	}
+
 	private String keyword;
 	private String enclosingKeyword;
+	private int precedence = -1;
 }
