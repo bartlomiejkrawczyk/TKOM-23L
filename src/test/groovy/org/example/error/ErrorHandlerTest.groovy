@@ -15,4 +15,20 @@ class ErrorHandlerTest extends Specification {
 		noExceptionThrown()
 	}
 
+	def 'Should log parser errors correctly'() {
+		when:
+		errorHandler.handleParserException(new RuntimeException("Test"))
+
+		then:
+		noExceptionThrown()
+	}
+
+	def 'Should log semantic analysis errors correctly'() {
+		when:
+		errorHandler.handleSemanticAnalysisException(new RuntimeException("Test"))
+
+		then:
+		noExceptionThrown()
+	}
+
 }
