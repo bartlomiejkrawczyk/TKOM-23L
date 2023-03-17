@@ -1,15 +1,9 @@
 package org.example.token;
 
-import java.math.BigDecimal;
-import lombok.Builder;
-import lombok.Value;
+public interface Token {
+	TokenType getType();
 
-@Builder
-@Value
-public class Token {
-	TokenType type;
-	Position position;
+	Position getPosition();
 
-	BigDecimal numericalValue;
-	String stringValue;
+	<T> T getValue();
 }
