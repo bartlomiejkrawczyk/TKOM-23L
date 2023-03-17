@@ -19,11 +19,11 @@ class TokenTest extends Specification {
 		token.getValue() == value
 
 		where:
-		token                                                                     || value
-		new StringToken(TokenType.IDENTIFIER, position, "value")                  || "value"
-		new IntegerToken(TokenType.INTEGER_CONSTANT, position, 1)                 || 1
-		new FloatingPointToken(TokenType.FLOATING_POINT_CONSTANT, position, 1.25) || 1.25
-		new KeywordToken(TokenType.FUNCTION_DEFINITION, position)                 || null
+		token                                                     || value
+		new StringToken(TokenType.IDENTIFIER, position, "value")  || "value"
+		new IntegerToken(position, 1)                             || 1
+		new FloatingPointToken(position, 1.25)                    || 1.25
+		new KeywordToken(TokenType.FUNCTION_DEFINITION, position) || null
 	}
 
 }
