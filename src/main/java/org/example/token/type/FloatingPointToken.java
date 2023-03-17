@@ -8,7 +8,10 @@ import org.example.token.TokenType;
 @Value
 public class FloatingPointToken implements Token {
 
-	TokenType type;
 	Position position;
 	Double value;
+
+	public TokenType getType() {
+		return TokenType.FLOATING_POINT_CONSTANT;
+	}
 }

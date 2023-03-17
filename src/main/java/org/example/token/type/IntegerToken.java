@@ -8,7 +8,10 @@ import org.example.token.TokenType;
 @Value
 public class IntegerToken implements Token {
 
-	TokenType type;
 	Position position;
 	Integer value;
+
+	public TokenType getType() {
+		return TokenType.INTEGER_CONSTANT;
+	}
 }

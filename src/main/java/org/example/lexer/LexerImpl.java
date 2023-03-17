@@ -1,7 +1,6 @@
 package org.example.lexer;
 
-import static io.vavr.API.unchecked;
-
+import io.vavr.API;
 import java.io.Reader;
 import java.util.LinkedList;
 import java.util.Objects;
@@ -62,7 +61,7 @@ public class LexerImpl implements Lexer {
 	}
 
 	private String nextCharacter() {
-		var value = unchecked(reader::read).apply();
+		var value = API.unchecked(reader::read).apply();
 
 		if (value == CharactersUtility.END_OF_FILE) {
 			currentCharacter = StringUtils.EMPTY;
@@ -151,19 +150,21 @@ public class LexerImpl implements Lexer {
 		var integerPart = parseInteger();
 
 		if (!StringUtils.equals(currentCharacter, CharactersUtility.DOT)) {
-			token = new IntegerToken(TokenType.INTEGER_CONSTANT, tokenPosition, integerPart);
+			token = new IntegerToken(tokenPosition, integerPart);
 		} else {
 			nextCharacter();
 			var fractionalPart = parseFloatingPoint();
 			var value = integerPart + fractionalPart;
-			token = new FloatingPointToken(TokenType.FLOATING_POINT_CONSTANT, tokenPosition, value);
+			token = new FloatingPointToken(tokenPosition, value);
 		}
 	}
 
 	private int parseInteger() {
 		var number = LexerUtility.parseNumericValue(currentCharacter);
 
-		while (StringUtils.isNumeric(nextCharacter())) {
+		// TODO: add exact
+
+		while (LexerUtility.isNumeric(nextCharacter())) {
 			var currentValue = LexerUtility.parseNumericValue(currentCharacter);
 			number = number * LexerConfiguration.BASE_TEN + currentValue;
 		}
@@ -172,21 +173,24 @@ public class LexerImpl implements Lexer {
 	}
 
 	private double parseFloatingPoint() {
-		if (!StringUtils.isNumeric(currentCharacter)) {
+		if (!LexerUtility.isNumeric(currentCharacter)) {
 			var exception = new UnexpectedCharacterException(currentCharacter, tokenPosition);
 			errorHandler.handleLexerException(exception);
 			return 0;
 		}
 
-		var nominator = LexerUtility.parseNumericValue(currentCharacter);
-		var denominator = LexerConfiguration.BASE_TEN;
+		var nominator = (long) LexerUtility.parseNumericValue(currentCharacter);
+		var denominator = (long) LexerConfiguration.BASE_TEN;
 
-		while (StringUtils.isNumeric(nextCharacter())) {
+
+		// TODO: divide exact
+		while (LexerUtility.isNumeric(nextCharacter())) {
 			var currentValue = Integer.parseInt(currentCharacter);
 			nominator = LexerConfiguration.BASE_TEN * nominator + currentValue;
 			denominator = LexerConfiguration.BASE_TEN * denominator;
 		}
 
+		// TODO: divide exact
 		return (double) nominator / denominator;
 	}
 
