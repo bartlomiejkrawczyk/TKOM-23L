@@ -1,8 +1,11 @@
 package org.example.lexer;
 
+import static io.vavr.API.unchecked;
+
 import java.io.Reader;
+import java.util.LinkedList;
 import java.util.Objects;
-import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.example.error.ErrorHandler;
@@ -19,6 +22,7 @@ import org.example.token.type.IntegerToken;
 import org.example.token.type.KeywordToken;
 import org.example.token.type.StringToken;
 
+@Slf4j
 public class LexerImpl implements Lexer {
 
 	private Token token;
@@ -30,6 +34,11 @@ public class LexerImpl implements Lexer {
 	public LexerImpl(Reader reader) {
 		this.reader = new PositionalReaderImpl(reader);
 		this.errorHandler = new ErrorHandlerImpl();
+	}
+
+	public LexerImpl(Reader reader, ErrorHandler errorHandler) {
+		this.reader = new PositionalReaderImpl(reader);
+		this.errorHandler = errorHandler;
 	}
 
 	@Override
@@ -47,13 +56,13 @@ public class LexerImpl implements Lexer {
 
 		var exception = new UnexpectedCharacterException(currentCharacter, getPosition());
 		errorHandler.handleLexerException(exception);
+		nextCharacter();
 
 		return nextToken();
 	}
 
-	@SneakyThrows
 	private String nextCharacter() {
-		var value = reader.read();
+		var value = unchecked(reader::read).apply();
 
 		if (value == CharactersUtility.END_OF_FILE) {
 			currentCharacter = StringUtils.EMPTY;
@@ -236,18 +245,42 @@ public class LexerImpl implements Lexer {
 				return builder.toString();
 			}
 
-			if (builder.length() > LexerConfiguration.MAX_STRING_LENGTH) {
+			if (builder.length() > LexerConfiguration.MAX_STRING_LENGTH + patternLength) {
 				var exception = new TokenTooLongException(builder.toString(), tokenPosition);
 				errorHandler.handleLexerException(exception);
-				// TODO: skip the rest till you find pattern
+				var start = Math.max(0, builder.length() - patternLength);
+				passUntil(builder.substring(start), enclosingString);
+				return builder.toString();
 			}
 
 			nextCharacter();
 
 			var start = Math.max(0, builder.length() - patternLength);
-			match = builder.substring(start, builder.length());
+			match = builder.substring(start);
 		} while (!StringUtils.equals(match, enclosingString));
 
 		return builder.substring(0, builder.length() - patternLength);
+	}
+
+	private void passUntil(String beginning, String enclosingString) {
+		var characters = beginning.chars().boxed().toList();
+		var queue = new LinkedList<>(characters);
+
+		String match;
+		do {
+			if (LexerUtility.isEndOfFile(currentCharacter)) {
+				var exception = new EndOfFileReachedException(enclosingString, tokenPosition);
+				errorHandler.handleLexerException(exception);
+				return;
+			}
+
+			queue.addLast(currentCharacter.codePointAt(0));
+			queue.pollFirst();
+
+			nextCharacter();
+
+			var codePoints = queue.stream().mapToInt(it -> it).toArray();
+			match = new String(codePoints, 0, queue.size());
+		} while (!StringUtils.equals(match, enclosingString));
 	}
 }

@@ -1,5 +1,10 @@
 package org.example.lexer
 
+import org.example.error.ErrorHandler
+import org.example.lexer.error.EndOfFileReachedException
+import org.example.lexer.error.TokenTooLongException
+import org.example.lexer.error.UnexpectedCharacterException
+import org.example.lexer.error.UnknownTypeException
 import org.example.token.Position
 import org.example.token.TokenType
 import spock.lang.Specification
@@ -188,5 +193,148 @@ class LexerTest extends Specification {
 		"1.0"    || 1.0
 		"1.25"   || 1.25
 		"10.750" || 10.750
+	}
+
+	def 'Should raise an exception when found symbol is not a operator or comment'() {
+		given:
+		var reader = new StringReader(content)
+		var errorHandler = Mock(ErrorHandler)
+		var lexer = new LexerImpl(reader, errorHandler)
+
+		when:
+		var token = lexer.nextToken()
+
+		then:
+		token.getValue() == value
+		1 * errorHandler.handleLexerException(_ as UnknownTypeException)
+
+		where:
+		content || value
+		"@abc"  || "abc"
+		"~abc"  || "abc"
+	}
+
+	def 'Should raise an exception when floating point number does not have a float part'() {
+		given:
+		var reader = new StringReader(content)
+		var errorHandler = Mock(ErrorHandler)
+		var lexer = new LexerImpl(reader, errorHandler)
+
+		when:
+		var token = lexer.nextToken()
+
+		then:
+		token.getValue() == value
+		token.getType() == TokenType.FLOATING_POINT_CONSTANT
+		1 * errorHandler.handleLexerException(_ as UnexpectedCharacterException)
+		lexer.nextToken().getType() == TokenType.END_OF_FILE
+
+		where:
+		content || value
+		"13."   || 13
+		"4."    || 4
+		"5."    || 5
+		"0."    || 0
+	}
+
+	def 'Should raise an exception when identifier is too long'() {
+		given:
+		var content = "a" * length
+		var reader = new StringReader(content)
+		var errorHandler = Mock(ErrorHandler)
+		var lexer = new LexerImpl(reader, errorHandler)
+
+		when:
+		var token = lexer.nextToken()
+
+		then:
+		token.getType() == TokenType.IDENTIFIER
+		1 * errorHandler.handleLexerException(_ as TokenTooLongException)
+
+		where:
+		length                                       | _
+		LexerConfiguration.MAX_IDENTIFIER_LENGTH + 1 | _
+		LexerConfiguration.MAX_IDENTIFIER_LENGTH * 2 | _
+	}
+
+	def 'Should raise an exception when comment or string is too long'() {
+		given:
+		var content = tokenType.getKeyword() + "c" * length + tokenType.getEnclosingKeyword() + " abc"
+		var reader = new StringReader(content)
+		var errorHandler = Mock(ErrorHandler)
+		var lexer = new LexerImpl(reader, errorHandler)
+
+		when:
+		var token = lexer.nextToken()
+
+		then:
+		token.getType() == tokenType
+		1 * errorHandler.handleLexerException(_ as TokenTooLongException)
+		0 * errorHandler.handleLexerException(_ as EndOfFileReachedException)
+		lexer.nextToken().getValue() == "abc"
+
+		where:
+		length                                   | tokenType
+		LexerConfiguration.MAX_STRING_LENGTH + 1 | TokenType.STRING_DOUBLE_QUOTE_CONSTANT
+		LexerConfiguration.MAX_STRING_LENGTH * 2 | TokenType.MULTI_LINE_COMMENT
+	}
+
+	def 'Should raise two exceptions when comment or string is too long and not enclosed'() {
+		given:
+		var content = tokenType.getKeyword() + "c" * length
+		var reader = new StringReader(content)
+		var errorHandler = Mock(ErrorHandler)
+		var lexer = new LexerImpl(reader, errorHandler)
+
+		when:
+		var token = lexer.nextToken()
+
+		then:
+		token.getType() == tokenType
+		1 * errorHandler.handleLexerException(_ as TokenTooLongException)
+		1 * errorHandler.handleLexerException(_ as EndOfFileReachedException)
+		lexer.nextToken().getType() == TokenType.END_OF_FILE
+
+		where:
+		length                                   | tokenType
+		LexerConfiguration.MAX_STRING_LENGTH + 2 | TokenType.STRING_DOUBLE_QUOTE_CONSTANT
+		LexerConfiguration.MAX_STRING_LENGTH * 2 | TokenType.MULTI_LINE_COMMENT
+	}
+
+	def 'Should raise an exception when comment or string is not closed'() {
+		given:
+		var reader = new StringReader(content)
+		var errorHandler = Mock(ErrorHandler)
+		var lexer = new LexerImpl(reader, errorHandler)
+
+		when:
+		var token = lexer.nextToken()
+
+		then:
+		token.getValue()
+		1 * errorHandler.handleLexerException(_ as EndOfFileReachedException)
+
+		where:
+		content   || value
+		"/*Hello" || "Hello"
+		"\"Hello" || "Hello"
+	}
+
+	def 'Should raise an exception when lexer finds unexpected character'() {
+		given:
+		var reader = new StringReader(content)
+		var errorHandler = Mock(ErrorHandler)
+		var lexer = new LexerImpl(reader, errorHandler)
+
+		when:
+		var token = lexer.nextToken()
+
+		then:
+		token.getType() == TokenType.END_OF_FILE
+		2 * errorHandler.handleLexerException(_ as UnexpectedCharacterException)
+
+		where:
+		content                                | _
+		new String(Character.toChars(0x1F349)) | _
 	}
 }
