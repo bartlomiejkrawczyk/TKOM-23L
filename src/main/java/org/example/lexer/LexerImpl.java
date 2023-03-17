@@ -1,50 +1,31 @@
 package org.example.lexer;
 
 import java.io.Reader;
-import java.math.BigDecimal;
-import java.math.MathContext;
-import java.util.EnumSet;
-import java.util.Map;
 import java.util.Objects;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import lombok.SneakyThrows;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.example.error.ErrorHandler;
 import org.example.error.ErrorHandlerImpl;
+import org.example.lexer.error.EndOfFileReachedException;
 import org.example.lexer.error.TokenTooLongException;
 import org.example.lexer.error.UnexpectedCharacterException;
 import org.example.lexer.error.UnknownTypeException;
 import org.example.token.Position;
 import org.example.token.Token;
 import org.example.token.TokenType;
+import org.example.token.type.FloatingPointToken;
+import org.example.token.type.IntegerToken;
+import org.example.token.type.KeywordToken;
+import org.example.token.type.StringToken;
 
 public class LexerImpl implements Lexer {
 
-	private static final String DOT = ".";
-	private static final String SINGLE_LINE_COMMENT_CLOSE = "\n";
-	private static final String MULTILINE_COMMENT_CLOSE = "*/";
-	private static final String SPACE = " ";
-	private static final String UNDERSCORE = "_";
-	private static final String QUOTATION_MARK = "\"";
-	private static final int END_OF_FILE = -1;
-	private static final BigDecimal BASE_TEN = BigDecimal.valueOf(10);
-	private static final int MAX_IDENTIFIER_LENGTH = 100;
-	private static final int MAX_STRING_LENGTH = 1_000;
-	private static final Map<String, TokenType> KEYWORDS = EnumSet.allOf(TokenType.class)
-			.stream()
-			.filter(it -> StringUtils.isNotBlank(it.getKeyword()))
-			.filter(it -> StringUtils.isAlphanumeric(it.getKeyword()))
-			.collect(Collectors.toMap(TokenType::getKeyword, Function.identity()));
-	private static final Map<String, TokenType> SYMBOLS = EnumSet.allOf(TokenType.class)
-			.stream()
-			.filter(it -> isSymbol(it.getKeyword()))
-			.collect(Collectors.toMap(TokenType::getKeyword, Function.identity()));
-
-	private Token.TokenBuilder tokenBuilder;
-	private String currentCharacter = SPACE;
+	private Token token;
+	private Position tokenPosition;
+	private String currentCharacter = CharactersUtility.SPACE;
 	private final PositionalReaderImpl reader;
-	private final ErrorHandler errorHandler; // TODO: add errorHandler
+	private final ErrorHandler errorHandler;
 
 	public LexerImpl(Reader reader) {
 		this.reader = new PositionalReaderImpl(reader);
@@ -54,31 +35,27 @@ public class LexerImpl implements Lexer {
 	@Override
 	public Token nextToken() {
 		skipWhitespaces();
+		tokenPosition = getPosition();
 
-		tokenBuilder = Token.builder().position(getPosition());
-
-		if (StringUtils.isEmpty(currentCharacter)) {
-			processEndOfFile();
-		} else if (StringUtils.equals(currentCharacter, QUOTATION_MARK)) {
-			processString();
-		} else if (isIdentifierHead(currentCharacter)) {
-			processIdentifier();
-		} else if (StringUtils.isNumeric(currentCharacter)) {
-			processNumber();
-		} else if (isSymbol(currentCharacter)) {
-			processSymbol();
-		} else {
-			throw new UnexpectedCharacterException(currentCharacter, getPosition());
+		if (tryBuildEndOfFile()
+				|| tryBuildNumber()
+				|| tryBuildIdentifierOrKeyword()
+				|| tryBuildString()
+				|| tryBuildOperatorOrComment()) {
+			return token;
 		}
 
-		return tokenBuilder.build();
+		var exception = new UnexpectedCharacterException(currentCharacter, getPosition());
+		errorHandler.handleLexerException(exception);
+
+		return nextToken();
 	}
 
 	@SneakyThrows
 	private String nextCharacter() {
 		var value = reader.read();
 
-		if (value == END_OF_FILE) {
+		if (value == CharactersUtility.END_OF_FILE) {
 			currentCharacter = StringUtils.EMPTY;
 		} else {
 			currentCharacter = Character.toString(value);
@@ -91,103 +68,132 @@ public class LexerImpl implements Lexer {
 		return reader.getPosition();
 	}
 
-	private Position getTokenPosition() {
-		return tokenBuilder.build().getPosition();
-	}
-
-	private static boolean isIdentifierHead(String character) {
-		return StringUtils.isAlpha(character) || StringUtils.equals(character, UNDERSCORE);
-	}
-
-	private static boolean isIdentifierElement(String character) {
-		return StringUtils.isAlphanumeric(character) || StringUtils.equals(character, UNDERSCORE);
-	}
-
 	private void skipWhitespaces() {
-		while (StringUtils.isBlank(currentCharacter) && StringUtils.isNotEmpty(currentCharacter)) {
+		while (LexerUtility.isWhitespace(currentCharacter)) {
 			nextCharacter();
 		}
 	}
 
-	private void processEndOfFile() {
-		tokenBuilder.type(TokenType.END_OF_FILE);
+	private boolean tryBuildEndOfFile() {
+		if (StringUtils.isEmpty(currentCharacter)) {
+			token = new KeywordToken(TokenType.END_OF_FILE, tokenPosition);
+			return true;
+		}
+		return false;
+	}
+
+	private boolean tryBuildString() {
+		if (LexerUtility.STRINGS.containsKey(currentCharacter)) {
+			processString();
+			return true;
+		}
+		return false;
 	}
 
 	private void processString() {
+		var tokenType = LexerUtility.STRINGS.get(currentCharacter);
 		nextCharacter();
-		var content = readUntil(QUOTATION_MARK);
-		tokenBuilder.type(TokenType.STRING_CONSTANT).stringValue(content);
+		var content = readUntil(tokenType.getEnclosingKeyword());
+		var unescapedContent = StringEscapeUtils.unescapeJava(content);
+		token = new StringToken(tokenType, tokenPosition, unescapedContent);
 	}
 
-	private void processIdentifier() {
+	private boolean tryBuildIdentifierOrKeyword() {
+		if (LexerUtility.isIdentifierHead(currentCharacter)) {
+			var identifier = parseIdentifier();
+			var type = LexerUtility.KEYWORDS.getOrDefault(identifier, TokenType.IDENTIFIER);
+			if (type == TokenType.IDENTIFIER) {
+				token = new StringToken(type, tokenPosition, identifier);
+			} else {
+				token = new KeywordToken(type, tokenPosition);
+			}
+			return true;
+		}
+		return false;
+	}
+
+	@SuppressWarnings({"checkstyle:NeedBraces", "CheckStyle", "StatementWithEmptyBody"})
+	private String parseIdentifier() {
 		var builder = new StringBuilder();
 		builder.append(currentCharacter);
 
-		while (isIdentifierElement(nextCharacter())) {
+		while (LexerUtility.isIdentifierElement(nextCharacter())) {
 			builder.append(currentCharacter);
-			if (builder.length() > MAX_IDENTIFIER_LENGTH) {
-				throw new TokenTooLongException(builder.toString(), getTokenPosition());
+			if (builder.length() > LexerConfiguration.MAX_IDENTIFIER_LENGTH) {
+				var error = new TokenTooLongException(builder.toString(), tokenPosition);
+				errorHandler.handleLexerException(error);
+
+				while (LexerUtility.isIdentifierElement(nextCharacter())) ;
 			}
 		}
-		var identifier = builder.toString();
 
-		var type = KEYWORDS.getOrDefault(identifier, TokenType.IDENTIFIER);
+		return builder.toString();
+	}
 
-		tokenBuilder.type(type).stringValue(identifier);
+	private boolean tryBuildNumber() {
+		if (LexerUtility.isNumeric(currentCharacter)) {
+			processNumber();
+			return true;
+		}
+		return false;
 	}
 
 	private void processNumber() {
 		var integerPart = parseInteger();
 
-		if (StringUtils.equals(currentCharacter, DOT)) {
-			nextCharacter();
-
-			var fractionalPart = parseFloatingPoint();
-
-			var value = integerPart.add(fractionalPart);
-			tokenBuilder.type(TokenType.FLOATING_POINT_CONSTANT).numericalValue(value);
+		if (!StringUtils.equals(currentCharacter, CharactersUtility.DOT)) {
+			token = new IntegerToken(TokenType.INTEGER_CONSTANT, tokenPosition, integerPart);
 		} else {
-			tokenBuilder.type(TokenType.INTEGER_CONSTANT).numericalValue(integerPart);
+			nextCharacter();
+			var fractionalPart = parseFloatingPoint();
+			var value = integerPart + fractionalPart;
+			token = new FloatingPointToken(TokenType.FLOATING_POINT_CONSTANT, tokenPosition, value);
 		}
 	}
 
-	private BigDecimal parseInteger() {
-		// TODO: Do not use parseInt !!!
-		var number = BigDecimal.valueOf(Integer.parseInt(currentCharacter));
+	private int parseInteger() {
+		var number = LexerUtility.parseNumericValue(currentCharacter);
 
 		while (StringUtils.isNumeric(nextCharacter())) {
-			var integerValue = Integer.parseInt(currentCharacter);
-			var currentValue = BigDecimal.valueOf(integerValue);
-			number = number.multiply(BASE_TEN).add(currentValue);
+			var currentValue = LexerUtility.parseNumericValue(currentCharacter);
+			number = number * LexerConfiguration.BASE_TEN + currentValue;
 		}
 
 		return number;
 	}
 
-	private BigDecimal parseFloatingPoint() {
+	private double parseFloatingPoint() {
 		if (!StringUtils.isNumeric(currentCharacter)) {
-			throw new UnexpectedCharacterException(currentCharacter, getTokenPosition());
+			var exception = new UnexpectedCharacterException(currentCharacter, tokenPosition);
+			errorHandler.handleLexerException(exception);
+			return 0;
 		}
 
-		var nominator = BigDecimal.valueOf(Integer.parseInt(currentCharacter));
-		var denominator = BASE_TEN;
+		var nominator = LexerUtility.parseNumericValue(currentCharacter);
+		var denominator = LexerConfiguration.BASE_TEN;
 
 		while (StringUtils.isNumeric(nextCharacter())) {
-			var integerValue = Integer.parseInt(currentCharacter);
-			var currentValue = BigDecimal.valueOf(integerValue);
-			nominator = BASE_TEN.multiply(nominator).add(currentValue);
-			denominator = BASE_TEN.multiply(denominator);
+			var currentValue = Integer.parseInt(currentCharacter);
+			nominator = LexerConfiguration.BASE_TEN * nominator + currentValue;
+			denominator = LexerConfiguration.BASE_TEN * denominator;
 		}
 
-		return nominator.divide(denominator, MathContext.UNLIMITED);
+		return (double) nominator / denominator;
 	}
 
-	private void processSymbol() {
-		var first = currentCharacter;
+	private boolean tryBuildOperatorOrComment() {
+		if (LexerUtility.isSymbol(currentCharacter)) {
+			processOperatorOrComment();
+			return true;
+		}
+		return false;
+	}
 
+	private void processOperatorOrComment() {
+		var first = currentCharacter;
 		var symbol = first;
-		if (isSymbol(nextCharacter())) {
-			var possibleSymbol = SYMBOLS.keySet()
+		if (LexerUtility.isSymbol(nextCharacter())) {
+			var possibleSymbol = LexerUtility.TWO_LETTER_SYMBOLS.keySet()
 					.stream()
 					.filter(it -> StringUtils.equals(it, first + currentCharacter))
 					.findFirst();
@@ -198,51 +204,49 @@ public class LexerImpl implements Lexer {
 			}
 		}
 
-		var type = SYMBOLS.getOrDefault(symbol, null);
+		var type = LexerUtility.SYMBOLS.getOrDefault(symbol, null);
 
 		if (Objects.isNull(type)) {
-			throw new UnknownTypeException(symbol, getTokenPosition());
+			var error = new UnknownTypeException(symbol, tokenPosition);
+			errorHandler.handleLexerException(error);
+			token = nextToken();
+		} else if (LexerUtility.COMMENTS.containsKey(symbol)) {
+			processComments(LexerUtility.COMMENTS.get(symbol));
+		} else {
+			token = new KeywordToken(type, tokenPosition);
 		}
-
-		tokenBuilder.type(type).stringValue(symbol);
-		processComments(symbol);
 	}
 
-	private static boolean isSymbol(String character) {
-		return !StringUtils.isAlphanumeric(character)
-				&& StringUtils.isAsciiPrintable(character)
-				&& StringUtils.isNotBlank(character);
-	}
-
-	private void processComments(String symbol) {
-		if (StringUtils.equals(symbol, TokenType.SINGLE_LINE_COMMENT.getKeyword())) {
-			var content = readUntil(SINGLE_LINE_COMMENT_CLOSE);
-			tokenBuilder.type(TokenType.SINGLE_LINE_COMMENT).stringValue(content);
-		} else if (StringUtils.equals(symbol, TokenType.MULTI_LINE_COMMENT.getKeyword())) {
-			var content = readUntil(MULTILINE_COMMENT_CLOSE);
-			tokenBuilder.type(TokenType.MULTI_LINE_COMMENT).stringValue(content);
-		}
+	private void processComments(TokenType commentType) {
+		var content = readUntil(commentType.getEnclosingKeyword());
+		token = new StringToken(commentType, tokenPosition, content);
 	}
 
 	private String readUntil(String enclosingString) {
 		var builder = new StringBuilder();
-
 		var patternLength = enclosingString.length();
 
 		String match;
 		do {
 			builder.append(currentCharacter);
-			nextCharacter();
 
-			if (builder.length() > MAX_STRING_LENGTH) {
-				throw new TokenTooLongException(builder.toString(), getTokenPosition());
+			if (LexerUtility.isEndOfFile(currentCharacter)) {
+				var exception = new EndOfFileReachedException(enclosingString, tokenPosition);
+				errorHandler.handleLexerException(exception);
+				return builder.toString();
 			}
-			// TODO: escape values like \n
+
+			if (builder.length() > LexerConfiguration.MAX_STRING_LENGTH) {
+				var exception = new TokenTooLongException(builder.toString(), tokenPosition);
+				errorHandler.handleLexerException(exception);
+				// TODO: skip the rest till you find pattern
+			}
+
+			nextCharacter();
 
 			var start = Math.max(0, builder.length() - patternLength);
 			match = builder.substring(start, builder.length());
 		} while (!StringUtils.equals(match, enclosingString));
-
 
 		return builder.substring(0, builder.length() - patternLength);
 	}
