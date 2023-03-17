@@ -9,4 +9,15 @@ public class ErrorHandlerImpl implements ErrorHandler {
 	public void handleLexerException(Exception exception) {
 		log.error(exception.getMessage());
 	}
+
+	@Override
+	public void handleParserException(Exception exception) {
+		log.error(exception.getMessage());
+
+	}
+
+	@Override
+	public void handleSemanticAnalysisException(Exception exception) {
+		log.error(exception.getMessage());
+	}
 }
