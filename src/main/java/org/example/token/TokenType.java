@@ -50,7 +50,8 @@ public enum TokenType {
 	IDENTIFIER,
 	INTEGER_CONSTANT,
 	FLOATING_POINT_CONSTANT,
-	STRING_CONSTANT("\"", "\""),
+	STRING_DOUBLE_QUOTE_CONSTANT("\"", "\""),
+	STRING_SINGLE_QUOTE_CONSTANT("'", "'"),
 	;
 
 	TokenType(String keyword) {
