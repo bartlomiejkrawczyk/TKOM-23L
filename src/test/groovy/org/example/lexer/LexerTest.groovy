@@ -9,12 +9,12 @@ import org.example.token.Position
 import org.example.token.TokenType
 import spock.lang.Specification
 
-
 class LexerTest extends Specification {
 
 	Lexer toLexer(String content) {
 		var reader = new StringReader(content)
-		return new LexerImpl(reader)
+		var errorHandler = Mock(ErrorHandler)
+		return new LexerImpl(reader, errorHandler)
 	}
 
 	def 'Should return correct position in file'() {

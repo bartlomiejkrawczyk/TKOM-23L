@@ -8,7 +8,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.example.error.ErrorHandler;
-import org.example.error.ErrorHandlerImpl;
 import org.example.lexer.error.EndOfFileReachedException;
 import org.example.lexer.error.TokenTooLongException;
 import org.example.lexer.error.UnexpectedCharacterException;
@@ -29,11 +28,6 @@ public class LexerImpl implements Lexer {
 	private String currentCharacter = CharactersUtility.SPACE;
 	private final PositionalReaderImpl reader;
 	private final ErrorHandler errorHandler;
-
-	public LexerImpl(Reader reader) {
-		this.reader = new PositionalReaderImpl(reader);
-		this.errorHandler = new ErrorHandlerImpl();
-	}
 
 	public LexerImpl(Reader reader, ErrorHandler errorHandler) {
 		this.reader = new PositionalReaderImpl(reader);
