@@ -1,10 +1,7 @@
 package org.example.lexer
 
 import org.example.error.ErrorHandler
-import org.example.lexer.error.EndOfFileReachedException
-import org.example.lexer.error.TokenTooLongException
-import org.example.lexer.error.UnexpectedCharacterException
-import org.example.lexer.error.UnknownTypeException
+import org.example.lexer.error.*
 import org.example.token.Position
 import org.example.token.TokenType
 import spock.lang.Specification
@@ -235,6 +232,49 @@ class LexerTest extends Specification {
 		"4."    || 4
 		"5."    || 5
 		"0."    || 0
+	}
+
+	def 'Should raise an exception when integer is too long'() {
+		given:
+		var reader = new StringReader(content)
+		var errorHandler = Mock(ErrorHandler)
+		var lexer = new LexerImpl(reader, errorHandler)
+
+		when:
+		var token = lexer.nextToken()
+
+		then:
+		token.getValue() == value
+		token.getType() == TokenType.INTEGER_CONSTANT
+		1 * errorHandler.handleLexerException(_ as NumericOverflowException)
+
+		where:
+		content         | value
+		"2147483647123" | 2147483647
+		"2147483648"    | 214748364
+	}
+
+	def 'Should raise an exception when floating point number is too long'() {
+		given:
+		var reader = new StringReader(content)
+		var errorHandler = Mock(ErrorHandler)
+		var lexer = new LexerImpl(reader, errorHandler)
+
+		when:
+		var token = lexer.nextToken()
+
+		then:
+		token.getValue() == value
+		token.getType() == TokenType.FLOATING_POINT_CONSTANT
+		1 * errorHandler.handleLexerException(_ as NumericOverflowException)
+
+		where:
+		content                              | value
+		"2147483647.12345678901234567890123" | 2147483647.12345678901234567890123
+		"2147483647.1234567890123456789012"  | 2147483647.1234567890123456789012
+		"2147483647.123456789012345678901"   | 2147483647.123456789012345678901
+		"2147483647.12345678901234567890"    | 2147483647.12345678901234567890
+		"2147483647.1234567890123456789"     | 2147483647.1234567890123456789
 	}
 
 	def 'Should raise an exception when identifier is too long'() {

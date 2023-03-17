@@ -9,6 +9,7 @@ import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.example.error.ErrorHandler;
 import org.example.lexer.error.EndOfFileReachedException;
+import org.example.lexer.error.NumericOverflowException;
 import org.example.lexer.error.TokenTooLongException;
 import org.example.lexer.error.UnexpectedCharacterException;
 import org.example.lexer.error.UnknownTypeException;
@@ -114,7 +115,7 @@ public class LexerImpl implements Lexer {
 		return false;
 	}
 
-	@SuppressWarnings({"checkstyle:NeedBraces", "CheckStyle", "StatementWithEmptyBody"})
+	@SuppressWarnings("StatementWithEmptyBody")
 	private String parseIdentifier() {
 		var builder = new StringBuilder();
 		builder.append(currentCharacter);
@@ -122,8 +123,8 @@ public class LexerImpl implements Lexer {
 		while (LexerUtility.isIdentifierElement(nextCharacter())) {
 			builder.append(currentCharacter);
 			if (builder.length() > LexerConfiguration.MAX_IDENTIFIER_LENGTH) {
-				var error = new TokenTooLongException(builder.toString(), tokenPosition);
-				errorHandler.handleLexerException(error);
+				var exception = new TokenTooLongException(builder.toString(), tokenPosition);
+				errorHandler.handleLexerException(exception);
 
 				while (LexerUtility.isIdentifierElement(nextCharacter())) ;
 			}
@@ -156,16 +157,24 @@ public class LexerImpl implements Lexer {
 	private int parseInteger() {
 		var number = LexerUtility.parseNumericValue(currentCharacter);
 
-		// TODO: add exact
-
-		while (LexerUtility.isNumeric(nextCharacter())) {
-			var currentValue = LexerUtility.parseNumericValue(currentCharacter);
-			number = number * LexerConfiguration.BASE_TEN + currentValue;
+		var previous = number;
+		try {
+			while (LexerUtility.isNumeric(nextCharacter())) {
+				var currentValue = LexerUtility.parseNumericValue(currentCharacter);
+				previous = number;
+				number = Math.multiplyExact(number, LexerConfiguration.BASE_TEN);
+				number = Math.addExact(number, currentValue);
+			}
+		} catch (ArithmeticException ignore) {
+			var exception = new NumericOverflowException(tokenPosition);
+			errorHandler.handleLexerException(exception);
+			return previous;
 		}
 
 		return number;
 	}
 
+	@SuppressWarnings("StatementWithEmptyBody")
 	private double parseFloatingPoint() {
 		if (!LexerUtility.isNumeric(currentCharacter)) {
 			var exception = new UnexpectedCharacterException(currentCharacter, tokenPosition);
@@ -176,15 +185,18 @@ public class LexerImpl implements Lexer {
 		var nominator = (long) LexerUtility.parseNumericValue(currentCharacter);
 		var denominator = (long) LexerConfiguration.BASE_TEN;
 
-
-		// TODO: divide exact
-		while (LexerUtility.isNumeric(nextCharacter())) {
-			var currentValue = Integer.parseInt(currentCharacter);
-			nominator = LexerConfiguration.BASE_TEN * nominator + currentValue;
-			denominator = LexerConfiguration.BASE_TEN * denominator;
+		try {
+			while (LexerUtility.isNumeric(nextCharacter())) {
+				denominator = Math.multiplyExact(LexerConfiguration.BASE_TEN, denominator);
+				var currentValue = LexerUtility.parseNumericValue(currentCharacter);
+				nominator = LexerConfiguration.BASE_TEN * nominator + currentValue;
+			}
+		} catch (ArithmeticException ignore) {
+			var exception = new NumericOverflowException(tokenPosition);
+			errorHandler.handleLexerException(exception);
+			while (LexerUtility.isNumeric(nextCharacter())) ;
 		}
 
-		// TODO: divide exact
 		return (double) nominator / denominator;
 	}
 
@@ -214,8 +226,8 @@ public class LexerImpl implements Lexer {
 		var type = LexerUtility.SYMBOLS.getOrDefault(symbol, null);
 
 		if (Objects.isNull(type)) {
-			var error = new UnknownTypeException(symbol, tokenPosition);
-			errorHandler.handleLexerException(error);
+			var exception = new UnknownTypeException(symbol, tokenPosition);
+			errorHandler.handleLexerException(exception);
 			token = nextToken();
 		} else if (LexerUtility.COMMENTS.containsKey(symbol)) {
 			processComments(LexerUtility.COMMENTS.get(symbol));
