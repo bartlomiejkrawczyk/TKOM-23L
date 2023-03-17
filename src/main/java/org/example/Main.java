@@ -1,8 +1,10 @@
 package org.example;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.example.error.ErrorHandlerImpl;
 import org.example.lexer.CommentFilterLexer;
 import org.example.lexer.LexerImpl;
 import org.example.token.Token;
@@ -11,12 +13,23 @@ import org.example.token.TokenType;
 @Slf4j
 public class Main {
 
-	@SneakyThrows
 	public static void main(String[] args) {
-		var file = Main.class.getResourceAsStream("/test.txt");
-		assert file != null;
+		var resourceName = "/test.txt";
+		run(resourceName);
+	}
+
+	private static void run(String resourceName) {
+		try (var file = Main.class.getResourceAsStream(resourceName)) {
+			handleStream(file);
+		} catch (IOException e) {
+			log.error("IOException: Cannot read input file", e);
+		}
+	}
+
+	private static void handleStream(InputStream file) {
 		var reader = new InputStreamReader(file);
-		var lexer = new LexerImpl(reader);
+		var errorHandler = new ErrorHandlerImpl();
+		var lexer = new LexerImpl(reader, errorHandler);
 		var filter = new CommentFilterLexer(lexer);
 
 		Token token;
@@ -24,8 +37,6 @@ public class Main {
 			token = filter.nextToken();
 			log.info("Token = {}", token);
 		} while (token.getType() != TokenType.END_OF_FILE);
-
-		file.close();
 	}
 
 }
