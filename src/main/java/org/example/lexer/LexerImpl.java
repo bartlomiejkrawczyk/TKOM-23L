@@ -1,6 +1,6 @@
 package org.example.lexer;
 
-import io.vavr.API;
+import java.io.IOException;
 import java.io.Reader;
 import java.util.LinkedList;
 import java.util.Objects;
@@ -10,6 +10,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.example.error.ErrorHandler;
 import org.example.lexer.error.EndOfFileReachedException;
 import org.example.lexer.error.NumericOverflowException;
+import org.example.lexer.error.ReaderException;
 import org.example.lexer.error.TokenTooLongException;
 import org.example.lexer.error.UnexpectedCharacterException;
 import org.example.lexer.error.UnknownTypeException;
@@ -56,7 +57,14 @@ public class LexerImpl implements Lexer {
 	}
 
 	private String nextCharacter() {
-		var value = API.unchecked(reader::read).apply();
+		int value;
+		try {
+			value = reader.read();
+		} catch (IOException error) {
+			var exception = new ReaderException(tokenPosition, error.getMessage());
+			errorHandler.handleLexerException(exception);
+			return nextCharacter();
+		}
 
 		if (value == CharactersUtility.END_OF_FILE) {
 			currentCharacter = StringUtils.EMPTY;
