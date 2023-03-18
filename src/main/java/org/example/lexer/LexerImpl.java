@@ -275,8 +275,8 @@ public class LexerImpl implements Lexer {
 	private void passUntil(String beginning, String enclosingString) {
 		var characters = beginning.chars().boxed().toList();
 		var queue = new LinkedList<>(characters);
+		var pattern = enclosingString.codePoints().boxed().toList();
 
-		String match;
 		do {
 			if (LexerUtility.isEndOfFile(currentCharacter)) {
 				var exception = new EndOfFileReachedException(enclosingString, tokenPosition);
@@ -288,9 +288,6 @@ public class LexerImpl implements Lexer {
 			queue.pollFirst();
 
 			nextCharacter();
-
-			var codePoints = queue.stream().mapToInt(it -> it).toArray();
-			match = new String(codePoints, 0, queue.size());
-		} while (!StringUtils.equals(match, enclosingString));
+		} while (!queue.equals(pattern));
 	}
 }
