@@ -377,4 +377,20 @@ class LexerTest extends Specification {
 		content                                | _
 		new String(Character.toChars(0x1F349)) | _
 	}
+
+	def 'Should raise an exception when reader throws an IOException'() {
+		given:
+		var reader = Mock(BufferedReader)
+		reader.read() >> { throw new IOException() }
+		var errorHandler = Mock(ErrorHandler)
+		var lexer = new LexerImpl(reader, errorHandler)
+
+		when:
+		var token = lexer.nextToken()
+
+		then:
+		1 * errorHandler.handleLexerException(_ as ReaderException)
+		token.getType() == TokenType.END_OF_FILE
+		noExceptionThrown()
+	}
 }

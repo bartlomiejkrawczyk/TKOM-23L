@@ -63,7 +63,7 @@ public class LexerImpl implements Lexer {
 		} catch (IOException error) {
 			var exception = new ReaderException(tokenPosition, error.getMessage());
 			errorHandler.handleLexerException(exception);
-			return nextCharacter();
+			value = CharactersUtility.END_OF_FILE;
 		}
 
 		if (value == CharactersUtility.END_OF_FILE) {
