@@ -1,8 +1,11 @@
 package org.example.lexer;
 
+import io.vavr.API;
+import io.vavr.Function0;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
+import java.util.Map;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.example.lexer.error.InconsistentNewLine;
@@ -12,6 +15,14 @@ public class PositionalReaderImpl implements PositionalReader {
 
 	private static final int NEW_LINE_CODE = '\n';
 	private static final int CARRIAGE_RETURN_CODE = '\r';
+	private static final String NEW_LINE = "\n";
+	private static final String NEW_LINE_CARRIAGE_RETURN = "\n\r";
+	private static final String CARRIAGE_RETURN_NEW_LINE = "\r\n";
+
+	private final Map<Integer, Function0<Integer>> newLineHandlers = Map.of(
+			NEW_LINE_CODE, API.unchecked(this::handleNewLine),
+			CARRIAGE_RETURN_CODE, API.unchecked(this::handleCarriageReturn)
+	);
 
 	private final BufferedReader reader;
 	private String newLineCharacter;
@@ -29,30 +40,36 @@ public class PositionalReaderImpl implements PositionalReader {
 	public int read() throws IOException {
 		var currentCharacter = reader.read();
 		advanceCharacter();
-		int nextCharacter;
+		return newLineHandlers.getOrDefault(
+				currentCharacter,
+				() -> currentCharacter
+		).apply();
+	}
 
-		if (currentCharacter == NEW_LINE_CODE) {
-			reader.mark(1);
-			nextCharacter = reader.read();
-			if (nextCharacter == CARRIAGE_RETURN_CODE) {
-				validateNewLine("\n\r");
-			} else {
-				validateNewLine("\n");
-				reader.reset();
-			}
-			advanceLine();
-		} else if (currentCharacter == CARRIAGE_RETURN_CODE) {
-			reader.mark(1);
-			nextCharacter = reader.read();
-			if (nextCharacter == NEW_LINE_CODE) {
-				currentCharacter = NEW_LINE_CODE;
-				advanceLine();
-				validateNewLine("\r\n");
-			} else {
-				reader.reset();
-			}
+	private int handleNewLine() throws IOException {
+		reader.mark(1);
+		var nextCharacter = reader.read();
+		if (nextCharacter == CARRIAGE_RETURN_CODE) {
+			validateNewLine(NEW_LINE_CARRIAGE_RETURN);
+		} else {
+			validateNewLine(NEW_LINE);
+			reader.reset();
 		}
-		return currentCharacter;
+		advanceLine();
+		return NEW_LINE_CODE;
+	}
+
+	private int handleCarriageReturn() throws IOException {
+		reader.mark(1);
+		var nextCharacter = reader.read();
+		if (nextCharacter == NEW_LINE_CODE) {
+			advanceLine();
+			validateNewLine(CARRIAGE_RETURN_NEW_LINE);
+			return NEW_LINE_CODE;
+		} else {
+			reader.reset();
+			return CARRIAGE_RETURN_CODE;
+		}
 	}
 
 	private void validateNewLine(String detectedNewLine) {
