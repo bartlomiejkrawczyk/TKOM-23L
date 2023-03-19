@@ -146,7 +146,7 @@ class LexerTest extends Specification {
 		"/*\nW Sczebrzeczynie,\nchrząszcz brzmi w trzcinie\n*/" || "\nW Sczebrzeczynie,\nchrząszcz brzmi w trzcinie\n"
 	}
 
-	def 'Should parse string constants correctly'() {
+	def 'Should parse string constants correctly while surrounded with double quote'() {
 		given:
 		var lexer = toLexer(content)
 
@@ -156,9 +156,36 @@ class LexerTest extends Specification {
 		token.getValue() as String == value
 
 		where:
-		content                            || value
-		"\"Ala ma kota\""                  || "Ala ma kota"
-		"\"Piszę\nw papierowym zeszycie\"" || "Piszę\nw papierowym zeszycie"
+		content                              || value
+		"\"Ala ma kota\""                    || "Ala ma kota"
+		"\"Piszę\nw papierowym zeszycie\""   || "Piszę\nw papierowym zeszycie"
+		"\"Piszę\\nw papierowym\nzeszycie\"" || "Piszę\nw papierowym\nzeszycie"
+		"\" \\n \""                          || " \n "
+		"\" \\\\ \""                         || " \\ "
+		"\" \\\" \""                         || " \" "
+		"\" \\\' \""                         || " \' "
+		"\" ' \""                            || " ' "
+	}
+
+	def 'Should parse string constants correctly while surrounded with single quote'() {
+		given:
+		var lexer = toLexer(content)
+
+		expect:
+		var token = lexer.nextToken()
+		token.getType() == TokenType.STRING_SINGLE_QUOTE_CONSTANT
+		token.getValue() as String == value
+
+		where:
+		content                              || value
+		"\'Ala ma kota\'"                    || "Ala ma kota"
+		"\'Piszę\nw papierowym zeszycie\'"   || "Piszę\nw papierowym zeszycie"
+		"\'Piszę\\nw papierowym\nzeszycie\'" || "Piszę\nw papierowym\nzeszycie"
+		"\' \\n \'"                          || " \n "
+		"\' \\\\ \'"                         || " \\ "
+		"\' \\\" \'"                         || " \" "
+		"\' \" \'"                           || " \" "
+		"\' \\\' \'"                         || " \' "
 	}
 
 	def 'Should parse integer constants correctly'() {

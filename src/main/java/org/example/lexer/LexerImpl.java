@@ -104,8 +104,19 @@ public class LexerImpl implements Lexer {
 	private void processString() {
 		var tokenType = LexerUtility.STRINGS.get(currentCharacter);
 		nextCharacter();
-		var content = readUntil(tokenType.getEnclosingKeyword());
-		var unescapedContent = StringEscapeUtils.unescapeJava(content);
+		var builder = new StringBuilder();
+
+		while (true) {
+			var content = readUntil(tokenType.getEnclosingKeyword(), builder.length());
+			builder.append(content);
+			if (builder.charAt(builder.length() - 1) == CharactersUtility.ESCAPE_CHARACTER) {
+				builder.append(tokenType.getEnclosingKeyword());
+			} else {
+				break;
+			}
+		}
+
+		var unescapedContent = StringEscapeUtils.unescapeJava(builder.toString());
 		token = new StringToken(tokenType, tokenPosition, unescapedContent);
 	}
 
@@ -250,6 +261,10 @@ public class LexerImpl implements Lexer {
 	}
 
 	private String readUntil(String enclosingString) {
+		return readUntil(enclosingString, 0);
+	}
+
+	private String readUntil(String enclosingString, int alreadyRead) {
 		var builder = new StringBuilder();
 		var patternLength = enclosingString.length();
 
@@ -263,7 +278,7 @@ public class LexerImpl implements Lexer {
 				return builder.toString();
 			}
 
-			if (builder.length() > LexerConfiguration.MAX_STRING_LENGTH + patternLength) {
+			if (builder.length() + alreadyRead > LexerConfiguration.MAX_STRING_LENGTH + patternLength) {
 				var exception = new TokenTooLongException(builder.toString(), tokenPosition);
 				errorHandler.handleLexerException(exception);
 				var start = Math.max(0, builder.length() - patternLength);
