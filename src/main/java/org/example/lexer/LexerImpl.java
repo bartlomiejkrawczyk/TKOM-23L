@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.LinkedList;
 import java.util.Objects;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.example.error.ErrorHandler;
@@ -22,7 +21,6 @@ import org.example.token.type.IntegerToken;
 import org.example.token.type.KeywordToken;
 import org.example.token.type.StringToken;
 
-@Slf4j
 public class LexerImpl implements Lexer {
 
 	private Token token;
