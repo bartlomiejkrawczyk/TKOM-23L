@@ -316,10 +316,12 @@ class LexerTest extends Specification {
 
 		then:
 		token.getType() == TokenType.IDENTIFIER
+		(token.getValue() as String).length() == LexerConfiguration.MAX_IDENTIFIER_LENGTH
 		1 * errorHandler.handleLexerException(_ as TokenTooLongException)
 
 		where:
 		length                                       | _
+		LexerConfiguration.MAX_IDENTIFIER_LENGTH | _
 		LexerConfiguration.MAX_IDENTIFIER_LENGTH + 1 | _
 		LexerConfiguration.MAX_IDENTIFIER_LENGTH * 2 | _
 	}
@@ -336,13 +338,20 @@ class LexerTest extends Specification {
 
 		then:
 		token.getType() == tokenType
+		(token.getValue() as String).length() == LexerConfiguration.MAX_STRING_LENGTH
 		1 * errorHandler.handleLexerException(_ as TokenTooLongException)
 		0 * errorHandler.handleLexerException(_ as EndOfFileReachedException)
 		lexer.nextToken().getValue() == "abc"
 
 		where:
 		length                                   | tokenType
+		LexerConfiguration.MAX_STRING_LENGTH     | TokenType.STRING_SINGLE_QUOTE_CONSTANT
+		LexerConfiguration.MAX_STRING_LENGTH     | TokenType.STRING_DOUBLE_QUOTE_CONSTANT
+		LexerConfiguration.MAX_STRING_LENGTH     | TokenType.SINGLE_LINE_COMMENT
+		LexerConfiguration.MAX_STRING_LENGTH     | TokenType.MULTI_LINE_COMMENT
 		LexerConfiguration.MAX_STRING_LENGTH + 1 | TokenType.STRING_DOUBLE_QUOTE_CONSTANT
+		LexerConfiguration.MAX_STRING_LENGTH + 1 | TokenType.MULTI_LINE_COMMENT
+		LexerConfiguration.MAX_STRING_LENGTH * 2 | TokenType.SINGLE_LINE_COMMENT
 		LexerConfiguration.MAX_STRING_LENGTH * 2 | TokenType.MULTI_LINE_COMMENT
 	}
 

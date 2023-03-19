@@ -141,7 +141,7 @@ public class LexerImpl implements Lexer {
 
 		while (LexerUtility.isIdentifierElement(nextCharacter())) {
 			builder.append(currentCharacter);
-			if (builder.length() > LexerConfiguration.MAX_IDENTIFIER_LENGTH) {
+			if (builder.length() >= LexerConfiguration.MAX_IDENTIFIER_LENGTH) {
 				var exception = new TokenTooLongException(builder.toString(), tokenPosition);
 				errorHandler.handleLexerException(exception);
 
@@ -278,12 +278,12 @@ public class LexerImpl implements Lexer {
 				return builder.toString();
 			}
 
-			if (builder.length() + alreadyRead > LexerConfiguration.MAX_STRING_LENGTH + patternLength) {
+			if (builder.length() + alreadyRead >= LexerConfiguration.MAX_STRING_LENGTH + patternLength - 1) {
 				var exception = new TokenTooLongException(builder.toString(), tokenPosition);
 				errorHandler.handleLexerException(exception);
 				var start = Math.max(0, builder.length() - patternLength);
 				passUntil(builder.substring(start), enclosingString);
-				return builder.toString();
+				return builder.substring(0, builder.length() - patternLength + 1);
 			}
 
 			nextCharacter();
