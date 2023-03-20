@@ -121,7 +121,7 @@ public class LexerImpl implements Lexer {
 	private boolean tryBuildIdentifierOrKeyword() {
 		if (LexerUtility.isIdentifierHead(currentCharacter)) {
 			var identifier = parseIdentifier();
-			var type = LexerUtility.KEYWORDS.getOrDefault(identifier, TokenType.IDENTIFIER);
+			var type = LexerUtility.KEYWORDS.getOrDefault(identifier.toLowerCase(), TokenType.IDENTIFIER);
 			if (type == TokenType.IDENTIFIER) {
 				token = new StringToken(type, tokenPosition, identifier);
 			} else {
