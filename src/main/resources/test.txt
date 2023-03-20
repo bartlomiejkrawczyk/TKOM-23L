@@ -8,9 +8,9 @@ fun hello(world: String) {
  * Program that prints "Hello, World!"
  */
 fun main() {
-	hello("Hello, World!");
+	hello("Hello,\nWorld!");
 
-	x = 3;
-	pi = 3.14159265358979;
-	e=2.71828182846;
+	int x = 3;
+	double pi = 3.14159265358979;
+	double e = 2.71828182846;
 }
