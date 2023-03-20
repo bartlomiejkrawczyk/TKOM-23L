@@ -23,7 +23,7 @@ fun prepareSimpleQuery(): Query<String, int> {
 			value
 		FROM database
 		WHERE value >= 100 AND id != "key_1"
-		ORDER_BY value ASCENDING;
+		ORDER BY value ASCENDING;
 
 	return result;
 }
@@ -54,7 +54,7 @@ fun prepareAdvancedQuery(): Query<String, Map<>> {
 			multiply(value["property_3"]) AS property_3,
 		FROM database
 		WHERE property_1 < property_2
-		ORDER_BY property_3 DESCENDING;
+		ORDER BY property_3 DESCENDING;
 
 	return result;
 }
