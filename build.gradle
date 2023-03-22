@@ -2,10 +2,19 @@ plugins {
 	id 'java'
 	id 'checkstyle'
 	id 'groovy'
+	id 'com.github.johnrengelman.shadow' version '5.1.0'
 }
 
 group 'org.example'
 version '1.0-SNAPSHOT'
+
+jar {
+	manifest {
+		attributes(
+				'Main-Class': 'org.example.Main'
+		)
+	}
+}
 
 repositories {
 	mavenCentral()
