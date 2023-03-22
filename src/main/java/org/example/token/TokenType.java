@@ -33,6 +33,7 @@ public enum TokenType {
 	SEMICOLON(";"),
 	COLON(":"),
 	COMMA(","),
+	DOT("."),
 
 	AND("and"),
 	NOT("not"),
