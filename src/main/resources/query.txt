@@ -59,6 +59,48 @@ fun prepareAdvancedQuery(): Query<String, Map<>> {
 	return result;
 }
 
+fun prepareAdvancedJoinQuery(): Query<String, Map<>> {
+	Map<String, Map<String, int>> database1 = {
+		"id_1" : {
+			"property_1" : 1,
+			"property_2" : 2,
+			"property_3" : 3,
+		},
+		"id_2" : {
+			"property_1" : 2,
+			"property_2" : 3,
+			"property_3" : 4,
+		},
+	};
+
+	Map<String, Map<String, int>> database2 = {
+    		"id_1" : {
+    			"property_1" : 1,
+    			"property_2" : 2,
+    			"property_3" : 3,
+    		},
+    		"id_2" : {
+    			"property_1" : 2,
+    			"property_2" : 3,
+    			"property_3" : 4,
+    		},
+    	};
+
+	Query<String, int, int, int> result =
+		SELECT
+			db1.key AS id1,
+			db2.key AS id2,
+			db2.value["property_1"] AS property_1,
+			db1.value["property_2"] AS property_2,
+			multiply(db1.value["property_3"]) AS property_3,
+		FROM database1 AS db1
+		FROM database2 AS db2
+		WHERE property_1 > property_2 AND id1 == id2
+		ORDER BY property_3 DESCENDING;
+
+	return result;
+}
+
 fun compare(first: Entry<String, int>, second: Entry<String, int>) {
 	return first.value < second.value;
 }

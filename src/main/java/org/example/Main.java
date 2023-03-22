@@ -1,5 +1,7 @@
 package org.example;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -18,13 +20,16 @@ import org.example.token.TokenType;
 public class Main {
 
 	public static void main(String[] args) {
-		var resourceName = "/test.txt";
-		run(resourceName);
+		if (args.length > 0) {
+			var file = args[0];
+			run(file);
+		}
 	}
 
-	private static void run(String resourceName) {
-		try (var file = Main.class.getResourceAsStream(resourceName)) {
-			handleStream(file);
+	private static void run(String fileName) {
+		var file = new File(fileName);
+		try (var inputStream = new FileInputStream(file)) {
+			handleStream(inputStream);
 		} catch (IOException e) {
 			log.error("IOException: Cannot read input file", e);
 		}

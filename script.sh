@@ -3,6 +3,7 @@
 set -euo pipefail
 
 FAT_JAR="./build/libs/tkom-1.0-SNAPSHOT-all.jar"
+FILE="./src/main/resources/query.txt"
 
 help () {
     cat << EOF
@@ -40,4 +41,4 @@ if [ ! -f "$FAT_JAR" ]; then
   ./gradlew shadowJar
 fi
 
-java -jar "$FAT_JAR"
+java -jar "$FAT_JAR" "$FILE"
