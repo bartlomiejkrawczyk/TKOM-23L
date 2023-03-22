@@ -58,7 +58,7 @@ public class LexerUtility {
 	}
 
 	public static int parseNumericValue(String character) {
-		return Character.getNumericValue(character.charAt(0));
+		return character.charAt(0) - CharactersUtility.ZERO_CHARACTER;
 	}
 
 	public static boolean isSymbol(String character) {
