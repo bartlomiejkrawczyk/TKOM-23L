@@ -178,6 +178,11 @@ public class LexerImpl implements Lexer {
 	private int parseInteger() {
 		var number = LexerUtility.parseNumericValue(currentCharacter);
 
+		if (number == 0) {
+			nextCharacter();
+			return 0;
+		}
+
 		var previous = number;
 		try {
 			while (LexerUtility.isNumeric(nextCharacter())) {

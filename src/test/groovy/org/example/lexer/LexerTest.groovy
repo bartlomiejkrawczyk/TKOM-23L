@@ -234,6 +234,7 @@ class LexerTest extends Specification {
 		"1.0"    || 1.0
 		"1.25"   || 1.25
 		"10.750" || 10.750
+		"0.750" || 0.750
 	}
 
 	def 'Should raise an exception when found symbol is not a operator or comment'() {
