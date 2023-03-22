@@ -16,6 +16,7 @@ import org.example.lexer.error.UnknownTypeException;
 import org.example.token.Position;
 import org.example.token.Token;
 import org.example.token.TokenType;
+import org.example.token.type.BooleanToken;
 import org.example.token.type.FloatingPointToken;
 import org.example.token.type.IntegerToken;
 import org.example.token.type.KeywordToken;
@@ -41,7 +42,7 @@ public class LexerImpl implements Lexer {
 
 		if (tryBuildEndOfFile()
 				|| tryBuildNumber()
-				|| tryBuildIdentifierOrKeyword()
+				|| tryBuildIdentifierOrKeywordOrBoolean()
 				|| tryBuildString()
 				|| tryBuildOperatorOrComment()) {
 			return token;
@@ -118,14 +119,17 @@ public class LexerImpl implements Lexer {
 		token = new StringToken(tokenType, tokenPosition, unescapedContent);
 	}
 
-	private boolean tryBuildIdentifierOrKeyword() {
+	private boolean tryBuildIdentifierOrKeywordOrBoolean() {
 		if (LexerUtility.isIdentifierHead(currentCharacter)) {
 			var identifier = parseIdentifier();
 			var type = LexerUtility.KEYWORDS.getOrDefault(identifier.toLowerCase(), TokenType.IDENTIFIER);
-			if (type == TokenType.IDENTIFIER) {
-				token = new StringToken(type, tokenPosition, identifier);
-			} else {
+			if (type != TokenType.IDENTIFIER) {
 				token = new KeywordToken(type, tokenPosition);
+			} else if (LexerUtility.isBoolean(identifier)) {
+				var value = Boolean.valueOf(identifier);
+				token = new BooleanToken(tokenPosition, value);
+			} else {
+				token = new StringToken(type, tokenPosition, identifier);
 			}
 			return true;
 		}
