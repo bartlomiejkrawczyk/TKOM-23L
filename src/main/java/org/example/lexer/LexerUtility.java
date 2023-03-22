@@ -1,6 +1,7 @@
 package org.example.lexer;
 
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
@@ -45,6 +46,11 @@ public class LexerUtility {
 			)
 			.collect(Collectors.toUnmodifiableMap(TokenType::getKeyword, Function.identity()));
 
+	public static final List<String> BOOLEANS = List.of(
+			"true",
+			"false"
+	);
+
 	public static boolean isWhitespace(String character) {
 		return StringUtils.isBlank(character) && StringUtils.isNotEmpty(character);
 	}
@@ -73,5 +79,9 @@ public class LexerUtility {
 
 	public static boolean isIdentifierHead(String character) {
 		return StringUtils.isAlpha(character) || StringUtils.equals(character, CharactersUtility.UNDERSCORE);
+	}
+
+	public static boolean isBoolean(String identifier) {
+		return BOOLEANS.contains(identifier.toLowerCase());
 	}
 }

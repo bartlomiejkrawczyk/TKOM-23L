@@ -85,6 +85,23 @@ class LexerTest extends Specification {
 		type << LexerUtility.KEYWORDS.values()
 	}
 
+	def 'Should detect all the boolean tokens correctly'() {
+		given:
+		var lexer = toLexer(content)
+
+		expect:
+		var token = lexer.nextToken()
+		token.getType() == TokenType.BOOLEAN_CONSTANT
+		token.getValue() == value
+
+		where:
+		content   | value
+		" true "  | true
+		" True "  | true
+		" false " | false
+		" False " | false
+	}
+
 	def 'Should detect all operators correctly'() {
 		given:
 		var content = type.getKeyword()
