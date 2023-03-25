@@ -8,7 +8,7 @@ FAT_JAR="$INTERPRETER_PATH/build/libs/tkom-1.0-SNAPSHOT-all.jar"
 FILE="$INTERPRETER_PATH/src/main/resources/query.txt"
 
 help () {
-    cat << EOF
+    cat 1>&2 << EOF
 Usage: $0 [OPTION] [FILE]
     -h --help        Display this message
     -c --clean       Re-build project from scratch before running application
@@ -22,7 +22,7 @@ while [[ $# -gt 0 ]]; do
         help
         ;;
     -c|--clean)
-        ./gradlew clean
+        ./gradlew clean 1>&2
         shift
         ;;
     -*)
@@ -40,7 +40,7 @@ done
 
 
 if [ ! -f "$FAT_JAR" ]; then
-  exec "$INTERPRETER_PATH/gradlew" shadowJar
+  exec "$INTERPRETER_PATH/gradlew" shadowJar 1>&2
 fi
 
 java -jar "$FAT_JAR" "$FILE"
