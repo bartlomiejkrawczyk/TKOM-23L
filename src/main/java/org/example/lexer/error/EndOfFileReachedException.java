@@ -9,7 +9,7 @@ import org.example.token.Position;
 @Getter
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 @ToString
-public class EndOfFileReachedException extends RuntimeException {
+public class EndOfFileReachedException extends LexerException {
 
 	String expectedEnclosingKeyword;
 	Position position;

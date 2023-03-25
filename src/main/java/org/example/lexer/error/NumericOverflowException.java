@@ -10,7 +10,7 @@ import org.example.token.Position;
 @Getter
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 @ToString
-public class NumericOverflowException extends RuntimeException {
+public class NumericOverflowException extends LexerException {
 
 	Position position;
 

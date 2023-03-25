@@ -10,7 +10,7 @@ import org.example.token.Position;
 @Getter
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 @ToString
-public class ReaderException extends RuntimeException {
+public class ReaderException extends LexerException {
 
 	Position position;
 

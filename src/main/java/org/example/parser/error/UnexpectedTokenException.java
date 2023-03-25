@@ -10,7 +10,7 @@ import org.example.token.TokenType;
 @Getter
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 @ToString
-public class UnexpectedTokenException extends RuntimeException {
+public class UnexpectedTokenException extends ParserException {
 
 	TokenType expectedType;
 	Token token;

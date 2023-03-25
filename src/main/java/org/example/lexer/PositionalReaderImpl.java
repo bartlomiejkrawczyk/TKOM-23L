@@ -76,7 +76,7 @@ public class PositionalReaderImpl implements PositionalReader {
 		if (newLineCharacter == null) {
 			newLineCharacter = detectedNewLine;
 		} else if (!StringUtils.equals(newLineCharacter, detectedNewLine)) {
-			throw new InconsistentNewLine(detectedNewLine, newLineCharacter);
+			throw new InconsistentNewLine(detectedNewLine, newLineCharacter, position);
 		}
 	}
 

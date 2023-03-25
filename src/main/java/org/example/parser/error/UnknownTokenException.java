@@ -9,7 +9,7 @@ import org.example.token.Token;
 @Getter
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 @ToString
-public class UnknownTokenException extends RuntimeException {
+public class UnknownTokenException extends ParserException {
 
 	Token token;
 

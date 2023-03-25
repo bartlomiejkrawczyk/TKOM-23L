@@ -9,7 +9,7 @@ import org.example.token.Position;
 @Getter
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 @ToString
-public class InvalidTokenException extends RuntimeException {
+public class InvalidTokenException extends LexerException {
 
 	Position position;
 
