@@ -2,12 +2,14 @@
 
 set -euo pipefail
 
-FAT_JAR="./build/libs/tkom-1.0-SNAPSHOT-all.jar"
-FILE="./src/main/resources/query.txt"
+INTERPRETER_PATH=$(realpath "$0" | xargs dirname)
+
+FAT_JAR="$INTERPRETER_PATH/build/libs/tkom-1.0-SNAPSHOT-all.jar"
+FILE="$INTERPRETER_PATH/src/main/resources/query.txt"
 
 help () {
     cat << EOF
-Usage: script.sh [OPTION] [FILE]
+Usage: $0 [OPTION] [FILE]
     -h --help        Display this message
     -c --clean       Re-build project from scratch before running application
 EOF
@@ -38,7 +40,7 @@ done
 
 
 if [ ! -f "$FAT_JAR" ]; then
-  ./gradlew shadowJar
+  exec "$INTERPRETER_PATH/gradlew" shadowJar
 fi
 
 java -jar "$FAT_JAR" "$FILE"
