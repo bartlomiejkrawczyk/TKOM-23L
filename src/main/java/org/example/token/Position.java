@@ -7,7 +7,7 @@ import lombok.Value;
 @Builder(toBuilder = true)
 @AllArgsConstructor
 @Value
-public class Position {
+public class Position implements Comparable<Position> {
 
 	private static final int BEFORE_FIRST_LETTER = -1;
 
@@ -30,5 +30,16 @@ public class Position {
 				.characterNumber(BEFORE_FIRST_LETTER)
 				.line(line + 1)
 				.build();
+	}
+
+	@Override
+	public int compareTo(Position position) {
+		if (this.line > position.line || this.characterNumber > position.characterNumber) {
+			return 1;
+		} else if (this.line == position.line && this.characterNumber == position.characterNumber) {
+			return 0;
+		} else {
+			return -1;
+		}
 	}
 }
