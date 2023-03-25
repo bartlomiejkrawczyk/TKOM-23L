@@ -12,4 +12,15 @@ class MainTest extends Specification {
 		a + b == 4
 		a - b != 4
 	}
+
+	def 'Should parse query.txt without exceptions'() {
+		when:
+		Main.main("./src/main/resources/" + file)
+
+		then:
+		noExceptionThrown()
+
+		where:
+		file << ["query.txt", "test.txt"]
+	}
 }
