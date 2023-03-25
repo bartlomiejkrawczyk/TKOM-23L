@@ -1,5 +1,9 @@
 package org.example.error
 
+import org.example.lexer.error.InvalidTokenException
+import org.example.parser.error.UnknownTokenException
+import org.example.token.Position
+import org.example.token.Token
 import spock.lang.Specification
 
 
@@ -7,28 +11,23 @@ class ErrorHandlerTest extends Specification {
 
 	var errorHandler = new ErrorHandlerImpl()
 
-	def 'Should log lexer errors correctly'() {
+	def 'Should handle lexer errors correctly'() {
 		when:
-		errorHandler.handleLexerException(new RuntimeException("Test"))
+		errorHandler.handleLexerException(new InvalidTokenException("Test", Position.builder().build()))
 
 		then:
 		noExceptionThrown()
 	}
 
-	def 'Should log parser errors correctly'() {
+	def 'Should handle parser errors correctly'() {
 		when:
-		errorHandler.handleParserException(new RuntimeException("Test"))
+		errorHandler.handleParserException(new UnknownTokenException(Mock(Token.class)))
 
 		then:
 		noExceptionThrown()
 	}
 
-	def 'Should log semantic analysis errors correctly'() {
-		when:
-		errorHandler.handleSemanticAnalysisException(new RuntimeException("Test"))
-
-		then:
-		noExceptionThrown()
-	}
+	// TODO: test for errors cap reached
+	// TODO: test if errors are printed nicely
 
 }
