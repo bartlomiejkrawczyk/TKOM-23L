@@ -118,7 +118,7 @@ fun main() {
 		print(entry.key);
 	}
 
-	for (entry: database[compare]) {
+	for (Tuple<String, int> entry: database.iterable(compare)) {
 		print(entry.key);
 	}
 }
