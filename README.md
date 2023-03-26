@@ -164,6 +164,8 @@ Iterable<String, int, double, boolean> query =
 
 # Semantyka
 
+[//]: # (Opis wyrażeń - hmm co tu napisać xD)
+
 **Operacje arytmetyczne:**
 
 - `+` - dodawanie
@@ -327,9 +329,7 @@ fun fibbonaci(n: int): int {
 
 # Formalna specyfikacja
 
-# Składnia (EBNF) realizowanego języka
-
-# Gramatyka
+# Gramatyka - Składnia (EBNF) realizowanego języka
 
 ## Symbole terminalne
 
@@ -337,17 +337,111 @@ fun fibbonaci(n: int): int {
 
 [//]: # (Wyrażenia regularne)
 
+```
+// Wyrażenia regularne
+letter                  = [a-zA-Z]; (* także inne znaki krajowe *)
+non_zero_digit          = [1-9];
+digit                   = [0-9];
+zero                    = "0";
+character               = ?;
+relation_operator       = "<" | "<=" | "==" | ">" | ">=" | "!="
+addition_operator       = "+" | "-";
+symbol                  = ":" | "-" | "+" | ...; (* także inne symbole *) // TODO: refactor
+
+// EBNF
+INTEGER                 = zero
+                        | non_zero_digit, {digit};
+FLOATING_POINT          = INTEGER, ".", digit, {digit};
+
+IDENTIFIER              = letter, {letter | digit};
+
+CHARACTERS              = {character};
+STRING_DOUBLE_QUOTE     = "'", CHARACTERS, "'";
+STRING_DOUBLE_QUOTE     = '"', CHARACTERS, "'";
+
+STRING                  = STRING_DOUBLE_QUOTE
+                        | STRING_SINGLE_QUOTE;
+
+COMMENT_SINGLE_LINE     = "//", CHARACTERS , "\n";
+COMMENT_MULTI_LINE      = "/*", CHARACTERS , "*/";
+
+COMMENT                 = COMMENT_SINGLE_LINE
+                        | COMMENT_MULTI_LINE;
+```
+
 ## Symbole złożone
 
 [//]: # (Te obsługiwane przez parser)
 
 [//]: # (EBNF)
 
+```
+TYPE_DECLARATION        = IDENTIFIER, ["<", TYPE_DECLARATION, {",", TYPE_DECLARATION} ,">"];
+
+ARGUMENT_DECLARATION    = IDENTIFIER, ":", TYPE_DECLARATION;
+ARGUMENT_LIST           = ARGUMENT_DECLARATION, {",", ARGUMENT_DECLARATION};
+FUNCTION_DECLARATION    = "fun", "(", [ARGUMENT_LIST], ")", [":", TYPE_DECLARATION], BLOCK;
+
+FUNCTION_CALL           = IDENTIFIER, "(", [EXPRESSION, {",", EXPRESSION}], ")";
+
+EXPRESSION              = IDENTIFIER
+                        | FUNCTION_CALL
+                        | SELECT_EXPRESSION
+                        | TUPLE_EXPRESSION
+                        | MAP_EXPRESSION
+                        | "(", EXPRESSION, ")";
+
+
+IF_STATEMENT            = "if", EXPRESSION, STATEMENT, 
+                          ["else", STATEMENT];
+
+WHILE_STATEMENT         = "while", EXPRESSION, STATEMENT;
+
+RETURN_STATEMENT        = "return", EXPRESSION, ";";
+
+FOR_EACH_EXPRESSION     = TYPE_DECLARATION, IDENTIFIER, ":", EXPRESSION
+                        | "(", TYPE_DECLARATION, IDENTIFIER, ":", EXPRESSION, ")";
+FOR_STATEMENT           = "for", FOR_EACH_EXPRESSION, STATEMENT;
+
+DECLARATION             = TYPE_DECLARATION, IDENTIFIER, ["=", EXPRESSION], ";";
+
+STATEMENT               = IF_STATEMENT
+                        | DECLARATION
+                        | EXPRESSION, ";"
+                        | BLOCK
+                        | ";";
+
+BLOCK                   = "{", {STATEMENT} "}";
+
+MAP_ELEMENT             = EXPRESSION, ":", EXPRESSION;
+MAP_EXPRESSION          = "{", [MAP_ELEMENT, {",", MAP_ELEMENT}];
+
+TUPLE_ELEMENT           = EXPRESSION, "AS", IDENTIFIER
+TUPLE_EXPRESSION        = TUPLE_ELEMENT, {",", TUPLE_ELEMENT};
+
+ORDER_BY_EXPRESSION     = EXPRESSION, ["ASCENDING" | "DESCENDING"];
+
+SELECT_EXPRESSION       = "SELECT", TUPLE_EXPRESSION, "FROM", TUPLE_ELEMENT,
+                          ["JOIN", TUPLE_ELEMENT, ["ON", EXPRESSION]],
+                          ["WHERE", EXPRESSION],
+                          ["GROUP", "BY", EXPRESSION, {",", EXPRESSION}, ["HAVING", EXPRESSION]],
+                          ["ORDER", "BY", ORDER_BY_EXPRESSION, {"," ORDER_BY_EXPRESSION}],
+                          ";"
+```
+
 ## Symbol startowy
+
+```
+PROGRAM = {COMMENT | FUNCTION_DECLARATION | DECLARATION | ";", ";"};
+```
 
 # Formalna specyfikacja plików / strumieni wejściowych
 
 # Formalna specyfikacja danych konfiguracyjnych
+
+Wszystkie konfigurowalne dane są dostępne z poziomu [interpretera](./interpreter).
+
+Aby zmodyfikować konfigurację należy ustawić odpowiednie wartości za pomocą flag interpretera.
 
 # Obsługa błędów
 
@@ -566,7 +660,12 @@ TODO
 
 # Testowanie
 
-TODO - opis testowania
+Testy do każdego modułu wydzieliłem testy jednostkowe `*Test` oraz testy integracyjne `*IntegrationTest`.
+
+Testy jednostkowe charakteryzują się tym, że zamiast docelowego obiektu wstawiam mock obiektu i upewniam się, że wstawiony obiekt zwróci dokładnie to
+czego oczekiwaliśmy.
+
+Testy integracyjne polegają na tym
 
 # Biblioteki
 
