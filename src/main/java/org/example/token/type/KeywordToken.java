@@ -11,9 +11,8 @@ public class KeywordToken implements Token {
 	TokenType type;
 	Position position;
 
-	@SuppressWarnings("unchecked")
 	@Override
-	public Void getValue() {
+	public <T> T getValue() {
 		return null;
 	}
 }
