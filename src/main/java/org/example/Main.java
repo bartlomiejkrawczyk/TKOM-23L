@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.ast.Expression;
 import org.example.error.ErrorHandler;
 import org.example.error.ErrorHandlerImpl;
+import org.example.error.TooManyExceptionsException;
 import org.example.lexer.CommentFilterLexer;
 import org.example.lexer.Lexer;
 import org.example.lexer.LexerImpl;
@@ -34,7 +35,10 @@ public class Main {
 			handleStream(inputStream, errorHandler);
 		} catch (IOException e) {
 			log.error("IOException: Cannot read input file", e);
+		} catch (TooManyExceptionsException e) {
+			log.error("TooManyExceptions: {}", e.getMessage());
 		}
+
 		try (var inputStream = new FileInputStream(file)) {
 			errorHandler.showExceptions(new InputStreamReader(inputStream));
 		} catch (IOException e) {
