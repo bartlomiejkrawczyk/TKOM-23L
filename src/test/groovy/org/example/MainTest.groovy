@@ -13,7 +13,7 @@ class MainTest extends Specification {
 		a - b != 4
 	}
 
-	def 'Should parse query.txt without exceptions'() {
+	def 'Should parse working programs without exceptions'() {
 		when:
 		Main.main("./src/main/resources/" + file)
 
@@ -22,5 +22,16 @@ class MainTest extends Specification {
 
 		where:
 		file << ["query.txt", "test.txt"]
+	}
+
+	def 'Should parse not working program without exceptions'() {
+		when:
+		Main.main("./src/test/resources/" + file)
+
+		then:
+		noExceptionThrown()
+
+		where:
+		file << ["error.txt"]
 	}
 }

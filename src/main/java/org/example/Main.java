@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import lombok.extern.slf4j.Slf4j;
 import org.example.ast.Expression;
+import org.example.error.ErrorHandler;
 import org.example.error.ErrorHandlerImpl;
 import org.example.lexer.CommentFilterLexer;
 import org.example.lexer.Lexer;
@@ -28,8 +29,14 @@ public class Main {
 
 	private static void run(String fileName) {
 		var file = new File(fileName);
+		var errorHandler = new ErrorHandlerImpl();
 		try (var inputStream = new FileInputStream(file)) {
-			handleStream(inputStream);
+			handleStream(inputStream, errorHandler);
+		} catch (IOException e) {
+			log.error("IOException: Cannot read input file", e);
+		}
+		try (var inputStream = new FileInputStream(file)) {
+			errorHandler.showExceptions(new InputStreamReader(inputStream));
 		} catch (IOException e) {
 			log.error("IOException: Cannot read input file", e);
 		}
@@ -37,9 +44,8 @@ public class Main {
 
 
 	@SuppressWarnings({"unused", "java:S125"})
-	private static void handleStream(InputStream file) {
+	private static void handleStream(InputStream file, ErrorHandler errorHandler) {
 		var reader = new InputStreamReader(file);
-		var errorHandler = new ErrorHandlerImpl();
 		var lexer = new LexerImpl(reader, errorHandler);
 		var filter = new CommentFilterLexer(lexer);
 		var parser = new ParserImpl(filter, errorHandler);
