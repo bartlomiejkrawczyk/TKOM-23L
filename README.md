@@ -87,81 +87,79 @@ Dla typów prostych są zdefiniowane operacje matematyczne oraz operacje logiczn
 
 **String**
 
-```java
+```
 class String {
-	fun concat(other:String):String;
+	fun concat(other: String): String;
 }
 
-	fun print(messsage:String);
+fun print(messsage: String);
 ```
 
 **Comparator<value>**
 
-```java
+```
 class Comparator<V> {
-	fun compare(this:V, other:V):int;
+	fun compare(this:V, other:V): int;
 }
 
-	Comparator<int> compareValues = fun(this:int,other:int):int{
-		return 1;
-		}
+Comparator<int> compareValues = fun(this: int, other: int): int{
+	return 1;
+}
 ```
 
 **Tuple<value, ...>**
 
-```java
+```
 class Tuple<V1, V2, V3, ...>{
-		fun $name1:V1;
-		fun $name2:V2;
-		fun $name3:V3;
-		...
-		}
+	fun $name1: V1;
+	fun $name2: V2;
+	fun $name3: V3;
+	...
+}
 
-		Tuple<String, int,double>=(
-		value1 AS name1,
-		value2 AS name2,
-		value3 AS name3,
-		);
+Tuple<String, int, double> = (
+	value1 AS name1,
+	value2 AS name2,
+	value3 AS name3,
+);
 ```
 
 **Map<key, value>**
 
-```java
+```
 class Map<K, V> {
-	fun operator[](key:K):V;
-
-	fun put(key:K, value:V);
-
-	fun contains(key:K):boolean;
-
-	fun remove(key:K);
-
-	fun iterable():Iterable<K, V>;
-
-	fun iterable(comparator:Comparator<K, V>):Iterable<K, V>;
+	fun operator[](key: K): V;
+	fun put(key: K, value: V);
+	fun contains(key: K): boolean;
+	fun remove(key: K);
+	fun iterable(): Iterable<K, V>;
+	fun iterable(comparator: Comparator<K, V>): Iterable<K, V>;
 }
 
-	fun operator{}:Map<key, value>;
+fun operator{}: Map<key, value>;
+
+Map<String, int> map = {
+	"id_1": 1,
+	"id_2": 2
+};
 ```
 
 **Iterable<value, ...>**
 
-```sql
-class
-Iterable<VALUE, ...> {
+```
+class Iterable<VALUE, ...> {
     fun hasNext(): boolean;
-    fun
-NEXT(): Tuple<VALUE, ...>;
+    fun next(): Tuple<VALUE, ...>;
 }
 
-MAP<String, INT> MAP = prepareMap();
-// USER DEFINED FUNCTION
-Iterable<String, INT, DOUBLE, boolean> query =
-SELECT entry.key AS KEY,
-		entry.value AS VALUE
-FROM MAP AS entry
-WHERE entry.key != "abc" AND entry.value > 0
-ORDER BY entry.value, entry.key;
+Map<String, int> map = prepareMap(); // user defined function
+Iterable<String, int, double, boolean> query =
+	SELECT
+		entry.key AS key,
+		entry.value AS value
+	FROM map AS entry
+	WHERE entry.key != "abc" AND entry.value > 0
+	ORDER BY entry.value, entry.key;
 ```
 
 # Semantyka
@@ -189,8 +187,8 @@ int value = first * (second + third);
 
 **Złożenie wyrażeń logicznych:**
 
-```groovy
-boolean expression = first and(second or third);
+```
+boolean expression = first and (second or third);
 ```
 
 **Widoczność zmiennych:**
@@ -354,16 +352,29 @@ fun fibbonaci(n: int): int {
 # Obsługa błędów
 
 - Źródła
+	- użytkownikowi wyświetlony zostaje odpowiedni komunikat
+	- program interpretera kończy się
 - Lexera
+	- generalnie - przekazanie błędu do obsługi przez wydzielony obiekt
+	- długie identyfikatory / komentarze / stringi - przycięcie identyfikatora do maksymalnej długości
+	- długa liczba całkowita - podział liczby na dwie kolejne liczby
+	- długa część ułamkowa liczby zmienno przecinkowej - zignorowanie nadmiarowych cyfr po przecinku
+	- nie rozpoznany znak - pominięcie go
 - Parsera
+	- przekazanie błędu do obsługi przez wydzielony obiekt
 - Interpretera
+	- TODO
 - Czasu wykonania
+	- TODO
 
-TODO: Jakie błędy tolerowane, jak radzę sobie z błędami
+TODO: Jakie inne błędy będą tolerowane, jak radzę sobie z błędami
 
 ## Komunikaty
 
-Komunikaty są formatowane
+Błędy występujące w kodzie są zbierane i ostatecznie wyświetlane użytkownikowi.
+
+Każda linia zawierająca błędy jest najpierw printowana z numerem lini,
+a następnie w kolejnych liniach wyświetlane są błędy znalezione przez program.
 
 **Błędny kod:**
 
@@ -426,7 +437,7 @@ fun main() {
 Hello, World!
 ```
 
-## Program TODO
+[//]: # (## Program TODO)
 
 # Realizacja
 
@@ -566,11 +577,3 @@ TODO - opis testowania
 - **Project Lombok** - procesor anotacji, który generuje podstawową implementację na podstawie zdefiniowanych anotacji w kodzie.
 - **Spock Framework** - to framework do testowania aplikacji Java i Groovy. Wyróżnia go bardzo wyrazisty język specyfikacji. Umożliwia proste
   mockowanie oraz stubowanie funkcjonalności.
-
-W dokumentacji wstępnej proszę też podać wszystkie konkrety:
-
-- wszystkie typy wbudowane w Państwa język (w tym też takie, których konieczność obsługi wynikła z analizy tematu i które nie są jawnie podane w
-  treści zadania),
-- ich pola
-- i metody (zachęcam do dodania czegoś od siebie; to, co podałam w treści zadania, to jedynie przykłady),
-- użyte biblioteki (w tym te wykorzystywane do testów jednostkowych) itd.
