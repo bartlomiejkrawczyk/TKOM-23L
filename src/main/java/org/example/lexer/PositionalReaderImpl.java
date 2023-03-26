@@ -46,6 +46,11 @@ public class PositionalReaderImpl implements PositionalReader {
 		).apply();
 	}
 
+	@Override
+	public int getLine() {
+		return position.getLine();
+	}
+
 	private int handleNewLine() throws IOException {
 		reader.mark(1);
 		var nextCharacter = reader.read();

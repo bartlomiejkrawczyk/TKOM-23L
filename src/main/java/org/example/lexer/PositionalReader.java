@@ -7,5 +7,7 @@ public interface PositionalReader {
 
 	Position getPosition();
 
+	int getLine();
+
 	int read() throws IOException;
 }
