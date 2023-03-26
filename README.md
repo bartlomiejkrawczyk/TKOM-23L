@@ -29,7 +29,7 @@ za pomocą funkcji przekazywanej jako dodatkowy parametr pętli.
 
 # Opis zakładanej funkcjonalności
 
-### Przykładowe konstrukcje językowe
+### Przykładowe konstrukcje językowe oraz ich semantyka
 
 # Wymagania
 
@@ -239,6 +239,8 @@ fun fibbonaci(n: int): int {
  */
 ```
 
+# Formalna specyfikacja
+
 # Składnia (EBNF) realizowanego języka
 
 # Formalna specyfikacja plików / strumieni wejściowych
@@ -253,7 +255,25 @@ fun fibbonaci(n: int): int {
 - Interpretera
 - Czasu wykonania
 
-## Przykłady komunikatów
+Jakie błędy tolerowane, jak radzę sobie z błędami
+
+## Komunikaty
+
+Komunikaty są formatowane
+
+**Błędny kod:**
+
+```groovy
+String 🙁 = "Ala ma kota";
+```
+
+**Rezultat:**
+
+```bash
+[INFO]    1: String đź™? = "Ala ma kota";
+[ERROR] Unexpected character ™ at position line 1, character 10
+[ERROR] Unexpected character ? at position line 1, character 11
+```
 
 # Sposób uruchomienia
 
@@ -264,8 +284,14 @@ Przykładowe uruchomienie oraz rezultat:
 ```bash
 $ ./interpreter --help
 Usage: ./interpreter [OPTION] [FILE]
-    -h --help        Display this message
-    -c --clean       Re-build project from scratch before running application
+    -h --help               Display this message
+    -c --clean              Re-build project from scratch before running application
+    -i --identifier [VALUE] Set the maximum number of characters in a identifier
+                            Default: 100
+    -s --string [VALUE]     Set the maximum number of characters in a string
+                            Default: 1000
+    -e --exception [VALUE]  Set the maximum number of exceptions before stopping execution of a program
+                            Default: 500
 $ ./interpreter hello_world_program.txt
 Hello, World!
 ```
