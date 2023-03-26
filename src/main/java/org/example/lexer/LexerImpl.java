@@ -25,7 +25,7 @@ import org.example.token.type.StringToken;
 public class LexerImpl implements Lexer {
 
 	private Token token;
-	private Position tokenPosition;
+	private Position tokenPosition = new Position();
 	private String currentCharacter = CharactersUtility.SPACE;
 	private final PositionalReaderImpl reader;
 	private final ErrorHandler errorHandler;
