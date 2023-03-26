@@ -14,10 +14,10 @@ fun prepareDatabase(): Map<String, int> {
 	return database;
 }
 
-fun prepareSimpleQuery(): Query<String, int> {
+fun prepareSimpleQuery(): Iterable<String, int> {
 	Map<String, int> database = prepareDatabase();
 
-	Query<String, int> result =
+	Iterable<String, int> result =
 		SELECT
 			key AS id,
 			value
@@ -32,7 +32,7 @@ fun multiply(a: int, b: int): int {
 	return a * b;
 }
 
-fun prepareAdvancedQuery(): Query<String, Map<>> {
+fun prepareAdvancedQuery(): Iterable<String, Map<>> {
 	Map<String, Map<String, int>> database = {
 		"id_1" : {
 			"property_1" : 1,
@@ -46,7 +46,7 @@ fun prepareAdvancedQuery(): Query<String, Map<>> {
 		},
 	};
 
-	Query<String, int, int, int> result =
+	Iterable<String, int, int, int> result =
 		SELECT
 			key AS id,
 			value["property_1"] AS property_1,
@@ -59,7 +59,7 @@ fun prepareAdvancedQuery(): Query<String, Map<>> {
 	return result;
 }
 
-fun prepareAdvancedJoinQuery(): Query<String, Map<>> {
+fun prepareAdvancedJoinQuery(): Iterable<String, Map<>> {
 	Map<String, Map<String, int>> database1 = {
 		"id_1" : {
 			"property_1" : 1,
@@ -86,7 +86,7 @@ fun prepareAdvancedJoinQuery(): Query<String, Map<>> {
     		},
     	};
 
-	Query<String, int, int, int> result =
+	Iterable<String, int, int, int> result =
 		SELECT
 			db1.key AS id1,
 			db2.key AS id2,
@@ -101,22 +101,21 @@ fun prepareAdvancedJoinQuery(): Query<String, Map<>> {
 	return result;
 }
 
-fun compare(first: Entry<String, int>, second: Entry<String, int>) {
-	return first.value < second.value;
-}
-
 fun main() {
-	Query<String, int> result = prepareSimpleQuery();
+	Iterable<String, int> result = prepareSimpleQuery();
 
-	for (row: result) {
+	for (Tuple<String, int> row: result) {
 		print(row.id);
 		print(row.value);
 	}
 
 	Map<String, int> database = prepareDatabase();
+	Comparator<Tuple<String, int>> compare = fun compare(first: Tuple<String, int>, second: Tuple<String, int>) {
+		return first.value < second.value;
+	}
 
-	for (key, value: database[compare]) {
-		print(key);
+	for (Tuple<String, int> entry: database[compare]) {
+		print(entry.key);
 	}
 
 	for (entry: database[compare]) {

@@ -73,12 +73,96 @@ Dla typów prostych są zdefiniowane operacje matematyczne oraz operacje logiczn
 - `Tuple<value, ...>`
 	- nie-mutowalna krotka
 	- krotka może składać się z wielu wartości różnego typu
-	- np. TODO
-- `Query<value, ...>`
+	- np. `value1 AS name1, value2 AS name2`
+- `Comparator<value>`
+	- funkcja, która pozwala na porównanie dwóch wartości
+	- zwraca 1 w przypadku, gdy pierwsza wartość jest większa
+	- zwraca 0 w przypadku, gdy obie wartości są równe
+	- zwraca -1 w przypadku, gdy druga z wartości jest większa
+- `Iterable<value, ...>`
 	- struktura służąca do iterowania po krotkach, które są rezultatem zapytania
 	- np. `SELECT value FROM map`
 
-TODO: Złożone typy danych posiadają zdefiniowane dodatkowe metody, w szczegółach opisane będą w dalszych podpunktach.
+## "Interfejs" typów złożonych oraz wbudowane funkcje:
+
+**String**
+
+```java
+class String {
+	fun concat(other:String):String;
+}
+
+	fun print(messsage:String);
+```
+
+**Comparator<value>**
+
+```java
+class Comparator<V> {
+	fun compare(this:V, other:V):int;
+}
+
+	Comparator<int> compareValues = fun(this:int,other:int):int{
+		return 1;
+		}
+```
+
+**Tuple<value, ...>**
+
+```java
+class Tuple<V1, V2, V3, ...>{
+		fun $name1:V1;
+		fun $name2:V2;
+		fun $name3:V3;
+		...
+		}
+
+		Tuple<String, int,double>=(
+		value1 AS name1,
+		value2 AS name2,
+		value3 AS name3,
+		);
+```
+
+**Map<key, value>**
+
+```java
+class Map<K, V> {
+	fun operator[](key:K):V;
+
+	fun put(key:K, value:V);
+
+	fun contains(key:K):boolean;
+
+	fun remove(key:K);
+
+	fun iterable():Iterable<K, V>;
+
+	fun iterable(comparator:Comparator<K, V>):Iterable<K, V>;
+}
+
+	fun operator{}:Map<key, value>;
+```
+
+**Iterable<value, ...>**
+
+```sql
+class
+Iterable<VALUE, ...> {
+    fun hasNext(): boolean;
+    fun
+NEXT(): Tuple<VALUE, ...>;
+}
+
+MAP<String, INT> MAP = prepareMap();
+// USER DEFINED FUNCTION
+Iterable<String, INT, DOUBLE, boolean> query =
+SELECT entry.key AS KEY,
+		entry.value AS VALUE
+FROM MAP AS entry
+WHERE entry.key != "abc" AND entry.value > 0
+ORDER BY entry.value, entry.key;
+```
 
 # Semantyka
 
@@ -126,25 +210,22 @@ fun main() {
 
 - instrukcja warunkowa `if`:
 
-```groovy
+```
 boolean expression = 2 + 2 == 4;
 
-if
-expression {
+if expression {
 	// do something
 }
 
-if
-expression doSomething();
+if expression doSomething();
 ```
 
 - konstrukcja `if-else`:
 
-```groovy
+```
 boolean expression = 2 + 2 == 4;
 
-if
-expression {
+if expression {
 	// do something
 } else {
 	// do something else
@@ -153,25 +234,22 @@ expression {
 
 - złożenie `if-else`:
 
-```groovy
+```
 boolean first = 2 + 2 == 4;
 boolean second = false;
 
-if
-first {
+if first {
 	// do something
-} else if
-second {
+} else if second {
 	// do something else on condition
 }
 ```
 
 **Pętla warunkowa:**
 
-```groovy
+```
 boolean expression = true;
-while
-expression {
+while expression {
 	// do something
 }
 ```
@@ -229,14 +307,10 @@ Semantyka obsługi zmiennych:
 
 - funkcje mogą być wołane rekursywnie (z ograniczeniem do maksymalnego zagłębienia)
 
-```groovy
+```
 fun fibbonaci(n: int): int {
-	if
-	n == 0
-	return 0;
-	if
-	n == 1
-	return 1;
+	if n == 0 return 0;
+	if n == 1 return 1;
 	return fibbonaci(n - 1) + fibbonaci(n - 2);
 }
 ```
@@ -407,64 +481,64 @@ public interface ErrorHandler {
 
 Obsługiwane typy tokenów: [token types](./src/main/java/org/example/token/TokenType.java)
 
-```java
+```
 END_OF_FILE,
 
-		FUNCTION_DEFINITION("fun"),
-		RETURN("return"),
-		WHILE("while"),
-		FOR("for"),
-		IF("if"),
-		ELSE("else"),
+FUNCTION_DEFINITION("fun"),
+RETURN("return"),
+WHILE("while"),
+FOR("for"),
+IF("if"),
+ELSE("else"),
 
-		SELECT("select"),
-		FROM("from"),
-		WHERE("where"),
-		ORDER("order"),
-		BY("by"),
-		ASCENDING("ascending"),
-		DESCENDING("descending"),
+SELECT("select"),
+FROM("from"),
+WHERE("where"),
+ORDER("order"),
+BY("by"),
+ASCENDING("ascending"),
+DESCENDING("descending"),
 
-		OPEN_CURLY_PARENTHESES("{"),
-		OPEN_ROUND_PARENTHESES("("),
-		OPEN_SQUARE_PARENTHESES("["),
-		CLOSED_CURLY_PARENTHESES("}"),
-		CLOSED_ROUND_PARENTHESES(")"),
-		CLOSED_SQUARE_PARENTHESES("]"),
+OPEN_CURLY_PARENTHESES("{"),
+OPEN_ROUND_PARENTHESES("("),
+OPEN_SQUARE_PARENTHESES("["),
+CLOSED_CURLY_PARENTHESES("}"),
+CLOSED_ROUND_PARENTHESES(")"),
+CLOSED_SQUARE_PARENTHESES("]"),
 
-		SEMICOLON(";"),
-		COLON(":"),
-		COMMA(","),
-		DOT("."),
+SEMICOLON(";"),
+COLON(":"),
+COMMA(","),
+DOT("."),
 
-		AND("and"),
-		NOT("not"),
-		OR("or"),
+AND("and"),
+NOT("not"),
+OR("or"),
 
-		EQUALITY("==",10),
-		INEQUALITY("!=",10),
-		GREATER(">",10),
-		LESS("<",10),
-		GREATER_EQUAL(">=",10),
-		LESS_EQUAL("<=",10),
+EQUALITY("==",10),
+INEQUALITY("!=",10),
+GREATER(">",10),
+LESS("<",10),
+GREATER_EQUAL(">=",10),
+LESS_EQUAL("<=",10),
 
-		EQUALS("="),
+EQUALS("="),
 
-		PLUS("+",20),
-		MINUS("-",20),
-		TIMES("*",40),
-		DIVIDE("/",40),
+PLUS("+",20),
+MINUS("-",20),
+TIMES("*",40),
+DIVIDE("/",40),
 
-		SINGLE_LINE_COMMENT("//","\n"),
-		MULTI_LINE_COMMENT("/*","*/"),
+SINGLE_LINE_COMMENT("//","\n"),
+MULTI_LINE_COMMENT("/*","*/"),
 
-		IDENTIFIER,
-		INTEGER_CONSTANT,
-		FLOATING_POINT_CONSTANT,
-		BOOLEAN_CONSTANT,
-		STRING_DOUBLE_QUOTE_CONSTANT("\"","\""),
-		STRING_SINGLE_QUOTE_CONSTANT("'","'"),
-		;
+IDENTIFIER,
+INTEGER_CONSTANT,
+FLOATING_POINT_CONSTANT,
+BOOLEAN_CONSTANT,
+STRING_DOUBLE_QUOTE_CONSTANT("\"","\""),
+STRING_SINGLE_QUOTE_CONSTANT("'","'"),
+;
 ```
 
 ## Sposób przetwarzania - w poszczególnych komponentach
