@@ -12,7 +12,7 @@ Numer indeksu:
 310774
 ```
 
-## Temat
+# Opis zakładanej funkcjonalności
 
 Język z wbudowanym typem słownika. Możliwe są podstawowe operacje na słowniku
 (dodawanie, usuwanie, wyszukiwanie elementów wg klucza, sprawdzanie, czy dany
@@ -27,21 +27,25 @@ za pomocą funkcji przekazywanej jako dodatkowy parametr pętli.
 
 **Język realizacji interpretera:** Java 17
 
-# Opis zakładanej funkcjonalności
-
-### Przykładowe konstrukcje językowe oraz ich semantyka
-
 # Wymagania
 
 ## Funkcjonalne
 
-Analiza - TODO
+- pozwala na "typowe" operacje
+- udostępnia typ słownika
+- możliwe są zapytania w stylu LINQ
+- iterowanie po słowniku może przyjmować funkcję, która ustali kolejność iteracji
+- interpreter nie kończy się błędem, gdy interpretowany program kończy się błędem
 
 ## Niefunkcjonalne
 
-Analiza - TODO
+- wydajność?
+- szybkość?
+- bezpieczeństwo?
+- wsparcie?
+- użyteczność?
 
-# Semantyka
+# Typy Danych
 
 **Proste typy danych:**
 
@@ -54,6 +58,8 @@ Analiza - TODO
 - `boolean`
 	- wartość reprezentująca prawdę lub fałsz
 	- np. `true`, `false`
+
+Dla typów prostych są zdefiniowane operacje matematyczne oraz operacje logiczne / porówniania.
 
 **Złożone typy danych:**
 
@@ -71,6 +77,10 @@ Analiza - TODO
 - `Query<value, ...>`
 	- struktura służąca do iterowania po krotkach, które są rezultatem zapytania
 	- np. `SELECT value FROM map`
+
+TODO: Złożone typy danych posiadają zdefiniowane dodatkowe metody, w szczegółach opisane będą w dalszych podpunktach.
+
+# Semantyka
 
 **Operacje arytmetyczne:**
 
@@ -207,9 +217,13 @@ Semantyka przekazywania argumentów do funkcji:
 - w przypadku typów złożonych przekazywana jest wartość referencji do obiektu
 
 Semantyka obsługi zmiennych:
-- typowanie statyczne vs dynamiczne
-- typowanie silne vs słabe
-- mutowalność vs stałe (ile razy możemy przypisywać wartość do zmiennej)
+
+- typowanie statyczne
+	- typy zmiennym są nadawane w czasie kompilacji, poprzez deklarację.
+- typowanie silne
+	- każde wyrażenie ma ustalony typ i nie można go używać w kontekście przeznaczonym dla innych typów
+- mutowalność
+	- do zmiennych może być przypisywana nowa wartość, tego samego typu
 
 **Rekursywność wywoływania funkcji:**
 
@@ -243,6 +257,22 @@ fun fibbonaci(n: int): int {
 
 # Składnia (EBNF) realizowanego języka
 
+# Gramatyka
+
+## Symbole terminalne
+
+[//]: # (Te obsługiwane przez lekser)
+
+[//]: # (Wyrażenia regularne)
+
+## Symbole złożone
+
+[//]: # (Te obsługiwane przez parser)
+
+[//]: # (EBNF)
+
+## Symbol startowy
+
 # Formalna specyfikacja plików / strumieni wejściowych
 
 # Formalna specyfikacja danych konfiguracyjnych
@@ -255,7 +285,7 @@ fun fibbonaci(n: int): int {
 - Interpretera
 - Czasu wykonania
 
-Jakie błędy tolerowane, jak radzę sobie z błędami
+TODO: Jakie błędy tolerowane, jak radzę sobie z błędami
 
 ## Komunikaty
 
@@ -328,27 +358,130 @@ Hello, World!
 
 ## Moduły
 
+1. [Analizator leksykalny](./src/main/java/org/example/lexer)
+1. [Analizator składniowy](./src/main/java/org/example/parser)
+1. [Interpreter](./src/main/java/org/example/interpreter)
+1. [Obsługa błędów](./src/main/java/org/example/error)
+
 ## Obiekty
 
 ## Interfejsy
 
+**Analizator leksykalny:** [lexer](./src/main/java/org/example/lexer/Lexer.java)
+
+```java
+public interface Lexer {
+	Token nextToken();
+}
+```
+
+**Analizator semantyczny:** [parser](./src/main/java/org/example/parser/Parser.java)
+
+```java
+public interface Parser {
+	Expression nextExpression();
+}
+```
+
+**Interpreter:** [interpreter](./src/main/java/org/example/interpreter/Interpreter.java)
+
+```java
+public interface Interpreter {
+	// TODO: implement me!
+}
+```
+
+**Obsługa błędów:** [error handler](./src/main/java/org/example/error/ErrorHandler.java)
+
+```java
+public interface ErrorHandler {
+	void handleLexerException(LexerException exception);
+
+	void handleParserException(ParserException exception);
+
+	void showExceptions(Reader reader) throws IOException;
+}
+```
+
 ## Tokeny
 
-TODO - jakie rozróżniane
+Obsługiwane typy tokenów: [token types](./src/main/java/org/example/token/TokenType.java)
+
+```java
+END_OF_FILE,
+
+		FUNCTION_DEFINITION("fun"),
+		RETURN("return"),
+		WHILE("while"),
+		FOR("for"),
+		IF("if"),
+		ELSE("else"),
+
+		SELECT("select"),
+		FROM("from"),
+		WHERE("where"),
+		ORDER("order"),
+		BY("by"),
+		ASCENDING("ascending"),
+		DESCENDING("descending"),
+
+		OPEN_CURLY_PARENTHESES("{"),
+		OPEN_ROUND_PARENTHESES("("),
+		OPEN_SQUARE_PARENTHESES("["),
+		CLOSED_CURLY_PARENTHESES("}"),
+		CLOSED_ROUND_PARENTHESES(")"),
+		CLOSED_SQUARE_PARENTHESES("]"),
+
+		SEMICOLON(";"),
+		COLON(":"),
+		COMMA(","),
+		DOT("."),
+
+		AND("and"),
+		NOT("not"),
+		OR("or"),
+
+		EQUALITY("==",10),
+		INEQUALITY("!=",10),
+		GREATER(">",10),
+		LESS("<",10),
+		GREATER_EQUAL(">=",10),
+		LESS_EQUAL("<=",10),
+
+		EQUALS("="),
+
+		PLUS("+",20),
+		MINUS("-",20),
+		TIMES("*",40),
+		DIVIDE("/",40),
+
+		SINGLE_LINE_COMMENT("//","\n"),
+		MULTI_LINE_COMMENT("/*","*/"),
+
+		IDENTIFIER,
+		INTEGER_CONSTANT,
+		FLOATING_POINT_CONSTANT,
+		BOOLEAN_CONSTANT,
+		STRING_DOUBLE_QUOTE_CONSTANT("\"","\""),
+		STRING_SINGLE_QUOTE_CONSTANT("'","'"),
+		;
+```
 
 ## Sposób przetwarzania - w poszczególnych komponentach
 
+TODO
+
 ## Wykorzystywane struktury danych
 
-- do jakich struktur danych trafią określone obiekty (opis formalny / tekstowy)
-
-## Wykorzystanie struktur danych
+TODO - do jakich struktur danych trafią określone obiekty (opis formalny / tekstowy)
 
 ## Formy pośrednie
 
+TODO
+
 # Testowanie
 
-- opis testowania
+TODO - opis testowania
 
 # Biblioteki
 
