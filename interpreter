@@ -7,13 +7,20 @@ INTERPRETER_PATH=$(realpath "$0" | xargs dirname)
 FAT_JAR="$INTERPRETER_PATH/build/libs/tkom-1.0-SNAPSHOT-all.jar"
 FILE="$INTERPRETER_PATH/src/main/resources/query.txt"
 
+MAX_IDENTIFIER_LENGTH=100
+MAX_STRING_LENGTH=1000
+
 help () {
     cat 1>&2 << EOF
 Usage: $0 [OPTION] [FILE]
-    -h --help        Display this message
-    -c --clean       Re-build project from scratch before running application
+    -h --help               Display this message
+    -c --clean              Re-build project from scratch before running application
+    -i --identifier [VALUE] Set the maximum number of characters in a identifier
+                            Default: $MAX_IDENTIFIER_LENGTH
+    -s --string [VALUE]     Set the maximum number of characters in a string
+                            Default: $MAX_STRING_LENGTH
 EOF
-exit 0;
+	exit 0;
 }
 
 while [[ $# -gt 0 ]]; do
@@ -23,6 +30,16 @@ while [[ $# -gt 0 ]]; do
         ;;
     -c|--clean)
         ./gradlew clean 1>&2
+        shift
+        ;;
+    -i|--identifier)
+        MAX_IDENTIFIER_LENGTH="$2"
+        shift
+        shift
+        ;;
+    -s|--string)
+        MAX_STRING_LENGTH="$2"
+        shift
         shift
         ;;
     -*)
@@ -43,4 +60,8 @@ if [ ! -f "$FAT_JAR" ]; then
   exec "$INTERPRETER_PATH/gradlew" shadowJar 1>&2
 fi
 
-java -jar "$FAT_JAR" "$FILE"
+java \
+  -Dmax.identifier.length="$MAX_IDENTIFIER_LENGTH" \
+  -Dmax.string.length="$MAX_STRING_LENGTH" \
+  -jar "$FAT_JAR" \
+  "$FILE"
