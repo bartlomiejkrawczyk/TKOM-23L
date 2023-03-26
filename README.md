@@ -346,12 +346,16 @@ zero                    = "0";
 character               = ?;
 relation_operator       = "<" | "<=" | "==" | ">" | ">=" | "!="
 addition_operator       = "+" | "-";
+multiplication_operator = "*" | "/";
 symbol                  = ":" | "-" | "+" | ...; (* także inne symbole *) // TODO: refactor
+logical_bi_operator     = "and" | "or";
 
 // EBNF
 INTEGER                 = zero
                         | non_zero_digit, {digit};
 FLOATING_POINT          = INTEGER, ".", digit, {digit};
+NUMBER                  = INTEGER
+                        | FLOATING_POINT;
 
 IDENTIFIER              = letter, {letter | digit};
 
@@ -378,24 +382,52 @@ COMMENT                 = COMMENT_SINGLE_LINE
 ```
 TYPE_DECLARATION        = IDENTIFIER, ["<", TYPE_DECLARATION, {",", TYPE_DECLARATION} ,">"];
 
+TERM                    = FACTOR, [multiplication_operator, FACTOR];
+
+ARITHMETIC_EXPRESSION   = TERM, "+", TERM
+                        | [TERM], "-", TERM
+                        | TERM;
+
+LOGICAL_VALUE           = IDENTIFIER
+                        | FUNCTION_CALL
+                        | ARITHMETIC_EXPRESSION, relation_operator, ARITHMETIC_EXPRESSION;
+
+LOGICAL_EXPRESSION      = LOGICAL_EXPRESSION, logical_bi_operator, LOGICAL_EXPRESSION,
+                        | "not" LOGICAL_EXPRESSION,
+                        | LOGICAL_VALUE
+                        | "(", LOGICAL_EXPRESSION, ")";
+
+
 ARGUMENT_DECLARATION    = IDENTIFIER, ":", TYPE_DECLARATION;
 ARGUMENT_LIST           = ARGUMENT_DECLARATION, {",", ARGUMENT_DECLARATION};
-FUNCTION_DECLARATION    = "fun", "(", [ARGUMENT_LIST], ")", [":", TYPE_DECLARATION], BLOCK;
+FUNCTION_DECLARATION    = "fun", IDENTIFIER, "(", [ARGUMENT_LIST], ")", [":", TYPE_DECLARATION], BLOCK;
+
+LAMBDA_DECLARATION      = "fun", "(", [ARGUMENT_LIST], ")", [":", TYPE_DECLARATION], BLOCK; (* Reconsider this*)
 
 FUNCTION_CALL           = IDENTIFIER, "(", [EXPRESSION, {",", EXPRESSION}], ")";
 
+FACTOR                  = "(", ARITHMETIC_EXPRESSION ")"
+                        | NUMBER
+                        | IDENTIFIER
+                        | FUNCTION_CALL;
+
+METHOD_CALL             = EXPRESSION, ".", FUNCTION_CALL
+                        | EXPRESSION, "[", EXPRESSION, "]";
+
 EXPRESSION              = IDENTIFIER
+                        | ARITHMETIC_EXPRESSION
+                        | LOGICAL_EXPRESSION
                         | FUNCTION_CALL
+                        | METHOD_CALL
                         | SELECT_EXPRESSION
                         | TUPLE_EXPRESSION
                         | MAP_EXPRESSION
                         | "(", EXPRESSION, ")";
 
-
-IF_STATEMENT            = "if", EXPRESSION, STATEMENT, 
+IF_STATEMENT            = "if", LOGICAL_EXPRESSION, STATEMENT, 
                           ["else", STATEMENT];
 
-WHILE_STATEMENT         = "while", EXPRESSION, STATEMENT;
+WHILE_STATEMENT         = "while", LOGICAL_EXPRESSION, STATEMENT;
 
 RETURN_STATEMENT        = "return", EXPRESSION, ";";
 
@@ -406,6 +438,8 @@ FOR_STATEMENT           = "for", FOR_EACH_EXPRESSION, STATEMENT;
 DECLARATION             = TYPE_DECLARATION, IDENTIFIER, ["=", EXPRESSION], ";";
 
 STATEMENT               = IF_STATEMENT
+                        | WHILE_STATEMENT
+                        | FOR_STATEMENT
                         | DECLARATION
                         | EXPRESSION, ";"
                         | BLOCK
