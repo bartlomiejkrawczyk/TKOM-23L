@@ -34,7 +34,8 @@ public class Main {
 		try (var inputStream = new FileInputStream(file)) {
 			handleStream(inputStream, errorHandler);
 		} catch (IOException e) {
-			log.error("IOException: Cannot read input file", e);
+			log.error("IOException: Cannot read input file: {}", e.getMessage());
+			return;
 		} catch (TooManyExceptionsException e) {
 			log.error("TooManyExceptions: {}", e.getMessage());
 		}
@@ -42,7 +43,7 @@ public class Main {
 		try (var inputStream = new FileInputStream(file)) {
 			errorHandler.showExceptions(new InputStreamReader(inputStream));
 		} catch (IOException e) {
-			log.error("IOException: Cannot read input file", e);
+			log.error("IOException: Cannot read input file: {}", e.getMessage());
 		}
 	}
 
