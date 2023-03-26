@@ -43,8 +43,7 @@ public class Position implements Comparable<Position> {
 		}
 	}
 
-	@Override
-	public String toString() {
+	public String toPositionString() {
 		return "line " + (line + 1) + ", character " + (characterNumber + 1);
 	}
 }

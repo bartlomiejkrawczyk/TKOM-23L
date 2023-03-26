@@ -15,7 +15,7 @@ public class NumericOverflowException extends LexerException {
 	Position position;
 
 	public NumericOverflowException(Position position) {
-		super(String.format("Number at %s has reached limit", position));
+		super(String.format("Number at %s has reached limit", position.toPositionString()));
 		this.position = position;
 	}
 }

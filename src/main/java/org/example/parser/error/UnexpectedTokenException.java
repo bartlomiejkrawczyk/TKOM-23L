@@ -16,7 +16,8 @@ public class UnexpectedTokenException extends ParserException {
 	Token token;
 
 	public UnexpectedTokenException(TokenType expectedType, Token token) {
-		super(String.format("UnexpectedToken: %s at position position %s%nExpected: %s", token, token.getPosition(), expectedType));
+		super(String.format("UnexpectedToken: %s at position position %s%nExpected: %s", token, token.getPosition().toPositionString(),
+				expectedType));
 		this.expectedType = expectedType;
 		this.token = token;
 	}

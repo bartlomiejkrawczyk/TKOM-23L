@@ -15,7 +15,7 @@ public class ReaderException extends LexerException {
 	Position position;
 
 	public ReaderException(Position position, String message) {
-		super(String.format("Exception occurred while processing token at %s:%n%s", position, message));
+		super(String.format("Exception occurred while processing token at %s:%n%s", position.toPositionString(), message));
 		this.position = position;
 	}
 }

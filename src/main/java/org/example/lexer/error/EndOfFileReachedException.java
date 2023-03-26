@@ -15,7 +15,8 @@ public class EndOfFileReachedException extends LexerException {
 	Position position;
 
 	public EndOfFileReachedException(String expectedEnclosingKeyword, Position position) {
-		super(String.format("String starting at %s is missing a closing character combination: %s", position, expectedEnclosingKeyword));
+		super(String.format("String starting at %s is missing a closing character combination: %s", position.toPositionString(),
+				expectedEnclosingKeyword));
 		this.expectedEnclosingKeyword = expectedEnclosingKeyword;
 		this.position = position;
 	}

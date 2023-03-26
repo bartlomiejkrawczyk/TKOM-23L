@@ -14,7 +14,7 @@ public class UnknownTokenException extends ParserException {
 	Token token;
 
 	public UnknownTokenException(Token token) {
-		super(String.format("UnknownToken: %s at position position %s", token, token.getPosition()));
+		super(String.format("UnknownToken: %s at position position %s", token, token.getPosition().toPositionString()));
 		this.token = token;
 	}
 }
