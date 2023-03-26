@@ -29,7 +29,7 @@ public interface Expression {
 			if (children.hasNext()) {
 				expression.print(buffer, childrenPrefix + "|--- ", childrenPrefix + "|    ");
 			} else {
-				expression.print(buffer, childrenPrefix + "\\--- ", childrenPrefix + "     ");
+				expression.print(buffer, childrenPrefix + "`--- ", childrenPrefix + "     ");
 			}
 		}
 	}

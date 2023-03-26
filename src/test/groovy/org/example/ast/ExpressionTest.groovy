@@ -22,9 +22,9 @@ class ExpressionTest extends Specification {
 		expect:
 		expression.print() == """FunctionExpression()
 |--- PrototypeExpression(name=main, arguments={})
-\\--- BinaryExpression(operation=PLUS)
+`--- BinaryExpression(operation=PLUS)
      |--- IntegerExpression(value=10)
-     \\--- FloatingPointExpression(value=1.25)
+     `--- FloatingPointExpression(value=1.25)
 """
 	}
 }
