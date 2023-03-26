@@ -392,8 +392,8 @@ LOGICAL_VALUE           = IDENTIFIER
                         | FUNCTION_CALL
                         | ARITHMETIC_EXPRESSION, relation_operator, ARITHMETIC_EXPRESSION;
 
-LOGICAL_EXPRESSION      = LOGICAL_EXPRESSION, logical_bi_operator, LOGICAL_EXPRESSION,
-                        | "not" LOGICAL_EXPRESSION,
+LOGICAL_EXPRESSION      = LOGICAL_EXPRESSION, logical_bi_operator, LOGICAL_EXPRESSION
+                        | "not", LOGICAL_EXPRESSION
                         | LOGICAL_VALUE
                         | "(", LOGICAL_EXPRESSION, ")";
 
@@ -424,7 +424,7 @@ EXPRESSION              = IDENTIFIER
                         | MAP_EXPRESSION
                         | "(", EXPRESSION, ")";
 
-IF_STATEMENT            = "if", LOGICAL_EXPRESSION, STATEMENT, 
+IF_STATEMENT            = "if", LOGICAL_EXPRESSION, STATEMENT,
                           ["else", STATEMENT];
 
 WHILE_STATEMENT         = "while", LOGICAL_EXPRESSION, STATEMENT;
