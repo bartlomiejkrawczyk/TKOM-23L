@@ -390,6 +390,7 @@ ARITHMETIC_EXPRESSION   = TERM, "+", TERM
 
 LOGICAL_VALUE           = IDENTIFIER
                         | FUNCTION_CALL
+                        | METHOD_CALL
                         | ARITHMETIC_EXPRESSION, relation_operator, ARITHMETIC_EXPRESSION;
 
 LOGICAL_EXPRESSION      = LOGICAL_EXPRESSION, logical_bi_operator, LOGICAL_EXPRESSION
@@ -409,7 +410,8 @@ FUNCTION_CALL           = IDENTIFIER, "(", [EXPRESSION, {",", EXPRESSION}], ")";
 FACTOR                  = "(", ARITHMETIC_EXPRESSION ")"
                         | NUMBER
                         | IDENTIFIER
-                        | FUNCTION_CALL;
+                        | FUNCTION_CALL
+                        | METHOD_CALL;
 
 METHOD_CALL             = EXPRESSION, ".", FUNCTION_CALL
                         | EXPRESSION, "[", EXPRESSION, "]";
@@ -487,7 +489,7 @@ Aby zmodyfikować konfigurację należy ustawić odpowiednie wartości za pomoc�
 	- długie identyfikatory / komentarze / stringi - przycięcie identyfikatora do maksymalnej długości
 	- długa liczba całkowita - podział liczby na dwie kolejne liczby
 	- długa część ułamkowa liczby zmienno przecinkowej - zignorowanie nadmiarowych cyfr po przecinku
-	- nie rozpoznany znak - pominięcie go
+	- nierozpoznany znak - pominięcie go
 - Parsera
 	- przekazanie błędu do obsługi przez wydzielony obiekt
 - Interpretera
