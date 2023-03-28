@@ -407,6 +407,8 @@ LAMBDA_DECLARATION      = "fun", "(", [ARGUMENT_LIST], ")", [":", TYPE_DECLARATI
 
 FUNCTION_CALL           = IDENTIFIER, "(", [EXPRESSION, {",", EXPRESSION}], ")";
 
+TUPLE_CALL              = EXPRESSION, ".", IDENTIFIER;
+
 FACTOR                  = "(", ARITHMETIC_EXPRESSION ")"
                         | NUMBER
                         | IDENTIFIER
@@ -421,6 +423,7 @@ EXPRESSION              = IDENTIFIER
                         | LOGICAL_EXPRESSION
                         | FUNCTION_CALL
                         | METHOD_CALL
+                        | TUPLE_CALL
                         | SELECT_EXPRESSION
                         | TUPLE_EXPRESSION
                         | MAP_EXPRESSION
