@@ -458,7 +458,7 @@ TUPLE_EXPRESSION        = TUPLE_ELEMENT, {",", TUPLE_ELEMENT};
 ORDER_BY_EXPRESSION     = EXPRESSION, ["ASCENDING" | "DESCENDING"];
 
 SELECT_EXPRESSION       = "SELECT", TUPLE_EXPRESSION, "FROM", TUPLE_ELEMENT,
-                          ["JOIN", TUPLE_ELEMENT, ["ON", EXPRESSION]],
+                          {"JOIN", TUPLE_ELEMENT, ["ON", EXPRESSION]},
                           ["WHERE", EXPRESSION],
                           ["GROUP", "BY", EXPRESSION, {",", EXPRESSION}, ["HAVING", EXPRESSION]],
                           ["ORDER", "BY", ORDER_BY_EXPRESSION, {"," ORDER_BY_EXPRESSION}],
