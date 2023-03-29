@@ -348,7 +348,6 @@ relation_operator       = "<" | "<=" | "==" | ">" | ">=" | "!="
 addition_operator       = "+" | "-";
 multiplication_operator = "*" | "/";
 symbol                  = ":" | "-" | "+" | ...; (* także inne symbole *) // TODO: refactor
-logical_bi_operator     = "and" | "or";
 
 // EBNF
 INTEGER                 = zero
@@ -379,21 +378,33 @@ COMMENT                 = COMMENT_SINGLE_LINE
 
 [//]: # (EBNF)
 
+[//]: # (TODO: reduce types to beginning with the same token)
+
 ```
 TYPE_DECLARATION        = IDENTIFIER, ["<", TYPE_DECLARATION, {",", TYPE_DECLARATION} ,">"];
 
-TERM                    = FACTOR, [multiplication_operator, FACTOR];
+FACTOR                  = "(", ARITHMETIC_EXPRESSION ")"
+                        | NUMBER
+                        | IDENTIFIER
+                        | FUNCTION_CALL
+                        | METHOD_CALL;
 
-ARITHMETIC_EXPRESSION   = TERM, "+", TERM
-                        | [TERM], "-", TERM
-                        | TERM;
+TERM                    = FACTOR, {multiplication_operator, FACTOR};
+
+ARITHMETIC_EXPRESSION   = TERM, {"+", TERM}
+                        | [TERM], {"-", TERM};
 
 LOGICAL_VALUE           = IDENTIFIER
                         | FUNCTION_CALL
                         | METHOD_CALL
                         | ARITHMETIC_EXPRESSION, relation_operator, ARITHMETIC_EXPRESSION;
 
-LOGICAL_EXPRESSION      = LOGICAL_EXPRESSION, logical_bi_operator, LOGICAL_EXPRESSION
+LOGICAL_AND_EXPRESSION  = LOGICAL_VALUE, {"and", LOGICAL_VALUE};
+
+LOGICAL_OR_EXPRESSION   = LOGICAL_AND_EXPRESSION, {"or", LOGICAL_AND_EXPRESSION};
+
+
+LOGICAL_EXPRESSION      = LOGICAL_OR_EXPRESSION
                         | "not", LOGICAL_EXPRESSION
                         | LOGICAL_VALUE
                         | "(", LOGICAL_EXPRESSION, ")";
@@ -408,12 +419,6 @@ LAMBDA_DECLARATION      = "fun", "(", [ARGUMENT_LIST], ")", [":", TYPE_DECLARATI
 FUNCTION_CALL           = IDENTIFIER, "(", [EXPRESSION, {",", EXPRESSION}], ")";
 
 TUPLE_CALL              = EXPRESSION, ".", IDENTIFIER;
-
-FACTOR                  = "(", ARITHMETIC_EXPRESSION ")"
-                        | NUMBER
-                        | IDENTIFIER
-                        | FUNCTION_CALL
-                        | METHOD_CALL;
 
 METHOD_CALL             = EXPRESSION, ".", FUNCTION_CALL
                         | EXPRESSION, "[", EXPRESSION, "]";
@@ -464,8 +469,7 @@ SELECT_EXPRESSION       = "SELECT", TUPLE_EXPRESSION, "FROM", TUPLE_ELEMENT,
                           {"JOIN", TUPLE_ELEMENT, ["ON", EXPRESSION]},
                           ["WHERE", EXPRESSION],
                           ["GROUP", "BY", EXPRESSION, {",", EXPRESSION}, ["HAVING", EXPRESSION]],
-                          ["ORDER", "BY", ORDER_BY_EXPRESSION, {"," ORDER_BY_EXPRESSION}],
-                          ";"
+                          ["ORDER", "BY", ORDER_BY_EXPRESSION, {"," ORDER_BY_EXPRESSION}];
 ```
 
 ## Symbol startowy
