@@ -41,9 +41,9 @@ public enum TokenType {
 	COMMA(","),
 	DOT("."),
 
-	AND("and"),
+	AND("and", 5),
 	NOT("not"),
-	OR("or"),
+	OR("or", 4),
 
 	EQUALITY("==", 10),
 	INEQUALITY("!=", 10),
@@ -52,9 +52,9 @@ public enum TokenType {
 	GREATER_EQUAL(">=", 10),
 	LESS_EQUAL("<=", 10),
 
-	EQUALS("="),
+	EQUALS("="), // RIGHT ORDER
 
-	PLUS("+", 20),
+	PLUS("+", 20), // LEFT ORDER
 	MINUS("-", 20),
 	TIMES("*", 40),
 	DIVIDE("/", 40),
