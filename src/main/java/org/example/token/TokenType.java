@@ -17,11 +17,17 @@ public enum TokenType {
 
 	SELECT("select"),
 	FROM("from"),
+	JOIN("join"),
+	ON("on"),
 	WHERE("where"),
+	GROUP("group"),
+	HAVING("having"),
 	ORDER("order"),
 	BY("by"),
 	ASCENDING("ascending"),
 	DESCENDING("descending"),
+
+	AS("as"),
 
 	OPEN_CURLY_PARENTHESES("{"),
 	OPEN_ROUND_PARENTHESES("("),
