@@ -437,6 +437,29 @@ class LexerTest extends Specification {
 		LexerConfiguration.MAX_STRING_LENGTH * 2 | TokenType.MULTI_LINE_COMMENT
 	}
 
+	def 'Should raise an exception when string is too long and is escaped'() {
+		given:
+		var content = tokenType.getKeyword() + "\\" * length + "abc" + tokenType.getKeyword() + " def"
+		var reader = new StringReader(content)
+		var errorHandler = Mock(ErrorHandler)
+		var lexer = new LexerImpl(reader, errorHandler)
+
+		when:
+		var token = lexer.nextToken()
+
+		then:
+		token.getType() == tokenType
+		1 * errorHandler.handleLexerException(_ as TokenTooLongException)
+		0 * errorHandler.handleLexerException(_ as EndOfFileReachedException)
+		lexer.nextToken().getValue() == "def"
+
+		where:
+		length                                       | tokenType
+		LexerConfiguration.MAX_STRING_LENGTH * 3     | TokenType.STRING_DOUBLE_QUOTE_CONSTANT
+		LexerConfiguration.MAX_STRING_LENGTH * 2     | TokenType.STRING_SINGLE_QUOTE_CONSTANT
+		LexerConfiguration.MAX_STRING_LENGTH * 2 + 1 | TokenType.STRING_SINGLE_QUOTE_CONSTANT
+	}
+
 	def 'Should raise an exception when comment or string is not closed'() {
 		given:
 		var reader = new StringReader(content)
