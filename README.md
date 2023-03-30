@@ -289,6 +289,16 @@ fun getOne(): int {
 }
 ```
 
+**Przypisanie wartości zmiennej:**
+
+```groovy
+int a = 1;
+int b = 2;
+int tmp = a;
+a = b;
+b = tmp;
+```
+
 Semantyka przekazywania argumentów do funkcji:
 
 - typy proste przekazywane przez wartość
@@ -455,10 +465,13 @@ FOR_STATEMENT           = "for", FOR_EACH_EXPRESSION, STATEMENT;
 
 DECLARATION             = TYPE_DECLARATION, IDENTIFIER, ["=", EXPRESSION], ";";
 
+ASSIGNMENT              = IDENTIFIER, "=", EXPRESSION, ";";
+
 STATEMENT               = IF_STATEMENT
                         | WHILE_STATEMENT
                         | FOR_STATEMENT
                         | DECLARATION
+                        | ASSIGNMENT
                         | EXPRESSION, ";"
                         | BLOCK
                         | ";";
@@ -483,7 +496,7 @@ SELECT_EXPRESSION       = "SELECT", TUPLE_EXPRESSION, "FROM", TUPLE_ELEMENT,
 ## Symbol startowy
 
 ```
-PROGRAM = {COMMENT | FUNCTION_DECLARATION | DECLARATION | ";", ";"};
+PROGRAM = {COMMENT | FUNCTION_DECLARATION | DECLARATION | ";"};
 ```
 
 # Formalna specyfikacja plików / strumieni wejściowych
