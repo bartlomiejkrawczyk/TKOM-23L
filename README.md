@@ -405,7 +405,6 @@ LOGICAL_OR_EXPRESSION   = LOGICAL_AND_EXPRESSION, {"or", LOGICAL_AND_EXPRESSION}
 
 LOGICAL_EXPRESSION      = LOGICAL_OR_EXPRESSION
                         | "not", LOGICAL_EXPRESSION
-                        | LOGICAL_VALUE
                         | "(", LOGICAL_EXPRESSION, ")";
 
 
@@ -664,23 +663,23 @@ COLON(":"),
 COMMA(","),
 DOT("."),
 
-AND("and", 5),
+AND("and"),
 NOT("not"),
-OR("or", 4),
+OR("or"),
 
-EQUALITY("==", 10),
-INEQUALITY("!=", 10),
-GREATER(">", 10),
-LESS("<", 10),
-GREATER_EQUAL(">=", 10),
-LESS_EQUAL("<=", 10),
+EQUALITY("=="),
+INEQUALITY("!="),
+GREATER(">"),
+LESS("<"),
+GREATER_EQUAL(">="),
+LESS_EQUAL("<="),
 
 EQUALS("="),
 
-PLUS("+", 20),
-MINUS("-", 20),
-TIMES("*", 40),
-DIVIDE("/", 40),
+PLUS("+"),
+MINUS("-"),
+TIMES("*"),
+DIVIDE("/"),
 
 SINGLE_LINE_COMMENT("//", "\n"),
 MULTI_LINE_COMMENT("/*", "*/"),

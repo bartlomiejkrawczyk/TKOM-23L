@@ -41,23 +41,23 @@ public enum TokenType {
 	COMMA(","),
 	DOT("."),
 
-	AND("and", 5),
+	AND("and"),
 	NOT("not"),
-	OR("or", 4),
+	OR("or"),
 
-	EQUALITY("==", 10),
-	INEQUALITY("!=", 10),
-	GREATER(">", 10),
-	LESS("<", 10),
-	GREATER_EQUAL(">=", 10),
-	LESS_EQUAL("<=", 10),
+	EQUALITY("=="),
+	INEQUALITY("!="),
+	GREATER(">"),
+	LESS("<"),
+	GREATER_EQUAL(">="),
+	LESS_EQUAL("<="),
 
-	EQUALS("="), // RIGHT ORDER
+	EQUALS("="),
 
-	PLUS("+", 20), // LEFT ORDER
-	MINUS("-", 20),
-	TIMES("*", 40),
-	DIVIDE("/", 40),
+	PLUS("+"),
+	MINUS("-"),
+	TIMES("*"),
+	DIVIDE("/"),
 
 	SINGLE_LINE_COMMENT("//", "\n"),
 	MULTI_LINE_COMMENT("/*", "*/"),
@@ -79,12 +79,6 @@ public enum TokenType {
 		this.enclosingKeyword = enclosingKeyword;
 	}
 
-	TokenType(String keyword, int precedence) {
-		this.keyword = keyword;
-		this.precedence = precedence;
-	}
-
 	private String keyword;
 	private String enclosingKeyword;
-	private int precedence = -1;
 }

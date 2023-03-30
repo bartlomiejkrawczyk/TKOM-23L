@@ -77,7 +77,7 @@ public class ParserImpl implements Parser {
 	private Expression parseBinaryExpressionRight(int expressionPrecedence, Expression left) {
 		// TODO: Refactor :^)
 		while (true) {
-			int tokenPrecedence = currentToken.getPrecedence();
+			int tokenPrecedence = -1;
 
 			if (tokenPrecedence < expressionPrecedence) {
 				return left;
