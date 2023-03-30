@@ -394,15 +394,14 @@ TYPE_DECLARATION        = SIMPLE_TYPE
                         | COMPLEX_TYPE, "<", TYPE_DECLARATION, {",", TYPE_DECLARATION} ,">";
 
 FACTOR                  = "(", ARITHMETIC_EXPRESSION ")"
-                        | NUMBER
+                        | ["-"], NUMBER
                         | IDENTIFIER
                         | FUNCTION_CALL
                         | METHOD_CALL;
 
 TERM                    = FACTOR, {multiplication_operator, FACTOR};
 
-ARITHMETIC_EXPRESSION   = TERM, {"+", TERM}
-                        | [TERM], {"-", TERM};
+ARITHMETIC_EXPRESSION   = TERM, {addition_operator, TERM};
 
 LOGICAL_VALUE           = IDENTIFIER
                         | FUNCTION_CALL
