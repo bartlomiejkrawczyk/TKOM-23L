@@ -193,6 +193,18 @@ int value = first * (second + third);
 boolean expression = first and (second or third);
 ```
 
+**Rzutowanie zmiennych liczbowych:**
+Wspieram rzutowanie wartości liczbowych:
+
+- int na double - bez stratna
+- double na int - zaokrąglenie w dół (obcięcie cyfr po przecinku)
+
+```
+int a = 1;
+double b = 2.5;
+double value = (double) a + b;
+```
+
 **Widoczność zmiennych:**
 
 - zmienne widoczne jedynie w bloku w którym zostały powołane
@@ -407,7 +419,8 @@ FACTOR                  = "(", ARITHMETIC_EXPRESSION ")"
                         | ["-"], NUMBER
                         | IDENTIFIER
                         | FUNCTION_CALL
-                        | METHOD_CALL;
+                        | METHOD_CALL
+                        | "(", ("int" | "double"), ")", FACTOR;
 
 TERM                    = FACTOR, {multiplication_operator, FACTOR};
 
