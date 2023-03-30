@@ -153,7 +153,7 @@ class Iterable<VALUE, ...> {
 }
 
 Map<String, int> map = prepareMap(); // user defined function
-Iterable<String, int, double, boolean> query =
+Iterable<String, int> query =
 	SELECT
 		entry.key AS key,
 		entry.value AS value
