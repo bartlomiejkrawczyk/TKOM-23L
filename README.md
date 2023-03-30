@@ -347,7 +347,6 @@ character               = ?;
 relation_operator       = "<" | "<=" | "==" | ">" | ">=" | "!="
 addition_operator       = "+" | "-";
 multiplication_operator = "*" | "/";
-symbol                  = ":" | "-" | "+" | ...; (* także inne symbole *) // TODO: refactor
 
 // EBNF
 INTEGER                 = zero
@@ -641,11 +640,17 @@ ELSE("else"),
 
 SELECT("select"),
 FROM("from"),
+JOIN("join"),
+ON("on"),
 WHERE("where"),
+GROUP("group"),
+HAVING("having"),
 ORDER("order"),
 BY("by"),
 ASCENDING("ascending"),
 DESCENDING("descending"),
+
+AS("as"),
 
 OPEN_CURLY_PARENTHESES("{"),
 OPEN_ROUND_PARENTHESES("("),
@@ -659,33 +664,33 @@ COLON(":"),
 COMMA(","),
 DOT("."),
 
-AND("and"),
+AND("and", 5),
 NOT("not"),
-OR("or"),
+OR("or", 4),
 
-EQUALITY("==",10),
-INEQUALITY("!=",10),
-GREATER(">",10),
-LESS("<",10),
-GREATER_EQUAL(">=",10),
-LESS_EQUAL("<=",10),
+EQUALITY("==", 10),
+INEQUALITY("!=", 10),
+GREATER(">", 10),
+LESS("<", 10),
+GREATER_EQUAL(">=", 10),
+LESS_EQUAL("<=", 10),
 
 EQUALS("="),
 
-PLUS("+",20),
-MINUS("-",20),
-TIMES("*",40),
-DIVIDE("/",40),
+PLUS("+", 20),
+MINUS("-", 20),
+TIMES("*", 40),
+DIVIDE("/", 40),
 
-SINGLE_LINE_COMMENT("//","\n"),
-MULTI_LINE_COMMENT("/*","*/"),
+SINGLE_LINE_COMMENT("//", "\n"),
+MULTI_LINE_COMMENT("/*", "*/"),
 
 IDENTIFIER,
 INTEGER_CONSTANT,
 FLOATING_POINT_CONSTANT,
 BOOLEAN_CONSTANT,
-STRING_DOUBLE_QUOTE_CONSTANT("\"","\""),
-STRING_SINGLE_QUOTE_CONSTANT("'","'"),
+STRING_DOUBLE_QUOTE_CONSTANT("\"", "\""),
+STRING_SINGLE_QUOTE_CONSTANT("'", "'"),
 ;
 ```
 
