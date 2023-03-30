@@ -14,6 +14,8 @@ Numer indeksu:
 
 # Opis zakładanej funkcjonalności
 
+[//]: # (TODO: refactor this description)
+
 Język z wbudowanym typem słownika. Możliwe są podstawowe operacje na słowniku
 (dodawanie, usuwanie, wyszukiwanie elementów wg klucza, sprawdzanie, czy dany
 klucz znajduje się w słowniku itd.), iterowanie po elementach zgodnie z zadaną
@@ -38,6 +40,8 @@ za pomocą funkcji przekazywanej jako dodatkowy parametr pętli.
 - interpreter nie kończy się błędem, gdy interpretowany program kończy się błędem
 
 ## Niefunkcjonalne
+
+[//]: # (TODO: write something meaningful eg. security - protection before buffer overflow)
 
 - wydajność?
 - szybkość?
@@ -117,7 +121,7 @@ class Tuple<V1, V2, V3, ...>{
 	...
 }
 
-Tuple<String, int, double> = (
+Tuple<String, int, double> tuple = (
 	value1 AS name1,
 	value2 AS name2,
 	value3 AS name3,
@@ -610,6 +614,8 @@ Hello, World!
 
 [//]: # (## Program TODO)
 
+[//]: # (TODO: Copy already written programs and describe them)
+
 # Realizacja
 
 ## Moduły
@@ -750,6 +756,8 @@ TODO
 
 TODO - do jakich struktur danych trafią określone obiekty (opis formalny / tekstowy)
 
+[//]: # (TODO: napisz w jakich strukturach trzymam - rzeczy generowane przez parser - abstract syntax tree)
+
 ## Formy pośrednie
 
 TODO
@@ -762,6 +770,8 @@ Testy jednostkowe charakteryzują się tym, że zamiast docelowego obiektu wstaw
 czego oczekiwaliśmy.
 
 Testy integracyjne polegają na tym
+
+[//]: # (TODO: Copy here test cases 1:1 when ready)
 
 # Biblioteki
 
