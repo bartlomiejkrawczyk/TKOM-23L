@@ -122,12 +122,13 @@ public class LexerImpl implements Lexer {
 	private boolean tryBuildIdentifierOrKeywordOrBoolean() {
 		if (LexerUtility.isIdentifierHead(currentCharacter)) {
 			var identifier = parseIdentifier();
-			var type = LexerUtility.KEYWORDS.getOrDefault(identifier.toLowerCase(), TokenType.IDENTIFIER);
-			if (type != TokenType.IDENTIFIER) {
-				token = new KeywordToken(type, tokenPosition);
-			} else if (LexerUtility.isBoolean(identifier)) {
+			var caseInsensitiveType = LexerUtility.CASE_INSENSITIVE_KEYWORDS.getOrDefault(identifier.toLowerCase(), TokenType.IDENTIFIER);
+			var type = LexerUtility.KEYWORDS.getOrDefault(identifier, caseInsensitiveType);
+			if (LexerUtility.BOOLEANS.contains(type)) {
 				var value = Boolean.valueOf(identifier);
-				token = new BooleanToken(tokenPosition, value);
+				token = new BooleanToken(type, tokenPosition, value);
+			} else if (type != TokenType.IDENTIFIER) {
+				token = new KeywordToken(type, tokenPosition);
 			} else {
 				token = new StringToken(type, tokenPosition, identifier);
 			}

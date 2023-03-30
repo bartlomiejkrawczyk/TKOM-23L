@@ -15,11 +15,12 @@ class TokenTest extends Specification {
 		token.getValue() == value
 
 		where:
-		token                                                     || value
-		new StringToken(TokenType.IDENTIFIER, position, "value")  || "value"
-		new IntegerToken(position, 1)                             || 1
-		new FloatingPointToken(position, 1.25)                    || 1.25
-		new KeywordToken(TokenType.FUNCTION_DEFINITION, position) || null
-		new BooleanToken(position, true)                          || true
+		token                                                      || value
+		new StringToken(TokenType.IDENTIFIER, position, "value")   || "value"
+		new IntegerToken(position, 1)                              || 1
+		new FloatingPointToken(position, 1.25)                     || 1.25
+		new KeywordToken(TokenType.FUNCTION_DEFINITION, position)  || null
+		new BooleanToken(TokenType.BOOLEAN_TRUE, position, true)   || true
+		new BooleanToken(TokenType.BOOLEAN_FALSE, position, false) || false
 	}
 }

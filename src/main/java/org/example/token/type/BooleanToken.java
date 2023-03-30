@@ -8,10 +8,7 @@ import org.example.token.TokenType;
 @Value
 public class BooleanToken implements Token {
 
+	TokenType type;
 	Position position;
 	Boolean value;
-
-	public TokenType getType() {
-		return TokenType.BOOLEAN_CONSTANT;
-	}
 }

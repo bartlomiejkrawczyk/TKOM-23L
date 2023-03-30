@@ -52,6 +52,11 @@ class LexerTest extends Specification {
 		"\n\nnewline"        || "newline"
 		" ąĄćĆęĘłŁóÓśŚźŹżŻ"  || "ąĄćĆęĘłŁóÓśŚźŹżŻ"
 		" ąĄćĆęĘłŁóÓśŚźŹżŻ " || "ąĄćĆęĘłŁóÓśŚźŹżŻ"
+		" Return "           || "Return"
+		" wHiLe "            || "wHiLe"
+		" FOR "              || "FOR"
+		" True "             || "True"
+		" FaLsE "            || "FaLsE"
 	}
 
 	def 'Should detect correct token type for non-keywords'() {
@@ -85,21 +90,58 @@ class LexerTest extends Specification {
 		type << LexerUtility.KEYWORDS.values()
 	}
 
+	def 'Should detect all the case insensitive tokens correctly when capitalized'() {
+		given:
+		var content = type.getKeyword().capitalize()
+		var lexer = toLexer(content)
+
+		expect:
+		var token = lexer.nextToken()
+		token.getType() == type
+
+		where:
+		type << LexerUtility.CASE_INSENSITIVE_KEYWORDS.values()
+	}
+
+	def 'Should detect all the case insensitive tokens correctly when uppercase'() {
+		given:
+		var content = type.getKeyword().toUpperCase()
+		var lexer = toLexer(content)
+
+		expect:
+		var token = lexer.nextToken()
+		token.getType() == type
+
+		where:
+		type << LexerUtility.CASE_INSENSITIVE_KEYWORDS.values()
+	}
+
+	def 'Should detect all the case insensitive tokens correctly when lowercase'() {
+		given:
+		var content = type.getKeyword().toLowerCase()
+		var lexer = toLexer(content)
+
+		expect:
+		var token = lexer.nextToken()
+		token.getType() == type
+
+		where:
+		type << LexerUtility.CASE_INSENSITIVE_KEYWORDS.values()
+	}
+
 	def 'Should detect all the boolean tokens correctly'() {
 		given:
 		var lexer = toLexer(content)
 
 		expect:
 		var token = lexer.nextToken()
-		token.getType() == TokenType.BOOLEAN_CONSTANT
+		token.getType() == type
 		token.getValue() == value
 
 		where:
-		content   | value
-		" true "  | true
-		" True "  | true
-		" false " | false
-		" False " | false
+		content   || value | type
+		" true "  || true  | TokenType.BOOLEAN_TRUE
+		" false " || false | TokenType.BOOLEAN_FALSE
 	}
 
 	def 'Should detect all operators correctly'() {

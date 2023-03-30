@@ -1,10 +1,9 @@
 package org.example.error
 
-
 import org.example.lexer.error.InvalidTokenException
 import org.example.parser.error.UnknownTokenException
 import org.example.token.Position
-import org.example.token.type.BooleanToken
+import org.example.token.type.IntegerToken
 import spock.lang.Specification
 
 class ErrorHandlerTest extends Specification {
@@ -21,7 +20,7 @@ class ErrorHandlerTest extends Specification {
 
 	def 'Should handle parser errors correctly'() {
 		when:
-		errorHandler.handleParserException(new UnknownTokenException(new BooleanToken(new Position(), true)))
+		errorHandler.handleParserException(new UnknownTokenException(new IntegerToken(new Position(), 1)))
 
 		then:
 		noExceptionThrown()

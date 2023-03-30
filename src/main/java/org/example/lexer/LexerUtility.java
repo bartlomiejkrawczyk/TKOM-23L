@@ -19,6 +19,11 @@ public class LexerUtility {
 			.filter(it -> StringUtils.isNotBlank(it.getKeyword()))
 			.filter(it -> StringUtils.isAlphanumeric(it.getKeyword()))
 			.collect(Collectors.toUnmodifiableMap(TokenType::getKeyword, Function.identity()));
+
+	public static final Map<String, TokenType> CASE_INSENSITIVE_KEYWORDS = KEYWORDS.entrySet()
+			.stream()
+			.filter(it -> !it.getValue().isCaseSensitive())
+			.collect(Collectors.toUnmodifiableMap(it -> it.getKey().toLowerCase(), Map.Entry::getValue));
 	public static final Map<String, TokenType> SYMBOLS = EnumSet.allOf(TokenType.class)
 			.stream()
 			.filter(it -> isSymbol(it.getKeyword()))
@@ -46,9 +51,9 @@ public class LexerUtility {
 			)
 			.collect(Collectors.toUnmodifiableMap(TokenType::getKeyword, Function.identity()));
 
-	public static final List<String> BOOLEANS = List.of(
-			"true",
-			"false"
+	public static final List<TokenType> BOOLEANS = List.of(
+			TokenType.BOOLEAN_TRUE,
+			TokenType.BOOLEAN_FALSE
 	);
 
 	public static boolean isWhitespace(String character) {
@@ -79,9 +84,5 @@ public class LexerUtility {
 
 	public static boolean isIdentifierHead(String character) {
 		return StringUtils.isAlpha(character) || StringUtils.equals(character, CharactersUtility.UNDERSCORE);
-	}
-
-	public static boolean isBoolean(String identifier) {
-		return BOOLEANS.contains(identifier.toLowerCase());
 	}
 }
