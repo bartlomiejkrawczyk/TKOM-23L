@@ -369,6 +369,16 @@ COMMENT_MULTI_LINE      = "/*", CHARACTERS , "*/";
 
 COMMENT                 = COMMENT_SINGLE_LINE
                         | COMMENT_MULTI_LINE;
+
+SIMPLE_TYPE             = "int" 
+                        | "double" 
+                        | "boolean" 
+                        | "String";
+
+COMPLEX_TYPE            = "Map"
+                        | "Comparator"
+                        | "Iterable"
+                        | "Tuple";
 ```
 
 ## Symbole złożone
@@ -380,7 +390,8 @@ COMMENT                 = COMMENT_SINGLE_LINE
 [//]: # (TODO: reduce types to beginning with the same token)
 
 ```
-TYPE_DECLARATION        = IDENTIFIER, ["<", TYPE_DECLARATION, {",", TYPE_DECLARATION} ,">"];
+TYPE_DECLARATION        = SIMPLE_TYPE
+                        | COMPLEX_TYPE, "<", TYPE_DECLARATION, {",", TYPE_DECLARATION} ,">";
 
 FACTOR                  = "(", ARITHMETIC_EXPRESSION ")"
                         | NUMBER
@@ -637,19 +648,19 @@ FOR("for"),
 IF("if"),
 ELSE("else"),
 
-SELECT("select"),
-FROM("from"),
-JOIN("join"),
-ON("on"),
-WHERE("where"),
-GROUP("group"),
-HAVING("having"),
-ORDER("order"),
-BY("by"),
-ASCENDING("ascending"),
-DESCENDING("descending"),
+SELECT("select", false),
+FROM("from", false),
+JOIN("join", false),
+ON("on", false),
+WHERE("where", false),
+GROUP("group", false),
+HAVING("having", false),
+ORDER("order", false),
+BY("by", false),
+ASCENDING("ascending", false),
+DESCENDING("descending", false),
 
-AS("as"),
+AS("as", false),
 
 OPEN_CURLY_PARENTHESES("{"),
 OPEN_ROUND_PARENTHESES("("),
@@ -687,9 +698,22 @@ MULTI_LINE_COMMENT("/*", "*/"),
 IDENTIFIER,
 INTEGER_CONSTANT,
 FLOATING_POINT_CONSTANT,
-BOOLEAN_CONSTANT,
 STRING_DOUBLE_QUOTE_CONSTANT("\"", "\""),
 STRING_SINGLE_QUOTE_CONSTANT("'", "'"),
+
+BOOLEAN_TRUE("true"),
+BOOLEAN_FALSE("false"),
+
+INT("int"),
+DOUBLE("double"),
+BOOLEAN("boolean"),
+
+STRING("String"),
+
+MAP("Map"),
+ITERABLE("Iterable"),
+TUPLE("Tuple"),
+COMPARATOR("Comparator"),
 ;
 ```
 
