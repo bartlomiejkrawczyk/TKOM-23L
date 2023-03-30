@@ -14,7 +14,6 @@ import org.example.lexer.CommentFilterLexer;
 import org.example.lexer.Lexer;
 import org.example.lexer.LexerImpl;
 import org.example.parser.Parser;
-import org.example.parser.ParserImpl;
 import org.example.token.Token;
 import org.example.token.TokenType;
 
@@ -53,9 +52,10 @@ public class Main {
 		var reader = new InputStreamReader(file);
 		var lexer = new LexerImpl(reader, errorHandler);
 		var filter = new CommentFilterLexer(lexer);
-		var parser = new ParserImpl(filter, errorHandler);
 
 		testLexer(lexer);
+
+		// var parser = new ParserImpl(filter, errorHandler);
 		// testParser(parser);
 	}
 
