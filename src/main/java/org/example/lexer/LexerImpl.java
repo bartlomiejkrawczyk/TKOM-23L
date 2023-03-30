@@ -85,19 +85,19 @@ public class LexerImpl implements Lexer {
 	}
 
 	private boolean tryBuildEndOfFile() {
-		if (StringUtils.isEmpty(currentCharacter)) {
-			token = new KeywordToken(TokenType.END_OF_FILE, tokenPosition);
-			return true;
+		if (!StringUtils.isEmpty(currentCharacter)) {
+			return false;
 		}
-		return false;
+		token = new KeywordToken(TokenType.END_OF_FILE, tokenPosition);
+		return true;
 	}
 
 	private boolean tryBuildString() {
-		if (LexerUtility.STRINGS.containsKey(currentCharacter)) {
-			processString();
-			return true;
+		if (!LexerUtility.STRINGS.containsKey(currentCharacter)) {
+			return false;
 		}
-		return false;
+		processString();
+		return true;
 	}
 
 	private void processString() {
@@ -120,21 +120,21 @@ public class LexerImpl implements Lexer {
 	}
 
 	private boolean tryBuildIdentifierOrKeywordOrBoolean() {
-		if (LexerUtility.isIdentifierHead(currentCharacter)) {
-			var identifier = parseIdentifier();
-			var caseInsensitiveType = LexerUtility.CASE_INSENSITIVE_KEYWORDS.getOrDefault(identifier.toLowerCase(), TokenType.IDENTIFIER);
-			var type = LexerUtility.KEYWORDS.getOrDefault(identifier, caseInsensitiveType);
-			if (LexerUtility.BOOLEANS.contains(type)) {
-				var value = Boolean.valueOf(identifier);
-				token = new BooleanToken(type, tokenPosition, value);
-			} else if (type != TokenType.IDENTIFIER) {
-				token = new KeywordToken(type, tokenPosition);
-			} else {
-				token = new StringToken(type, tokenPosition, identifier);
-			}
-			return true;
+		if (!LexerUtility.isIdentifierHead(currentCharacter)) {
+			return false;
 		}
-		return false;
+		var identifier = parseIdentifier();
+		var caseInsensitiveType = LexerUtility.CASE_INSENSITIVE_KEYWORDS.getOrDefault(identifier.toLowerCase(), TokenType.IDENTIFIER);
+		var type = LexerUtility.KEYWORDS.getOrDefault(identifier, caseInsensitiveType);
+		if (LexerUtility.BOOLEANS.contains(type)) {
+			var value = Boolean.valueOf(identifier);
+			token = new BooleanToken(type, tokenPosition, value);
+		} else if (type != TokenType.IDENTIFIER) {
+			token = new KeywordToken(type, tokenPosition);
+		} else {
+			token = new StringToken(type, tokenPosition, identifier);
+		}
+		return true;
 	}
 
 	@SuppressWarnings("StatementWithEmptyBody")
@@ -156,11 +156,11 @@ public class LexerImpl implements Lexer {
 	}
 
 	private boolean tryBuildNumber() {
-		if (LexerUtility.isNumeric(currentCharacter)) {
-			processNumber();
-			return true;
+		if (!LexerUtility.isNumeric(currentCharacter)) {
+			return false;
 		}
-		return false;
+		processNumber();
+		return true;
 	}
 
 	private void processNumber() {
