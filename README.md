@@ -418,13 +418,15 @@ COMPLEX_TYPE            = "Map"
 ```
 TYPE_DECLARATION        = SIMPLE_TYPE
                         | COMPLEX_TYPE, "<", TYPE_DECLARATION, {",", TYPE_DECLARATION} ,">";
+                        
+EXPLICIT_CAST           = "(", ("int" | "double"), ")", FACTOR;
 
 FACTOR                  = "(", ARITHMETIC_EXPRESSION ")"
                         | ["-"], NUMBER
                         | IDENTIFIER
                         | FUNCTION_CALL
                         | METHOD_CALL
-                        | "(", ("int" | "double"), ")", FACTOR;
+                        | EXPLICIT_CAST;
 
 TERM                    = FACTOR, {multiplication_operator, FACTOR};
 
