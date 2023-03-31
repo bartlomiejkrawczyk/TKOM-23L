@@ -380,6 +380,9 @@ INTEGER                 = zero
 FLOATING_POINT          = INTEGER, ".", digit, {digit};
 NUMBER                  = INTEGER
                         | FLOATING_POINT;
+                        
+BOOLEAN                 = "true"
+                        | "false";
 
 IDENTIFIER              = letter, {letter | digit};
 
@@ -433,6 +436,7 @@ TERM                    = FACTOR, {multiplication_operator, FACTOR};
 ARITHMETIC_EXPRESSION   = TERM, {addition_operator, TERM};
 
 LOGICAL_VALUE           = IDENTIFIER
+                        | BOOLEAN
                         | FUNCTION_CALL
                         | METHOD_CALL
                         | ARITHMETIC_EXPRESSION, relation_operator, ARITHMETIC_EXPRESSION;
