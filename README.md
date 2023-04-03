@@ -387,8 +387,8 @@ BOOLEAN                 = "true"
 IDENTIFIER              = letter, {letter | digit};
 
 CHARACTERS              = {character};
-STRING_DOUBLE_QUOTE     = "'", CHARACTERS, "'";
-STRING_DOUBLE_QUOTE     = '"', CHARACTERS, "'";
+STRING_DOUBLE_QUOTE     = '"', CHARACTERS, '"';
+STRING_SINGLE_QUOTE     = "'", CHARACTERS, "'";
 
 STRING                  = STRING_DOUBLE_QUOTE
                         | STRING_SINGLE_QUOTE;
