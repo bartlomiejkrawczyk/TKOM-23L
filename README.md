@@ -156,7 +156,7 @@ class Iterable<VALUE, ...> {
     fun next(): Tuple<VALUE, ...>;
 }
 
-Map<String, int> map = prepareMap(); // user defined function
+Map<String, int> map = prepareMap(); # user defined function
 Iterable<String, int> query =
 	SELECT
 		entry.key AS key,
@@ -218,7 +218,7 @@ fun main() {
 	if (true) {
 		int a = 1;
 	}
-	int b = a; // błąd - `a` nie widoczne poza blokiem
+	int b = a; # błąd - ` a ` nie widoczne poza blokiem
 }
 ```
 
@@ -230,7 +230,7 @@ fun main() {
 boolean expression = 2 + 2 == 4;
 
 if expression {
-	// do something
+	# do something
 }
 
 if expression doSomething();
@@ -242,9 +242,9 @@ if expression doSomething();
 boolean expression = 2 + 2 == 4;
 
 if expression {
-	// do something
+	# do something
 } else {
-	// do something else
+	# do something else
 }
 ```
 
@@ -255,9 +255,9 @@ boolean first = 2 + 2 == 4;
 boolean second = false;
 
 if first {
-	// do something
+	# do something
 } else if second {
-	// do something else on condition
+	# do something else on condition
 }
 ```
 
@@ -266,7 +266,7 @@ if first {
 ```
 boolean expression = true;
 while expression {
-	// do something
+	# do something
 }
 ```
 
@@ -275,7 +275,7 @@ while expression {
 ```groovy
 Map<String, String> map = {};
 for (Tuple<String, String> entry : map) {
-	// do something
+	# do something
 }
 ```
 
@@ -343,8 +343,8 @@ fun fibbonaci(n: int): int {
 
 **Komentarze:**
 
-```groovy
-// Komentarz jedno-liniowy
+```py
+# Komentarz jedno-liniowy
 ```
 
 ```groovy
@@ -393,7 +393,7 @@ STRING_SINGLE_QUOTE     = "'", CHARACTERS, "'";
 STRING                  = STRING_DOUBLE_QUOTE
                         | STRING_SINGLE_QUOTE;
 
-COMMENT_SINGLE_LINE     = "//", CHARACTERS , "\n";
+COMMENT_SINGLE_LINE     = "#", CHARACTERS , "\n";
 COMMENT_MULTI_LINE      = "/*", CHARACTERS , "*/";
 
 COMMENT                 = COMMENT_SINGLE_LINE
@@ -729,7 +729,7 @@ MINUS("-"),
 TIMES("*"),
 DIVIDE("/"),
 
-SINGLE_LINE_COMMENT("//", "\n"),
+SINGLE_LINE_COMMENT("#", "\n"),
 MULTI_LINE_COMMENT("/*", "*/"),
 
 IDENTIFIER,

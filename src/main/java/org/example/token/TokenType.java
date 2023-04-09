@@ -59,7 +59,7 @@ public enum TokenType {
 	TIMES("*"),
 	DIVIDE("/"),
 
-	SINGLE_LINE_COMMENT("//", "\n"),
+	SINGLE_LINE_COMMENT("#", "\n"),
 	MULTI_LINE_COMMENT("/*", "*/"),
 
 	IDENTIFIER,

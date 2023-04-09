@@ -183,9 +183,9 @@ class LexerTest extends Specification {
 		token.getValue() as String == value
 
 		where:
-		content                                            || value
-		"//abc\nnext"                                      || "abc"
-		"//W Sczebrzeczynie, chrząszcz brzmi w trzcinie\n" || "W Sczebrzeczynie, chrząszcz brzmi w trzcinie"
+		content                                           || value
+		"#abc\nnext"                                      || "abc"
+		"#W Sczebrzeczynie, chrząszcz brzmi w trzcinie\n" || "W Sczebrzeczynie, chrząszcz brzmi w trzcinie"
 	}
 
 

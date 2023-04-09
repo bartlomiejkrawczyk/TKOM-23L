@@ -1,6 +1,6 @@
 
 fun hello(world: String) {
-	// Print value of variable world to standard output
+	# Print value of variable world to standard output
 	print(world);
 }
 

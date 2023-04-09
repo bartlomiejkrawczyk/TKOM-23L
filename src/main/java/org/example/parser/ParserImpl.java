@@ -30,7 +30,6 @@ public class ParserImpl implements Parser {
 	public ParserImpl(Lexer lexer, ErrorHandler errorHandler) {
 		this.lexer = lexer;
 		this.errorHandler = errorHandler;
-		this.currentToken = lexer.nextToken();
 	}
 
 	private Token nextToken() {
@@ -40,6 +39,9 @@ public class ParserImpl implements Parser {
 
 	@Override
 	public Expression nextExpression() {
+		if (currentToken == null) {
+			nextToken();
+		}
 		if (currentToken.getType() == TokenType.END_OF_FILE) {
 			return null;
 		} else if (currentToken.getType() == TokenType.SEMICOLON) {
