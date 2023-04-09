@@ -364,7 +364,7 @@ fun fibbonaci(n: int): int {
 [//]: # (Wyrażenia regularne)
 
 ```
-// Wyrażenia regularne
+(* Wyrażenia regularne *)
 letter                  = [a-zA-Z]; (* także inne znaki krajowe *)
 non_zero_digit          = [1-9];
 digit                   = [0-9];
@@ -374,7 +374,7 @@ relation_operator       = "<" | "<=" | "==" | ">" | ">=" | "!="
 addition_operator       = "+" | "-";
 multiplication_operator = "*" | "/";
 
-// EBNF
+(* EBNF *)
 INTEGER                 = zero
                         | non_zero_digit, {digit};
 FLOATING_POINT          = INTEGER, ".", digit, {digit};
