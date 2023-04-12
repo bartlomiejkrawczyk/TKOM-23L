@@ -316,9 +316,7 @@ b = tmp;
 ```
 
 Semantyka przekazywania argumentów do funkcji:
-
-- typy proste przekazywane przez wartość
-- w przypadku typów złożonych przekazywana jest wartość referencji do obiektu
+- obiekty przekazywane przez referencję
 
 Semantyka obsługi zmiennych:
 
@@ -647,8 +645,9 @@ public interface Lexer {
 
 ```java
 public interface Parser {
-	Expression nextExpression();
+	Program parseProgram();
 }
+
 ```
 
 **Interpreter:** [interpreter](./src/main/java/org/example/interpreter/Interpreter.java)

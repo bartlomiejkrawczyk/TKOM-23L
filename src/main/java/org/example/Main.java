@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import lombok.extern.slf4j.Slf4j;
-import org.example.ast.Expression;
 import org.example.error.ErrorHandler;
 import org.example.error.ErrorHandlerImpl;
 import org.example.error.TooManyExceptionsException;
@@ -70,11 +69,8 @@ public class Main {
 
 	@SuppressWarnings("unused")
 	private static void testParser(Parser parser) {
-		Expression expression;
-		do {
-			expression = parser.nextExpression();
-			log.info("Expression = {}", expression);
-		} while (expression != null);
+		var program = parser.parseProgram();
+		log.info(program.print());
 	}
 
 }

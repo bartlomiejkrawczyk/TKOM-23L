@@ -1,8 +1,8 @@
 package org.example.parser;
 
-import org.example.ast.Expression;
+import org.example.ast.expression.Program;
 
 public interface Parser {
 
-	Expression nextExpression();
+	Program parseProgram();
 }
