@@ -1,17 +1,21 @@
 package org.example.ast.expression;
 
 import java.util.List;
+import java.util.Map;
 import lombok.ToString;
 import lombok.Value;
 import org.example.ast.Expression;
 import org.example.ast.ExpressionType;
+import org.example.ast.ValueType;
 
 
-@ToString(exclude = {"prototype", "body"})
+@ToString(exclude = {"body"})
 @Value
 public class FunctionExpression implements Expression {
 
-	PrototypeExpression prototype;
+	String name;
+	// TODO: Consider instead of ValueType using String to allow for user defined types
+	Map<String, ValueType> arguments;
 	Expression body;
 
 	public ExpressionType getType() {
@@ -21,7 +25,6 @@ public class FunctionExpression implements Expression {
 	@Override
 	public Iterable<Expression> getChildrenExpressions() {
 		return List.of(
-				prototype,
 				body
 		);
 	}

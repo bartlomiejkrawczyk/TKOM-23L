@@ -9,7 +9,7 @@ import org.example.token.TokenType;
 
 @ToString(exclude = {"leftExpression", "rightExpression"})
 @Value
-public class BinaryExpression implements Expression {
+public class ArithmeticExpression implements Expression {
 
 	TokenType operation;
 	Expression leftExpression;
