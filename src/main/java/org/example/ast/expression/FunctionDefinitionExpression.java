@@ -11,7 +11,7 @@ import org.example.ast.ValueType;
 
 @ToString(exclude = {"body"})
 @Value
-public class FunctionExpression implements Expression {
+public class FunctionDefinitionExpression implements Expression {
 
 	String name;
 	// TODO: Consider instead of ValueType using String to allow for user defined types
@@ -19,7 +19,7 @@ public class FunctionExpression implements Expression {
 	Expression body;
 
 	public ExpressionType getType() {
-		return ExpressionType.FUNCTION;
+		return ExpressionType.FUNCTION_DECLARATION;
 	}
 
 	@Override

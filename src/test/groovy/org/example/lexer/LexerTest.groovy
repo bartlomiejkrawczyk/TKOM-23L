@@ -41,7 +41,7 @@ class LexerTest extends Specification {
 		expect:
 		var token = lexer.nextToken()
 		token.getType() == TokenType.IDENTIFIER
-		token.getValue() as String == value
+		token.<String> getValue() == value
 
 		where:
 		content              || value
@@ -136,7 +136,7 @@ class LexerTest extends Specification {
 		expect:
 		var token = lexer.nextToken()
 		token.getType() == type
-		token.getValue() == value
+		token.<Boolean> getValue() == value
 
 		where:
 		content   || value | type
@@ -180,7 +180,7 @@ class LexerTest extends Specification {
 		expect:
 		var token = lexer.nextToken()
 		token.getType() == TokenType.SINGLE_LINE_COMMENT
-		token.getValue() as String == value
+		token.<String> getValue() == value
 
 		where:
 		content                                           || value
@@ -196,7 +196,7 @@ class LexerTest extends Specification {
 		expect:
 		var token = lexer.nextToken()
 		token.getType() == TokenType.MULTI_LINE_COMMENT
-		token.getValue() as String == value
+		token.<String> getValue() == value
 
 		where:
 		content                                                 || value
@@ -212,7 +212,7 @@ class LexerTest extends Specification {
 		expect:
 		var token = lexer.nextToken()
 		token.getType() == TokenType.STRING_DOUBLE_QUOTE_CONSTANT
-		token.getValue() as String == value
+		token.<String> getValue() == value
 
 		where:
 		content                              || value
@@ -233,7 +233,7 @@ class LexerTest extends Specification {
 		expect:
 		var token = lexer.nextToken()
 		token.getType() == TokenType.STRING_SINGLE_QUOTE_CONSTANT
-		token.getValue() as String == value
+		token.<String> getValue() == value
 
 		where:
 		content                              || value
@@ -254,7 +254,7 @@ class LexerTest extends Specification {
 		expect:
 		var token = lexer.nextToken()
 		token.getType() == TokenType.INTEGER_CONSTANT
-		token.getValue() as Integer == value
+		token.<Integer> getValue() == value
 
 		where:
 		content    || value
@@ -269,7 +269,7 @@ class LexerTest extends Specification {
 		expect:
 		var token = lexer.nextToken()
 		token.getType() == TokenType.FLOATING_POINT_CONSTANT
-		token.getValue() as Double == value
+		token.<Double> getValue() == value
 
 		where:
 		content  || value
@@ -289,7 +289,7 @@ class LexerTest extends Specification {
 		var token = lexer.nextToken()
 
 		then:
-		token.getValue() == value
+		token.<String> getValue() == value
 		1 * errorHandler.handleLexerException(_ as UnknownTypeException)
 
 		where:
@@ -308,7 +308,7 @@ class LexerTest extends Specification {
 		var token = lexer.nextToken()
 
 		then:
-		token.getValue() == value
+		token.<Double> getValue() == value
 		token.getType() == TokenType.FLOATING_POINT_CONSTANT
 		1 * errorHandler.handleLexerException(_ as UnexpectedCharacterException)
 		lexer.nextToken().getType() == TokenType.END_OF_FILE
@@ -331,7 +331,7 @@ class LexerTest extends Specification {
 		var token = lexer.nextToken()
 
 		then:
-		token.getValue() == value
+		token.<Integer> getValue() == value
 		token.getType() == TokenType.INTEGER_CONSTANT
 		1 * errorHandler.handleLexerException(_ as NumericOverflowException)
 
@@ -351,7 +351,7 @@ class LexerTest extends Specification {
 		var token = lexer.nextToken()
 
 		then:
-		token.getValue() == value
+		token.<Double> getValue() == value
 		token.getType() == TokenType.FLOATING_POINT_CONSTANT
 		1 * errorHandler.handleLexerException(_ as NumericOverflowException)
 
@@ -376,7 +376,7 @@ class LexerTest extends Specification {
 
 		then:
 		token.getType() == TokenType.IDENTIFIER
-		(token.getValue() as String).length() == LexerConfiguration.MAX_IDENTIFIER_LENGTH
+		token.<String> getValue().length() == LexerConfiguration.MAX_IDENTIFIER_LENGTH
 		1 * errorHandler.handleLexerException(_ as TokenTooLongException)
 
 		where:
@@ -398,10 +398,10 @@ class LexerTest extends Specification {
 
 		then:
 		token.getType() == tokenType
-		(token.getValue() as String).length() == LexerConfiguration.MAX_STRING_LENGTH
+		token.<String> getValue().length() == LexerConfiguration.MAX_STRING_LENGTH
 		1 * errorHandler.handleLexerException(_ as TokenTooLongException)
 		0 * errorHandler.handleLexerException(_ as EndOfFileReachedException)
-		lexer.nextToken().getValue() == "abc"
+		lexer.nextToken().<String> getValue() == "abc"
 
 		where:
 		length                                   | tokenType
@@ -451,7 +451,7 @@ class LexerTest extends Specification {
 		token.getType() == tokenType
 		1 * errorHandler.handleLexerException(_ as TokenTooLongException)
 		0 * errorHandler.handleLexerException(_ as EndOfFileReachedException)
-		lexer.nextToken().getValue() == "def"
+		lexer.nextToken().<String> getValue() == "def"
 
 		where:
 		length                                       | tokenType
@@ -470,7 +470,7 @@ class LexerTest extends Specification {
 		var token = lexer.nextToken()
 
 		then:
-		token.getValue()
+		token.<String> getValue()
 		1 * errorHandler.handleLexerException(_ as EndOfFileReachedException)
 
 		where:
