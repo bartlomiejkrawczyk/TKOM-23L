@@ -178,6 +178,7 @@ public class LexerImpl implements Lexer {
 		}
 	}
 
+	@SuppressWarnings("StatementWithEmptyBody")
 	private int parseInteger() {
 		var number = LexerUtility.parseNumericValue(currentCharacter);
 
@@ -197,6 +198,7 @@ public class LexerImpl implements Lexer {
 		} catch (ArithmeticException ignore) {
 			var exception = new NumericOverflowException(tokenPosition);
 			errorHandler.handleLexerException(exception);
+			while (LexerUtility.isNumeric(nextCharacter())) ;
 			return previous;
 		}
 
