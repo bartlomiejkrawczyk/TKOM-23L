@@ -4,8 +4,11 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.example.lexer.CharactersUtility;
@@ -16,10 +19,11 @@ import org.example.lexer.error.LexerException;
 import org.example.parser.error.ParserException;
 import org.example.token.Position;
 
+@ToString
 @Slf4j
 public class ErrorHandlerImpl implements ErrorHandler {
 
-	private final Map<Position, List<PositionalException>> exceptions = new HashMap<>();
+	private final Map<Position, Set<PositionalException>> exceptions = new HashMap<>();
 
 	@SuppressWarnings("StatementWithEmptyBody")
 	@Override
@@ -46,7 +50,7 @@ public class ErrorHandlerImpl implements ErrorHandler {
 			}
 
 			var currentPosition = reader.getPosition();
-			var exceptionsAtPosition = exceptions.getOrDefault(currentPosition, List.of());
+			var exceptionsAtPosition = exceptions.getOrDefault(currentPosition, Set.of());
 			exceptionsOnLine.addAll(exceptionsAtPosition);
 		}
 	}
@@ -76,7 +80,7 @@ public class ErrorHandlerImpl implements ErrorHandler {
 	}
 
 	private void handleException(PositionalException exception) {
-		var exceptionsAtPosition = exceptions.computeIfAbsent(exception.getPosition(), position -> new ArrayList<>());
+		var exceptionsAtPosition = exceptions.computeIfAbsent(exception.getPosition(), position -> new HashSet<>());
 		exceptionsAtPosition.add(exception);
 		if (exceptions.size() > ErrorHandlerConfiguration.MAX_ERRORS) {
 			throw new TooManyExceptionsException();
