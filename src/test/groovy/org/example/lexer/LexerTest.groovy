@@ -4,6 +4,8 @@ import org.example.error.ErrorHandler
 import org.example.lexer.error.*
 import org.example.token.Position
 import org.example.token.TokenType
+import org.example.token.type.IntegerToken
+import org.example.token.type.StringToken
 import spock.lang.Specification
 
 class LexerTest extends Specification {
@@ -34,6 +36,22 @@ class LexerTest extends Specification {
 		" ąĄćĆęĘłŁóÓśŚźŹżŻ" || Position.builder().line(0).characterNumber(1).build()
 	}
 
+	def 'Should be able to parse multiple tokens correctly'() {
+		given:
+		var lexer = toLexer(content)
+
+		expect:
+		for (def expected : result) {
+			var token = lexer.nextToken()
+			token == expected
+		}
+
+		where:
+		content       || result
+		"123 234 345" || [new IntegerToken(new Position(0, 0), 123), new IntegerToken(new Position(0, 4), 234), new IntegerToken(new Position(0, 8), 345)]
+		"abc bcd cde" || [new StringToken(TokenType.IDENTIFIER, new Position(0, 0), "abc"), new StringToken(TokenType.IDENTIFIER, new Position(0, 4), "bcd"), new StringToken(TokenType.IDENTIFIER, new Position(0, 8), "cde")]
+	}
+
 	def 'Should parse non-keyword identifier correctly'() {
 		given:
 		var lexer = toLexer(content)
@@ -57,6 +75,7 @@ class LexerTest extends Specification {
 		" FOR "              || "FOR"
 		" True "             || "True"
 		" FaLsE "            || "FaLsE"
+		" forwhile "         || "forwhile"
 	}
 
 	def 'Should detect correct token type for non-keywords'() {
@@ -357,11 +376,11 @@ class LexerTest extends Specification {
 
 		where:
 		content                              | value
-		"2147483647.12345678901234567890123" | 2147483647.12345678901234567890123
-		"2147483647.1234567890123456789012"  | 2147483647.1234567890123456789012
-		"2147483647.123456789012345678901"   | 2147483647.123456789012345678901
-		"2147483647.12345678901234567890"    | 2147483647.12345678901234567890
-		"2147483647.1234567890123456789"     | 2147483647.1234567890123456789
+		"2147483647.12345678901234567890123" | 2147483647.123456789012345678
+		"2147483647.1234567890123456789012"  | 2147483647.123456789012345678
+		"2147483647.123456789012345678901"   | 2147483647.123456789012345678
+		"2147483647.12345678901234567890"    | 2147483647.123456789012345678
+		"2147483647.1234567890123456789"     | 2147483647.123456789012345678
 	}
 
 	def 'Should raise an exception when identifier is too long'() {
@@ -477,6 +496,24 @@ class LexerTest extends Specification {
 		content   || value
 		"/*Hello" || "Hello"
 		"\"Hello" || "Hello"
+	}
+
+	def 'Should raise an exception when string is not closed and last character is \\'() {
+		given:
+		var reader = new StringReader(content)
+		var errorHandler = Mock(ErrorHandler)
+		var lexer = new LexerImpl(reader, errorHandler)
+
+		when:
+		var token = lexer.nextToken()
+
+		then:
+		token.<String> getValue()
+		2 * errorHandler.handleLexerException(_ as EndOfFileReachedException)
+
+		where:
+		content     || value
+		"\"Hello\\" || "Hello\\"
 	}
 
 	def 'Should raise an exception when lexer finds unexpected character'() {
