@@ -216,16 +216,17 @@ public class LexerImpl implements Lexer {
 		var nominator = (long) LexerUtility.parseNumericValue(currentCharacter);
 		var denominator = (long) LexerConfiguration.BASE_TEN;
 
-		try {
-			while (LexerUtility.isNumeric(nextCharacter())) {
-				denominator = Math.multiplyExact(LexerConfiguration.BASE_TEN, denominator);
+		while (LexerUtility.isNumeric(nextCharacter())) {
+			if (denominator > Integer.MAX_VALUE / LexerConfiguration.BASE_TEN) {
+				var exception = new NumericOverflowException(tokenPosition);
+				errorHandler.handleLexerException(exception);
+				while (LexerUtility.isNumeric(nextCharacter())) ;
+				break;
+			} else {
+				denominator = LexerConfiguration.BASE_TEN * denominator;
 				var currentValue = LexerUtility.parseNumericValue(currentCharacter);
 				nominator = LexerConfiguration.BASE_TEN * nominator + currentValue;
 			}
-		} catch (ArithmeticException ignore) {
-			var exception = new NumericOverflowException(tokenPosition);
-			errorHandler.handleLexerException(exception);
-			while (LexerUtility.isNumeric(nextCharacter())) ;
 		}
 
 		return (double) nominator / denominator;
