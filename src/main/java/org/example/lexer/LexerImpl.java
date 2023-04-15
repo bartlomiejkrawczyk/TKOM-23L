@@ -187,19 +187,17 @@ public class LexerImpl implements Lexer {
 			return 0;
 		}
 
-		var previous = number;
-		try {
-			while (LexerUtility.isNumeric(nextCharacter())) {
-				var currentValue = LexerUtility.parseNumericValue(currentCharacter);
-				previous = number;
-				number = Math.multiplyExact(number, LexerConfiguration.BASE_TEN);
-				number = Math.addExact(number, currentValue);
+		while (LexerUtility.isNumeric(nextCharacter())) {
+			var currentValue = LexerUtility.parseNumericValue(currentCharacter);
+			if (number <= (Integer.MAX_VALUE - currentValue) / LexerConfiguration.BASE_TEN) {
+				number = number * LexerConfiguration.BASE_TEN;
+				number += currentValue;
+			} else {
+				var exception = new NumericOverflowException(tokenPosition);
+				errorHandler.handleLexerException(exception);
+				while (LexerUtility.isNumeric(nextCharacter())) ;
+				return number;
 			}
-		} catch (ArithmeticException ignore) {
-			var exception = new NumericOverflowException(tokenPosition);
-			errorHandler.handleLexerException(exception);
-			while (LexerUtility.isNumeric(nextCharacter())) ;
-			return previous;
 		}
 
 		return number;
@@ -217,15 +215,15 @@ public class LexerImpl implements Lexer {
 		var denominator = (long) LexerConfiguration.BASE_TEN;
 
 		while (LexerUtility.isNumeric(nextCharacter())) {
-			if (denominator > Integer.MAX_VALUE / LexerConfiguration.BASE_TEN) {
+			if (denominator <= Integer.MAX_VALUE / LexerConfiguration.BASE_TEN) {
+				denominator = LexerConfiguration.BASE_TEN * denominator;
+				var currentValue = LexerUtility.parseNumericValue(currentCharacter);
+				nominator = LexerConfiguration.BASE_TEN * nominator + currentValue;
+			} else {
 				var exception = new NumericOverflowException(tokenPosition);
 				errorHandler.handleLexerException(exception);
 				while (LexerUtility.isNumeric(nextCharacter())) ;
 				break;
-			} else {
-				denominator = LexerConfiguration.BASE_TEN * denominator;
-				var currentValue = LexerUtility.parseNumericValue(currentCharacter);
-				nominator = LexerConfiguration.BASE_TEN * nominator + currentValue;
 			}
 		}
 
