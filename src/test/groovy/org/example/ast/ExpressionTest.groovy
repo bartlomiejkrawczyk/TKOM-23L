@@ -1,10 +1,10 @@
 package org.example.ast
 
-
 import org.example.ast.expression.ArithmeticExpression
-import org.example.ast.expression.FloatingPointExpression
+import org.example.ast.expression.BlockExpression
 import org.example.ast.expression.FunctionDefinitionExpression
-import org.example.ast.expression.IntegerExpression
+import org.example.ast.type.FloatingPointValue
+import org.example.ast.type.IntegerValue
 import org.example.token.TokenType
 import spock.lang.Specification
 
@@ -15,17 +15,22 @@ class ExpressionTest extends Specification {
 		var expression = new FunctionDefinitionExpression(
 				"main",
 				Map.of(),
-				new ArithmeticExpression(
-						TokenType.PLUS,
-						new IntegerExpression(10),
-						new FloatingPointExpression(1.25)
+				new BlockExpression(
+						List.of(
+								new ArithmeticExpression(
+										TokenType.PLUS,
+										new IntegerValue(10),
+										new FloatingPointValue(1.25)
+								)
+						)
 				)
 		)
 		expect:
 		expression.print() == """FunctionDefinitionExpression(name=main, arguments={})
-`--- ArithmeticExpression(operation=PLUS)
-     |--- IntegerExpression(value=10)
-     `--- FloatingPointExpression(value=1.25)
+`--- BlockExpression()
+     `--- ArithmeticExpression(operation=PLUS)
+          |--- IntegerValue(value=10)
+          `--- FloatingPointValue(value=1.25)
 """
 	}
 }

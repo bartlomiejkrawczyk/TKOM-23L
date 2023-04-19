@@ -3,19 +3,18 @@ package org.example.ast.expression;
 import java.util.List;
 import lombok.ToString;
 import lombok.Value;
-import org.example.ast.Expression;
 import org.example.ast.Node;
+import org.example.ast.Statement;
 
-@ToString(exclude = {"arguments"})
 @Value
-public class FunctionCallExpression implements Expression {
+@ToString(exclude = {"statements"})
+public class BlockExpression implements Node {
 
-	String function;
-	List<Expression> arguments;
+	List<Statement> statements;
 
 	@Override
 	public Iterable<Node> getChildrenExpressions() {
-		return arguments.stream()
+		return statements.stream()
 				.map(it -> (Node) it)
 				.toList();
 	}

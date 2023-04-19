@@ -2,9 +2,11 @@ package org.example.ast;
 
 import org.example.interpreter.Environment;
 
-public interface Expression extends Node {
+public interface Expression extends Statement {
 
-	ExpressionType getType();
+	default ExpressionType getType() {
+		return ExpressionType.UNKNOWN;
+	}
 
 	default void evaluate(Environment environment) {
 

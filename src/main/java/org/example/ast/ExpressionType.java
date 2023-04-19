@@ -1,6 +1,7 @@
 package org.example.ast;
 
 public enum ExpressionType {
+	UNKNOWN,
 	PROGRAM,
 	FUNCTION_DECLARATION,
 	DECLARATION,

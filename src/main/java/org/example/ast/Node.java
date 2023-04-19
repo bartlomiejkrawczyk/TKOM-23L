@@ -6,7 +6,7 @@ import org.example.lexer.CharactersUtility;
 
 public interface Node {
 
-	default Iterable<Expression> getChildrenExpressions() {
+	default Iterable<Node> getChildrenExpressions() {
 		return List.of();
 	}
 

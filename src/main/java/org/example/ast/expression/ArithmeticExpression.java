@@ -1,10 +1,10 @@
 package org.example.ast.expression;
 
-import java.util.List;
+import java.util.stream.Stream;
 import lombok.ToString;
 import lombok.Value;
 import org.example.ast.Expression;
-import org.example.ast.ExpressionType;
+import org.example.ast.Node;
 import org.example.token.TokenType;
 
 @ToString(exclude = {"leftExpression", "rightExpression"})
@@ -15,15 +15,12 @@ public class ArithmeticExpression implements Expression {
 	Expression leftExpression;
 	Expression rightExpression;
 
-	public ExpressionType getType() {
-		return ExpressionType.EXPRESSION;
-	}
-
 	@Override
-	public Iterable<Expression> getChildrenExpressions() {
-		return List.of(
-				leftExpression,
-				rightExpression
-		);
+	public Iterable<Node> getChildrenExpressions() {
+		return Stream.of(
+						leftExpression,
+						rightExpression
+				).map(it -> (Node) it)
+				.toList();
 	}
 }
