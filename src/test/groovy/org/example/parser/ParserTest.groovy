@@ -1,9 +1,9 @@
 package org.example.parser
 
+import org.example.ast.Program
 import org.example.ast.ValueType
 import org.example.ast.expression.BlockExpression
-import org.example.ast.expression.FunctionDefinitionExpression
-import org.example.ast.expression.Program
+import org.example.ast.statement.FunctionDefinitionStatement
 import org.example.ast.type.TypeDeclaration
 import org.example.error.ErrorHandler
 import org.example.lexer.Lexer
@@ -14,7 +14,6 @@ import org.example.token.type.KeywordToken
 import org.example.token.type.StringToken
 import spock.lang.Specification
 import spock.lang.Subject
-
 
 class ParserTest extends Specification {
 
@@ -60,7 +59,7 @@ class ParserTest extends Specification {
 		parser.parseProgram() == new Program(
 				Map.of(
 						"main",
-						new FunctionDefinitionExpression(
+						new FunctionDefinitionStatement(
 								"main",
 								List.of(),
 								new TypeDeclaration(ValueType.VOID), new BlockExpression(List.of())

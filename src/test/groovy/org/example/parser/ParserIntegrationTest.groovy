@@ -1,14 +1,13 @@
 package org.example.parser
 
+import org.example.ast.Program
 import org.example.ast.ValueType
 import org.example.ast.expression.BlockExpression
-import org.example.ast.expression.FunctionDefinitionExpression
-import org.example.ast.expression.Program
+import org.example.ast.statement.FunctionDefinitionStatement
 import org.example.ast.type.TypeDeclaration
 import org.example.error.ErrorHandler
 import org.example.lexer.LexerImpl
 import spock.lang.Specification
-
 
 class ParserIntegrationTest extends Specification {
 
@@ -40,6 +39,6 @@ class ParserIntegrationTest extends Specification {
 
 		where:
 		program         || result
-		"fun main() {}" || new Program(Map.of("main", new FunctionDefinitionExpression("main", List.of(), new TypeDeclaration(ValueType.VOID), new BlockExpression(List.of()))), List.of())
+		"fun main() {}" || new Program(Map.of("main", new FunctionDefinitionStatement("main", List.of(), new TypeDeclaration(ValueType.VOID), new BlockExpression(List.of()))), List.of())
 	}
 }

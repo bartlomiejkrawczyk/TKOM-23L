@@ -8,7 +8,7 @@ import org.example.ast.Statement;
 
 @Value
 @ToString(exclude = {"statements"})
-public class BlockExpression implements Node {
+public class BlockExpression implements Statement {
 
 	List<Statement> statements;
 

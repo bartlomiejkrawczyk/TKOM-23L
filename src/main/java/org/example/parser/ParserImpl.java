@@ -6,12 +6,18 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import org.example.ast.Expression;
+import org.example.ast.Program;
+import org.example.ast.Statement;
 import org.example.ast.ValueType;
 import org.example.ast.expression.Argument;
 import org.example.ast.expression.BlockExpression;
-import org.example.ast.expression.DeclarationExpression;
-import org.example.ast.expression.FunctionDefinitionExpression;
-import org.example.ast.expression.Program;
+import org.example.ast.statement.AssignmentStatement;
+import org.example.ast.statement.DeclarationStatement;
+import org.example.ast.statement.ForStatement;
+import org.example.ast.statement.FunctionDefinitionStatement;
+import org.example.ast.statement.IfStatement;
+import org.example.ast.statement.WhileStatement;
 import org.example.ast.type.TypeDeclaration;
 import org.example.error.ErrorHandler;
 import org.example.lexer.Lexer;
@@ -40,13 +46,13 @@ public class ParserImpl implements Parser {
 	@Override
 	public Program parseProgram() {
 		nextToken();
-		var functionDefinitions = new HashMap<String, FunctionDefinitionExpression>();
-		var declarations = new ArrayList<DeclarationExpression>();
+		var functionDefinitions = new HashMap<String, FunctionDefinitionStatement>();
+		var declarations = new ArrayList<DeclarationStatement>();
 
 		boolean parse;
 		do {
 			parse = fillIn(this::parseFunctionDefinition, it -> functionDefinitions.put(it.getName(), it))
-					.orElseGet(() -> fillIn(this::parseDeclaration, declarations::add)
+					.orElseGet(() -> fillIn(this::parseDeclarationStatement, declarations::add)
 							.orElseGet(() -> skipIf(TokenType.SEMICOLON)));
 		} while (parse);
 
@@ -87,7 +93,7 @@ public class ParserImpl implements Parser {
 		}
 	}
 
-	private Optional<FunctionDefinitionExpression> parseFunctionDefinition() {
+	private Optional<FunctionDefinitionStatement> parseFunctionDefinition() {
 		if (currentToken.getType() != TokenType.FUNCTION_DEFINITION) {
 			return Optional.empty();
 		}
@@ -125,11 +131,11 @@ public class ParserImpl implements Parser {
 		}
 
 		var block = parseBlock().orElseGet(() -> new BlockExpression(List.of()));
-		return Optional.of(new FunctionDefinitionExpression(name, arguments, returnType, block));
+		return Optional.of(new FunctionDefinitionStatement(name, arguments, returnType, block));
 	}
 
-	private Optional<DeclarationExpression> parseDeclaration() {
-		// TODO: parse declaration
+	private Optional<DeclarationStatement> parseDeclarationStatement() {
+		// TODO: implement me!
 		return Optional.empty();
 	}
 
@@ -170,10 +176,69 @@ public class ParserImpl implements Parser {
 	}
 
 	private Optional<BlockExpression> parseBlock() {
-		handleSkip(TokenType.OPEN_CURLY_PARENTHESES);
-		// TODO: implement me!
-		nextToken();
+		if (!skipIf(TokenType.OPEN_CURLY_PARENTHESES)) {
+			return Optional.empty();
+		}
+		var statements = new ArrayList<Statement>();
+		var statement = parseStatement();
+		while (statement.isPresent()) {
+			statements.add(statement.get());
+			statement = parseStatement();
+		}
 		handleSkip(TokenType.CLOSED_CURLY_PARENTHESES);
+		return Optional.of(new BlockExpression(statements));
+	}
+
+	private final List<Supplier<Optional<? extends Statement>>> statementSuppliers = List.of(
+			this::parseIfStatement,
+			this::parseWhileStatement,
+			this::parseForStatement,
+			this::parseDeclarationStatement,
+			this::parseAssignmentStatement,
+			this::parseSingleExpression,
+			this::parseBlock
+	);
+
+	private Optional<? extends Statement> parseStatement() {
+		for (var supplier : statementSuppliers) {
+			var statement = supplier.get();
+			if (statement.isPresent()) {
+				return statement;
+			}
+		}
+		return Optional.empty();
+	}
+
+	private Optional<IfStatement> parseIfStatement() {
+		// TODO: implement me!
+		return Optional.empty();
+	}
+
+	private Optional<WhileStatement> parseWhileStatement() {
+		// TODO: implement me!
+		return Optional.empty();
+	}
+
+	private Optional<ForStatement> parseForStatement() {
+		// TODO: implement me!
+		return Optional.empty();
+	}
+
+	private Optional<AssignmentStatement> parseAssignmentStatement() {
+		// TODO: implement me!
+		return Optional.empty();
+	}
+
+	private Optional<Expression> parseSingleExpression() {
+		var expression = parseExpression();
+		if (expression.isPresent()) {
+			handleSkip(TokenType.SEMICOLON);
+		}
+		return expression;
+	}
+
+	private Optional<Expression> parseExpression() {
+		// TODO: implement me!
 		return Optional.empty();
 	}
 }

@@ -2,7 +2,7 @@ package org.example.ast
 
 import org.example.ast.expression.ArithmeticExpression
 import org.example.ast.expression.BlockExpression
-import org.example.ast.expression.FunctionDefinitionExpression
+import org.example.ast.statement.FunctionDefinitionStatement
 import org.example.ast.type.FloatingPointValue
 import org.example.ast.type.IntegerValue
 import org.example.token.TokenType
@@ -12,7 +12,7 @@ class ExpressionTest extends Specification {
 
 	def 'Should print tree correctly'() {
 		given:
-		var expression = new FunctionDefinitionExpression(
+		var expression = new FunctionDefinitionStatement(
 				"main",
 				List.of(),
 				new BlockExpression(

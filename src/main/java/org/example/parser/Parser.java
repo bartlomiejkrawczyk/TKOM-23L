@@ -1,6 +1,6 @@
 package org.example.parser;
 
-import org.example.ast.expression.Program;
+import org.example.ast.Program;
 
 public interface Parser {
 
