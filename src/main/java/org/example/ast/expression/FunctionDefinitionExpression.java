@@ -1,12 +1,11 @@
 package org.example.ast.expression;
 
 import java.util.List;
-import java.util.Map;
 import lombok.ToString;
 import lombok.Value;
 import org.example.ast.Expression;
 import org.example.ast.Node;
-import org.example.ast.ValueType;
+import org.example.ast.type.TypeDeclaration;
 
 
 @ToString(exclude = {"body"})
@@ -15,7 +14,8 @@ public class FunctionDefinitionExpression implements Expression {
 
 	String name;
 	// TODO: Consider instead of ValueType using String to allow for user defined types
-	Map<String, ValueType> arguments;
+	List<Argument> arguments;
+	TypeDeclaration returnType;
 	BlockExpression body;
 
 	@Override

@@ -6,27 +6,23 @@ import lombok.Getter;
 import lombok.ToString;
 import lombok.experimental.FieldDefaults;
 import org.example.token.Token;
-import org.example.token.TokenType;
 
 @Getter
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 @EqualsAndHashCode(callSuper = false)
 @ToString
-public class UnexpectedTokenException extends ParserException {
+public class ExpectedTypeDeclarationException extends ParserException {
 
-	TokenType expectedType;
 	Token token;
 
-	public UnexpectedTokenException(TokenType expectedType, Token token) {
+	public ExpectedTypeDeclarationException(Token token) {
 		super(
 				String.format(
-						"UnexpectedToken: %s at position position %s%nExpected: %s",
+						"ExpectedTypeDeclaration: %s at position position %s",
 						token,
-						token.getPosition().toPositionString(),
-						expectedType
+						token.getPosition().toPositionString()
 				)
 		);
-		this.expectedType = expectedType;
 		this.token = token;
 	}
 }

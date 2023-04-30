@@ -17,6 +17,7 @@ public enum ValueType {
 	COMPARATOR(TokenType.COMPARATOR, true),
 	ITERABLE(TokenType.ITERABLE, true),
 	TUPLE(TokenType.TUPLE, true),
+	VOID(TokenType.VOID, true),
 	;
 
 	private final TokenType type;
