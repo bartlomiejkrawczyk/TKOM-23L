@@ -14,7 +14,7 @@ class ExpressionTest extends Specification {
 		given:
 		var expression = new FunctionDefinitionExpression(
 				"main",
-				Map.of(),
+				List.of(),
 				new BlockExpression(
 						List.of(
 								new ArithmeticExpression(

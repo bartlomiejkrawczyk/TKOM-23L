@@ -5,9 +5,11 @@ import org.example.parser.error.UnknownTokenException
 import org.example.token.Position
 import org.example.token.type.IntegerToken
 import spock.lang.Specification
+import spock.lang.Subject
 
 class ErrorHandlerTest extends Specification {
 
+	@Subject
 	var errorHandler = new ErrorHandlerImpl()
 
 	def 'Should handle lexer errors correctly'() {

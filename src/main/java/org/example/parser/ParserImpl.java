@@ -75,7 +75,7 @@ public class ParserImpl implements Parser {
 	}
 
 	private void skipUntil(TokenType tokenType) {
-		while (currentToken.getType() != tokenType || currentToken.getType() != TokenType.END_OF_FILE) {
+		while (currentToken.getType() != tokenType && currentToken.getType() != TokenType.END_OF_FILE) {
 			nextToken();
 		}
 	}
@@ -101,6 +101,7 @@ public class ParserImpl implements Parser {
 		}
 
 		var name = currentToken.<String>getValue();
+		nextToken();
 		handleSkip(TokenType.OPEN_ROUND_PARENTHESES);
 
 		var arguments = new ArrayList<Argument>();
@@ -169,7 +170,10 @@ public class ParserImpl implements Parser {
 	}
 
 	private Optional<BlockExpression> parseBlock() {
+		handleSkip(TokenType.OPEN_CURLY_PARENTHESES);
 		// TODO: implement me!
+		nextToken();
+		handleSkip(TokenType.CLOSED_CURLY_PARENTHESES);
 		return Optional.empty();
 	}
 }

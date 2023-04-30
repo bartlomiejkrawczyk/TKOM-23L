@@ -4,6 +4,7 @@ import org.example.token.Position
 import org.example.token.TokenType
 import org.example.token.type.StringToken
 import spock.lang.Specification
+import spock.lang.Subject
 
 
 class CommentFilterLexerTest extends Specification {
@@ -18,6 +19,8 @@ class CommentFilterLexerTest extends Specification {
 	def 'Should filter comments correctly'() {
 		given:
 		var lexer = Mock(Lexer)
+
+		@Subject
 		var filter = new CommentFilterLexer(lexer)
 
 		1 * lexer.nextToken() >> new StringToken(tokenType, position, comment)

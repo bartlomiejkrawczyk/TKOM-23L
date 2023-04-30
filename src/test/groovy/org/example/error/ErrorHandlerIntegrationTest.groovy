@@ -3,10 +3,12 @@ package org.example.error
 import org.example.lexer.LexerImpl
 import org.example.token.TokenType
 import spock.lang.Specification
+import spock.lang.Subject
 
 
 class ErrorHandlerIntegrationTest extends Specification {
 
+	@Subject
 	var errorHandler = new ErrorHandlerImpl()
 
 	def 'Should log errors correctly'() {
