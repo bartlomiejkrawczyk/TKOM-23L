@@ -1,8 +1,10 @@
 package org.example.parser;
 
+import io.vavr.Function2;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -22,12 +24,28 @@ import org.example.ast.expression.MethodCallExpression;
 import org.example.ast.expression.SelectExpression;
 import org.example.ast.expression.TupleCallExpression;
 import org.example.ast.expression.TupleExpression;
+import org.example.ast.expression.arithmetic.AddArithmeticExpression;
+import org.example.ast.expression.arithmetic.DivideArithmeticExpression;
+import org.example.ast.expression.arithmetic.MultiplyArithmeticExpression;
+import org.example.ast.expression.arithmetic.NegationArithmeticExpression;
+import org.example.ast.expression.arithmetic.SubtractArithmeticExpression;
+import org.example.ast.expression.logical.AndLogicalExpression;
+import org.example.ast.expression.logical.OrLogicalExpression;
+import org.example.ast.expression.relation.EqualityLogicalExpression;
+import org.example.ast.expression.relation.GreaterEqualLogicalExpression;
+import org.example.ast.expression.relation.GreaterLogicalExpression;
+import org.example.ast.expression.relation.InequalityLogicalExpression;
+import org.example.ast.expression.relation.LessEqualLogicalExpression;
+import org.example.ast.expression.relation.LessLogicalExpression;
 import org.example.ast.statement.AssignmentStatement;
 import org.example.ast.statement.DeclarationStatement;
 import org.example.ast.statement.ForStatement;
 import org.example.ast.statement.FunctionDefinitionStatement;
 import org.example.ast.statement.IfStatement;
 import org.example.ast.statement.WhileStatement;
+import org.example.ast.type.BooleanValue;
+import org.example.ast.type.FloatingPointValue;
+import org.example.ast.type.IntegerValue;
 import org.example.ast.type.TypeDeclaration;
 import org.example.error.ErrorHandler;
 import org.example.lexer.Lexer;
@@ -332,6 +350,7 @@ public class ParserImpl implements Parser {
 		return Optional.empty();
 	}
 
+	// TODO: parseIdentifierOrFunctionCallOrMethodCallOrTupleCall
 	private Optional<IdentifierExpression> parseIdentifier() {
 		if (currentToken.getType() != TokenType.IDENTIFIER) {
 			return Optional.empty();
@@ -340,13 +359,144 @@ public class ParserImpl implements Parser {
 	}
 
 	private Optional<ArithmeticExpression> parseArithmeticExpression() {
+		var leftOptional = parseFactor();
+		if (leftOptional.isEmpty()) {
+			return Optional.empty();
+		}
+		var left = leftOptional.get();
+
+		while (currentToken.getType() != TokenType.END_OF_FILE) {
+			if (skipIf(TokenType.PLUS)) {
+				var right = retrieveItem(parseFactor(), "Missing factor");
+				left = new AddArithmeticExpression(left, right);
+			} else if (skipIf(TokenType.MINUS)) {
+				var right = retrieveItem(parseFactor(), "Missing factor");
+				left = new SubtractArithmeticExpression(left, right);
+			} else {
+				break;
+			}
+		}
+
+		return Optional.of(left);
+	}
+
+	private Optional<ArithmeticExpression> parseFactor() {
+		var leftOptional = parseTerm();
+		if (leftOptional.isEmpty()) {
+			return Optional.empty();
+		}
+
+		var left = leftOptional.get();
+
+		while (currentToken.getType() != TokenType.END_OF_FILE) {
+			if (skipIf(TokenType.TIMES)) {
+				var right = retrieveItem(parseTerm(), "Missing term");
+				left = new MultiplyArithmeticExpression(left, right);
+			} else if (skipIf(TokenType.DIVIDE)) {
+				var right = retrieveItem(parseTerm(), "Missing term");
+				left = new DivideArithmeticExpression(left, right);
+			} else {
+				break;
+			}
+		}
+		return Optional.of(left);
+	}
+
+	private Optional<ArithmeticExpression> parseTerm() {
+		var negate = skipIf(TokenType.MINUS);
+
+		Optional<ArithmeticExpression> expression = Optional.empty();
 		// TODO: implement me!
+
+		//				parseLiteral()
+		//				.orElseGet(() -> parseIdentifier().get());
+
+
+		return expression.map(it -> negate ? new NegationArithmeticExpression(it) : it);
+	}
+
+	private Optional<ArithmeticExpression> parseLiteral() {
+		if (currentToken.getType() == TokenType.INTEGER_CONSTANT) {
+			return Optional.of(new IntegerValue(currentToken.getValue()));
+		} else if (currentToken.getType() == TokenType.FLOATING_POINT_CONSTANT) {
+			return Optional.of(new FloatingPointValue(currentToken.getValue()));
+		}
 		return Optional.empty();
 	}
 
 	private Optional<LogicalExpression> parseLogicalExpression() {
-		// TODO: implement me!
-		return Optional.empty();
+		var leftOptional = parseLogicFactor();
+		if (leftOptional.isEmpty()) {
+			return Optional.empty();
+		}
+
+		var left = leftOptional.get();
+
+		while (currentToken.getType() != TokenType.END_OF_FILE) {
+			if (skipIf(TokenType.OR)) {
+				var right = retrieveItem(parseLogicFactor(), "Missing logic factor");
+				left = new OrLogicalExpression(left, right);
+			} else {
+				break;
+			}
+		}
+
+		return Optional.of(left);
+	}
+
+	private Optional<LogicalExpression> parseLogicFactor() {
+		var leftOptional = parseRelation();
+		if (leftOptional.isEmpty()) {
+			return Optional.empty();
+		}
+
+		var left = leftOptional.get();
+
+		while (currentToken.getType() != TokenType.END_OF_FILE) {
+			if (skipIf(TokenType.AND)) {
+				var right = retrieveItem(parseRelation(), "Missing relation");
+				left = new AndLogicalExpression(left, right);
+			} else {
+				break;
+			}
+		}
+
+		return Optional.of(left);
+	}
+
+	private final Map<TokenType, Function2<ArithmeticExpression, ArithmeticExpression, LogicalExpression>> relationExpressions = Map.of(
+			TokenType.LESS, Function2.of(LessLogicalExpression::new),
+			TokenType.LESS_EQUAL, Function2.of(LessEqualLogicalExpression::new),
+			TokenType.EQUALITY, Function2.of(EqualityLogicalExpression::new),
+			TokenType.GREATER_EQUAL, Function2.of(GreaterEqualLogicalExpression::new),
+			TokenType.GREATER, Function2.of(GreaterLogicalExpression::new),
+			TokenType.INEQUALITY, Function2.of(InequalityLogicalExpression::new)
+	);
+
+	private Optional<LogicalExpression> parseRelation() {
+		var negate = skipIf(TokenType.NOT);
+
+		if (skipIf(TokenType.BOOLEAN_TRUE)) {
+			return Optional.of(new BooleanValue(!negate));
+		}
+		if (skipIf(TokenType.BOOLEAN_FALSE)) {
+			return Optional.of(new BooleanValue(negate));
+		}
+
+		var leftOptionalExpression = parseArithmeticExpression();
+		if (leftOptionalExpression.isEmpty()) {
+			return Optional.empty();
+		}
+		var left = leftOptionalExpression.get();
+
+		var type = currentToken.getType();
+		if (!relationExpressions.containsKey(type)) {
+			throw new CriticalParserException("Missing relation operator", currentToken);
+		}
+		var constructor = relationExpressions.get(type);
+		var right = retrieveItem(parseArithmeticExpression(), "Missing arithmetic expression");
+
+		return Optional.of(constructor.apply(left, right));
 	}
 
 	private Optional<FunctionCallExpression> parseFunctionCall() {
