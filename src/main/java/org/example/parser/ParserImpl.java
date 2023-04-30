@@ -6,12 +6,22 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import lombok.NonNull;
 import org.example.ast.Expression;
 import org.example.ast.Program;
 import org.example.ast.Statement;
 import org.example.ast.ValueType;
 import org.example.ast.expression.Argument;
+import org.example.ast.expression.ArithmeticExpression;
 import org.example.ast.expression.BlockExpression;
+import org.example.ast.expression.FunctionCallExpression;
+import org.example.ast.expression.IdentifierExpression;
+import org.example.ast.expression.LogicalExpression;
+import org.example.ast.expression.MapExpression;
+import org.example.ast.expression.MethodCallExpression;
+import org.example.ast.expression.SelectExpression;
+import org.example.ast.expression.TupleCallExpression;
+import org.example.ast.expression.TupleExpression;
 import org.example.ast.statement.AssignmentStatement;
 import org.example.ast.statement.DeclarationStatement;
 import org.example.ast.statement.ForStatement;
@@ -21,12 +31,23 @@ import org.example.ast.statement.WhileStatement;
 import org.example.ast.type.TypeDeclaration;
 import org.example.error.ErrorHandler;
 import org.example.lexer.Lexer;
+import org.example.parser.error.CriticalParserException;
 import org.example.parser.error.ExpectedTypeDeclarationException;
 import org.example.parser.error.UnexpectedTokenException;
 import org.example.token.Token;
 import org.example.token.TokenType;
 
 public class ParserImpl implements Parser {
+
+	private final List<Supplier<Optional<? extends Statement>>> statementSuppliers = List.of(
+			this::parseIfStatement,
+			this::parseWhileStatement,
+			this::parseForStatement,
+			this::parseDeclarationStatement,
+			this::parseAssignmentStatement,
+			this::parseSingleExpression,
+			this::parseBlock
+	);
 
 	private final Lexer lexer;
 	private final ErrorHandler errorHandler;
@@ -93,20 +114,21 @@ public class ParserImpl implements Parser {
 		}
 	}
 
+	@NonNull
+	@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
+	private <T> T retrieveItem(@NonNull Optional<T> optional, String errorMessage) {
+		if (optional.isEmpty()) {
+			throw new CriticalParserException(errorMessage, currentToken);
+		}
+		return optional.get();
+	}
+
 	private Optional<FunctionDefinitionStatement> parseFunctionDefinition() {
 		if (currentToken.getType() != TokenType.FUNCTION_DEFINITION) {
 			return Optional.empty();
 		}
 		nextToken();
-
-		if (currentToken.getType() != TokenType.IDENTIFIER) {
-			errorHandler.handleParserException(new UnexpectedTokenException(TokenType.IDENTIFIER, currentToken));
-			skipUntil(TokenType.CLOSED_CURLY_PARENTHESES);
-			// TODO: reconsider
-			return Optional.empty();
-		}
-
-		var name = currentToken.<String>getValue();
+		var name = getIdentifierOrThrow();
 		nextToken();
 		handleSkip(TokenType.OPEN_ROUND_PARENTHESES);
 
@@ -135,8 +157,18 @@ public class ParserImpl implements Parser {
 	}
 
 	private Optional<DeclarationStatement> parseDeclarationStatement() {
-		// TODO: implement me!
-		return Optional.empty();
+		var typeDeclaration = parseTypeDeclaration();
+		if (typeDeclaration.isEmpty()) {
+			return Optional.empty();
+		}
+		var identifier = getIdentifierOrThrow();
+		// TODO: may add default values for all the object types (:
+		handleSkip(TokenType.EQUALS);
+		var expression = retrieveItem(parseExpression(), "Missing expression");
+		handleSkip(TokenType.SEMICOLON);
+		return Optional.of(
+				new DeclarationStatement(new Argument(identifier, typeDeclaration.get()), expression)
+		);
 	}
 
 	private Optional<Argument> parseArgument() {
@@ -189,44 +221,83 @@ public class ParserImpl implements Parser {
 		return Optional.of(new BlockExpression(statements));
 	}
 
-	private final List<Supplier<Optional<? extends Statement>>> statementSuppliers = List.of(
-			this::parseIfStatement,
-			this::parseWhileStatement,
-			this::parseForStatement,
-			this::parseDeclarationStatement,
-			this::parseAssignmentStatement,
-			this::parseSingleExpression,
-			this::parseBlock
-	);
-
-	private Optional<? extends Statement> parseStatement() {
+	@SuppressWarnings("unchecked")
+	private Optional<Statement> parseStatement() {
 		for (var supplier : statementSuppliers) {
 			var statement = supplier.get();
 			if (statement.isPresent()) {
-				return statement;
+				return (Optional<Statement>) statement;
 			}
+		}
+		// TODO: check for infinite loops :^o
+		if (skipIf(TokenType.SEMICOLON)) {
+			return Optional.of(new BlockExpression(List.of()));
 		}
 		return Optional.empty();
 	}
 
 	private Optional<IfStatement> parseIfStatement() {
-		// TODO: implement me!
-		return Optional.empty();
+		if (!skipIf(TokenType.IF)) {
+			return Optional.empty();
+		}
+		var condition = retrieveItem(parseLogicalExpression(), "Missing condition");
+		var ifTrue = retrieveItem(parseStatement(), "Missing statement");
+		Optional<Statement> ifFalse = skipIf(TokenType.ELSE)
+				? parseStatement()
+				: Optional.empty();
+
+		return Optional.of(
+				new IfStatement(condition, ifTrue, ifFalse.orElseGet(() -> new BlockExpression(List.of())))
+		);
 	}
 
 	private Optional<WhileStatement> parseWhileStatement() {
-		// TODO: implement me!
-		return Optional.empty();
+		if (!skipIf(TokenType.WHILE)) {
+			return Optional.empty();
+		}
+		var condition = retrieveItem(parseLogicalExpression(), "Missing logical expression");
+		var statement = parseStatement().orElseGet(() -> new BlockExpression(List.of()));
+		return Optional.of(
+				new WhileStatement(condition, statement)
+		);
 	}
 
 	private Optional<ForStatement> parseForStatement() {
-		// TODO: implement me!
-		return Optional.empty();
+		if (!skipIf(TokenType.FOR)) {
+			return Optional.empty();
+		}
+
+		handleSkip(TokenType.OPEN_ROUND_PARENTHESES);
+		var type = retrieveItem(parseTypeDeclaration(), "Missing type declaration");
+		var identifier = getIdentifierOrThrow();
+		nextToken();
+		handleSkip(TokenType.COLON);
+
+		var iterable = retrieveItem(parseExpression(), "Missing iterable expression");
+
+		nextToken();
+		handleSkip(TokenType.CLOSED_ROUND_PARENTHESES);
+
+		var body = parseStatement().orElseGet(() -> new BlockExpression(List.of()));
+
+		return Optional.of(new ForStatement(new Argument(identifier, type), iterable, body));
 	}
 
 	private Optional<AssignmentStatement> parseAssignmentStatement() {
-		// TODO: implement me!
-		return Optional.empty();
+		if (currentToken.getType() != TokenType.IDENTIFIER) {
+			return Optional.empty();
+		}
+		var identifier = currentToken.<String>getValue();
+		nextToken();
+		handleSkip(TokenType.EQUALS);
+		var expression = retrieveItem(parseExpression(), "Assignment should end with an expression");
+		handleSkip(TokenType.SEMICOLON);
+		return Optional.of(
+				new AssignmentStatement(
+						identifier,
+						expression
+				)
+		);
 	}
 
 	private Optional<Expression> parseSingleExpression() {
@@ -237,8 +308,81 @@ public class ParserImpl implements Parser {
 		return expression;
 	}
 
+	// TODO: extract to single function starting with identifier !!!
+	private final List<Supplier<Optional<? extends Expression>>> expressionSuppliers = List.of(
+			this::parseIdentifier,
+			this::parseArithmeticExpression,
+			this::parseLogicalExpression,
+			this::parseFunctionCall,
+			this::parseMethodCall,
+			this::parseTupleCall,
+			this::parseSelectExpression,
+			this::parseTupleExpression,
+			this::parseMapExpression
+	);
+
+	@SuppressWarnings("unchecked")
 	private Optional<Expression> parseExpression() {
+		for (var supplier : expressionSuppliers) {
+			var expression = supplier.get();
+			if (expression.isPresent()) {
+				return (Optional<Expression>) expression;
+			}
+		}
+		return Optional.empty();
+	}
+
+	private Optional<IdentifierExpression> parseIdentifier() {
+		if (currentToken.getType() != TokenType.IDENTIFIER) {
+			return Optional.empty();
+		}
+		return Optional.of(new IdentifierExpression(currentToken.getValue()));
+	}
+
+	private Optional<ArithmeticExpression> parseArithmeticExpression() {
 		// TODO: implement me!
 		return Optional.empty();
+	}
+
+	private Optional<LogicalExpression> parseLogicalExpression() {
+		// TODO: implement me!
+		return Optional.empty();
+	}
+
+	private Optional<FunctionCallExpression> parseFunctionCall() {
+		// TODO: implement me!
+		return Optional.empty();
+	}
+
+	private Optional<MethodCallExpression> parseMethodCall() {
+		// TODO: implement me!
+		return Optional.empty();
+	}
+
+	private Optional<TupleCallExpression> parseTupleCall() {
+		// TODO: implement me!
+		return Optional.empty();
+	}
+
+	private Optional<SelectExpression> parseSelectExpression() {
+		// TODO: implement me!
+		return Optional.empty();
+	}
+
+	private Optional<TupleExpression> parseTupleExpression() {
+		// TODO: implement me!
+		return Optional.empty();
+	}
+
+	private Optional<MapExpression> parseMapExpression() {
+		// TODO: implement me!
+		return Optional.empty();
+	}
+
+	private String getIdentifierOrThrow() {
+		return retrieveItem(
+				Optional.of(currentToken).filter(it -> it.getType() == TokenType.IDENTIFIER),
+				"Missing identifier"
+		).getValue();
 	}
 }

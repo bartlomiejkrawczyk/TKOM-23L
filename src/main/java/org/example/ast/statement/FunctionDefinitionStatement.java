@@ -15,7 +15,6 @@ import org.example.ast.type.TypeDeclaration;
 public class FunctionDefinitionStatement implements Statement {
 
 	String name;
-	// TODO: Consider instead of ValueType using String to allow for user defined types
 	List<Argument> arguments;
 	TypeDeclaration returnType;
 	BlockExpression body;
