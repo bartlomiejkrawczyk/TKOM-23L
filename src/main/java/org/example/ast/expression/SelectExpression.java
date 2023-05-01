@@ -12,9 +12,9 @@ public class SelectExpression implements Expression {
 
 	TupleExpression select;
 	Map.Entry<String, Expression> from;
-	List<Tuple3<String, Expression, LogicalExpression>> join;
-	LogicalExpression where;
+	List<Tuple3<String, Expression, Expression>> join;
+	Expression where;
 	List<Expression> groupBy;
-	LogicalExpression having;
+	Expression having;
 	List<Pair<Expression, Boolean>> orderBy;
 }

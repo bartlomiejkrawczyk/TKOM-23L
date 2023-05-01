@@ -129,7 +129,7 @@ class ParserIntegrationTest extends Specification {
 		where:
 		program              || result
 		"int a = 1 + 2 * 3;" || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.INTEGER)), new AddArithmeticExpression(new IntegerValue(1), new MultiplyArithmeticExpression(new IntegerValue(2), new IntegerValue(3))))))
-
+		"int a = 1 + i * 3;" || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.INTEGER)), new AddArithmeticExpression(new IntegerValue(1), new MultiplyArithmeticExpression(new IdentifierExpression("i"), new IntegerValue(3))))))
 	}
 
 	def 'Should be able to perform logical operations'() {
@@ -142,5 +142,6 @@ class ParserIntegrationTest extends Specification {
 		where:
 		program                                || result
 		"boolean a = false or true and false;" || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.BOOLEAN)), new OrLogicalExpression(new BooleanValue(false), new AndLogicalExpression(new BooleanValue(true), new BooleanValue(false))))))
+		"boolean a = false or b and false;" || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.BOOLEAN)), new OrLogicalExpression(new BooleanValue(false), new AndLogicalExpression(new IdentifierExpression("b"), new BooleanValue(false))))))
 	}
 }

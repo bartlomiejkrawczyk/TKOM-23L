@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import lombok.NonNull;
@@ -19,17 +20,14 @@ import org.example.ast.Program;
 import org.example.ast.Statement;
 import org.example.ast.ValueType;
 import org.example.ast.expression.Argument;
-import org.example.ast.expression.ArithmeticExpression;
 import org.example.ast.expression.BlockExpression;
 import org.example.ast.expression.FunctionCallExpression;
 import org.example.ast.expression.IdentifierExpression;
-import org.example.ast.expression.LogicalExpression;
 import org.example.ast.expression.MapExpression;
 import org.example.ast.expression.MethodCallExpression;
 import org.example.ast.expression.SelectExpression;
 import org.example.ast.expression.TupleCallExpression;
 import org.example.ast.expression.TupleExpression;
-import org.example.ast.expression.ValueExpression;
 import org.example.ast.expression.arithmetic.AddArithmeticExpression;
 import org.example.ast.expression.arithmetic.DivideArithmeticExpression;
 import org.example.ast.expression.arithmetic.MultiplyArithmeticExpression;
@@ -87,9 +85,8 @@ public class ParserImpl implements Parser {
 		this.errorHandler = errorHandler;
 	}
 
-	private Token nextToken() {
+	private void nextToken() {
 		currentToken = lexer.nextToken();
-		return currentToken;
 	}
 
 	@Override
@@ -193,7 +190,7 @@ public class ParserImpl implements Parser {
 		var identifier = getIdentifierOrThrow();
 		// TODO: may add default values for all the object types (:
 		handleSkip(TokenType.EQUALS);
-		var expression = retrieveItem(parseExpression(), "Missing expression");
+		var expression = retrieveItem(parseExpression(), "Missing expression in declaration statement");
 		handleSkip(TokenType.SEMICOLON);
 		return Optional.of(
 				new DeclarationStatement(new Argument(identifier, typeDeclaration.get()), expression)
@@ -346,12 +343,7 @@ public class ParserImpl implements Parser {
 	}
 
 	private final List<Supplier<Optional<? extends Expression>>> expressionSuppliers = List.of(
-			this::parseExpressionStartingWithParentheses,
-			this::parseExpressionStartingWithIdentifier,
-			this::parseExpressionStartingWithInteger,
-			this::parseExpressionStartingWithFloatingPoint,
-			this::parseExpressionStartingWithString,
-			this::parseExpressionStartingWithBoolean,
+			this::parseLogicalExpression,
 			this::parseSelectExpression,
 			this::parseMapExpression
 	);
@@ -416,52 +408,25 @@ public class ParserImpl implements Parser {
 		return Optional.of(new IdentifierExpression(identifier));
 	}
 
-	// TODO: simplify those \/ \/ \/ to a parametrized function
-	private Optional<Expression> parseExpressionStartingWithInteger() {
-		if (currentToken.getType() != TokenType.INTEGER_CONSTANT) {
-			return Optional.empty();
+	private final List<Pair<Predicate<TokenType>, Function<?, Expression>>> simpleTypeParser = List.of(
+			Pair.of(it -> it == TokenType.INTEGER_CONSTANT, (Function<Integer, Expression>) IntegerValue::new),
+			Pair.of(it -> it == TokenType.FLOATING_POINT_CONSTANT, (Function<Double, Expression>) FloatingPointValue::new),
+			Pair.of(LexerUtility.STRINGS::containsValue, (Function<String, Expression>) StringValue::new)
+	);
+
+	private Optional<Expression> parseSimpleTypeExpression() {
+		var type = currentToken.getType();
+		for (var pair : simpleTypeParser) {
+			if (pair.getKey().test(type)) {
+				var result = pair.getValue().apply(currentToken.getValue());
+				nextToken();
+				return Optional.of(result);
+			}
 		}
-
-		var value = currentToken.<Integer>getValue();
-		nextToken();
-
-		return Optional.of(new IntegerValue(value));
+		return Optional.empty();
 	}
 
-	private Optional<Expression> parseExpressionStartingWithFloatingPoint() {
-		if (currentToken.getType() != TokenType.FLOATING_POINT_CONSTANT) {
-			return Optional.empty();
-		}
-
-		var value = currentToken.<Double>getValue();
-		nextToken();
-
-		return Optional.of(new FloatingPointValue(value));
-	}
-
-	private Optional<Expression> parseExpressionStartingWithString() {
-		if (!LexerUtility.STRINGS.containsValue(currentToken.getType())) {
-			return Optional.empty();
-		}
-
-		var value = currentToken.<String>getValue();
-		nextToken();
-
-		return Optional.of(new StringValue(value));
-	}
-
-	private Optional<Expression> parseExpressionStartingWithBoolean() {
-		if (!LexerUtility.BOOLEANS.contains(currentToken.getType())) {
-			return Optional.empty();
-		}
-
-		var value = currentToken.<Boolean>getValue();
-		nextToken();
-
-		return Optional.of(new BooleanValue(value));
-	}
-
-	private Optional<ArithmeticExpression> parseArithmeticExpression() {
+	private Optional<Expression> parseArithmeticExpression() {
 		var leftOptional = parseFactor();
 		if (leftOptional.isEmpty()) {
 			return Optional.empty();
@@ -483,7 +448,7 @@ public class ParserImpl implements Parser {
 		return Optional.of(left);
 	}
 
-	private Optional<ArithmeticExpression> parseFactor() {
+	private Optional<Expression> parseFactor() {
 		var leftOptional = parseTerm();
 		if (leftOptional.isEmpty()) {
 			return Optional.empty();
@@ -505,20 +470,25 @@ public class ParserImpl implements Parser {
 		return Optional.of(left);
 	}
 
-	private Optional<ArithmeticExpression> parseTerm() {
+	private final List<Supplier<Optional<Expression>>> termSuppliers = List.of(
+			this::parseSimpleTypeExpression,
+			this::parseExpressionStartingWithIdentifier,
+			this::parseExpressionStartingWithParentheses
+	);
+
+	private Optional<Expression> parseTerm() {
 		var negate = skipIf(TokenType.MINUS);
 
-		Optional<ArithmeticExpression> expression = Optional.empty();
-		// TODO: implement me!
-
-		//				parseLiteral()
-		//				.orElseGet(() -> parseIdentifier().get());
-
-
-		return expression.map(it -> negate ? new NegationArithmeticExpression(it) : it);
+		for (var function : termSuppliers) {
+			var expression = function.get();
+			if (expression.isPresent()) {
+				return expression.map(it -> negate ? new NegationArithmeticExpression(it) : it);
+			}
+		}
+		return Optional.empty();
 	}
 
-	private Optional<LogicalExpression> parseLogicalExpression() {
+	private Optional<Expression> parseLogicalExpression() {
 		var leftOptional = parseLogicFactor();
 		if (leftOptional.isEmpty()) {
 			return Optional.empty();
@@ -526,19 +496,15 @@ public class ParserImpl implements Parser {
 
 		var left = leftOptional.get();
 
-		while (currentToken.getType() != TokenType.END_OF_FILE) {
-			if (skipIf(TokenType.OR)) {
-				var right = retrieveItem(parseLogicFactor(), "Missing logic factor");
-				left = new OrLogicalExpression(left, right);
-			} else {
-				break;
-			}
+		while (skipIf(TokenType.OR)) {
+			var right = retrieveItem(parseLogicFactor(), "Missing logic factor");
+			left = new OrLogicalExpression(left, right);
 		}
 
 		return Optional.of(left);
 	}
 
-	private Optional<LogicalExpression> parseLogicFactor() {
+	private Optional<Expression> parseLogicFactor() {
 		var leftOptional = parseRelation();
 		if (leftOptional.isEmpty()) {
 			return Optional.empty();
@@ -558,7 +524,7 @@ public class ParserImpl implements Parser {
 		return Optional.of(left);
 	}
 
-	private final Map<TokenType, Function2<ArithmeticExpression, ArithmeticExpression, LogicalExpression>> relationExpressions = Map.of(
+	private final Map<TokenType, Function2<Expression, Expression, Expression>> relationExpressions = Map.of(
 			TokenType.LESS, Function2.of(LessLogicalExpression::new),
 			TokenType.LESS_EQUAL, Function2.of(LessEqualLogicalExpression::new),
 			TokenType.EQUALITY, Function2.of(EqualityLogicalExpression::new),
@@ -567,7 +533,7 @@ public class ParserImpl implements Parser {
 			TokenType.INEQUALITY, Function2.of(InequalityLogicalExpression::new)
 	);
 
-	private Optional<LogicalExpression> parseRelation() {
+	private Optional<Expression> parseRelation() {
 		var negate = skipIf(TokenType.NOT);
 
 		if (skipIf(TokenType.BOOLEAN_TRUE)) {
@@ -577,32 +543,19 @@ public class ParserImpl implements Parser {
 			return Optional.of(new BooleanValue(negate));
 		}
 
-		var expression = retrieveItem(parseExpression(), "Missing expression");
-
-		// TODO: this won't work with map / function call :(
-		if (expression instanceof ValueExpression valueExpression) {
-			var type = currentToken.getType();
-			if (!relationExpressions.containsKey(type)) {
-				return Optional.of(valueExpression);
-			}
-			var constructor = relationExpressions.get(type);
-			var right = retrieveItem(parseArithmeticExpression(), "Missing arithmetic expression");
-
-			return Optional.of(constructor.apply(valueExpression, right));
-		} else if (expression instanceof LogicalExpression logicalExpression) {
-			return Optional.of(logicalExpression);
-		} else if (expression instanceof ArithmeticExpression left) {
-			var type = currentToken.getType();
-			if (!relationExpressions.containsKey(type)) {
-				throw new CriticalParserException("Missing relation operator", currentToken);
-			}
-			var constructor = relationExpressions.get(type);
-			var right = retrieveItem(parseArithmeticExpression(), "Missing arithmetic expression");
-
-			return Optional.of(constructor.apply(left, right));
+		var expression = parseArithmeticExpression();
+		if (expression.isEmpty()) {
+			return Optional.empty();
 		}
 
-		throw new CriticalParserException("Expected logical expression", currentToken);
+		var type = currentToken.getType();
+		if (!relationExpressions.containsKey(type)) {
+			return expression;
+		}
+		var constructor = relationExpressions.get(type);
+		var right = retrieveItem(parseArithmeticExpression(), "Missing arithmetic expression");
+
+		return Optional.of(constructor.apply(expression.get(), right));
 	}
 
 	private Optional<FunctionCallExpression> parseFunctionCall(String name) {
@@ -655,7 +608,7 @@ public class ParserImpl implements Parser {
 		var select = retrieveItem(parseTupleExpression(), "Missing tuple expression");
 		handleSkip(TokenType.FROM);
 		var from = getTupleElementOrThrow();
-		var join = new ArrayList<Tuple3<String, Expression, LogicalExpression>>();
+		var join = new ArrayList<Tuple3<String, Expression, Expression>>();
 
 		var where = skipIf(TokenType.WHERE)
 				? retrieveItem(parseLogicalExpression(), "Missing 'where' logical expression")
@@ -672,9 +625,9 @@ public class ParserImpl implements Parser {
 		);
 	}
 
-	private Pair<List<Expression>, LogicalExpression> parseGroupBy() {
+	private Pair<List<Expression>, Expression> parseGroupBy() {
 		var groupBy = new ArrayList<Expression>();
-		var having = (LogicalExpression) new BooleanValue(true);
+		var having = (Expression) new BooleanValue(true);
 		if (skipIf(TokenType.GROUP) && skipIf(TokenType.BY)) {
 			do {
 				var expression = retrieveItem(parseExpression(), "Missing 'group by' expression");

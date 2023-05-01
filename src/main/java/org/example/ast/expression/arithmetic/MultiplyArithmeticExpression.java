@@ -1,11 +1,11 @@
 package org.example.ast.expression.arithmetic;
 
 import lombok.Value;
-import org.example.ast.expression.ArithmeticExpression;
+import org.example.ast.Expression;
 
 @Value
 public class MultiplyArithmeticExpression implements BinaryArithmeticExpression {
 
-	ArithmeticExpression left;
-	ArithmeticExpression right;
+	Expression left;
+	Expression right;
 }
