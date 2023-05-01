@@ -70,8 +70,7 @@ public class ParserImpl implements Parser {
 			this::parseWhileStatement,
 			this::parseForStatement,
 			this::parseDeclarationStatement,
-			this::parseAssignmentStatement,
-			this::parseSingleExpression,
+			this::parseAssignmentStatementOrSingleExpression,
 			this::parseBlock
 	);
 
@@ -305,14 +304,24 @@ public class ParserImpl implements Parser {
 		return Optional.of(new ForStatement(new Argument(identifier, type), iterable, body));
 	}
 
-	private Optional<AssignmentStatement> parseAssignmentStatement() {
+	private Optional<Statement> parseAssignmentStatementOrSingleExpression() {
 		if (currentToken.getType() != TokenType.IDENTIFIER) {
 			return Optional.empty();
 		}
 		var identifier = currentToken.<String>getValue();
 		nextToken();
 		if (!skipIf(TokenType.EQUALS)) {
-			// TODO: parse single expression starting with provided identifier
+			Expression expression = new IdentifierExpression(identifier);
+			for (var function : startingWithIdentifier) {
+				var result = function.apply(identifier);
+				if (result.isPresent()) {
+					expression = result.get();
+					break;
+				}
+			}
+			var parsed = parseExpressionStartingWithExpression(expression);
+			handleSkip(TokenType.SEMICOLON);
+			return Optional.of(parsed);
 		}
 		handleSkip(TokenType.EQUALS);
 		var expression = retrieveItem(parseExpression(), "Assignment should end with an expression");
@@ -323,14 +332,6 @@ public class ParserImpl implements Parser {
 						expression
 				)
 		);
-	}
-
-	private Optional<Expression> parseSingleExpression() {
-		var expression = parseExpression();
-		if (expression.isPresent()) {
-			handleSkip(TokenType.SEMICOLON);
-		}
-		return expression;
 	}
 
 	private final List<Supplier<Optional<? extends Expression>>> expressionSuppliers = List.of(
@@ -356,7 +357,7 @@ public class ParserImpl implements Parser {
 	}
 
 	private final List<UnaryOperator<Expression>> startingWithExpression = List.of(
-			// TODO: (tuple call / method call) / arithmetic / logical
+			// TODO: arithmetic / logical
 			this::parseTupleExpression,
 			this::parseTupleOrMethodCall,
 			this::parseMapCall
@@ -447,15 +448,6 @@ public class ParserImpl implements Parser {
 		nextToken();
 
 		return Optional.of(new BooleanValue(value));
-	}
-
-	private Optional<IdentifierExpression> parseIdentifier() {
-		if (currentToken.getType() != TokenType.IDENTIFIER) {
-			return Optional.empty();
-		}
-		var name = currentToken.<String>getValue();
-		nextToken();
-		return Optional.of(new IdentifierExpression(name));
 	}
 
 	private Optional<ArithmeticExpression> parseArithmeticExpression() {
@@ -606,29 +598,6 @@ public class ParserImpl implements Parser {
 		handleSkip(TokenType.CLOSED_ROUND_PARENTHESES);
 		return Optional.of(
 				new FunctionCallExpression(name, arguments)
-		);
-	}
-
-	private Optional<FunctionCallExpression> parseFunctionCall() {
-		var identifier = parseIdentifier();
-		if (identifier.isEmpty()) {
-			return Optional.empty();
-		}
-		var name = identifier.get();
-
-		handleSkip(TokenType.OPEN_ROUND_PARENTHESES);
-
-		var arguments = new ArrayList<Expression>();
-		if (currentToken.getType() != TokenType.CLOSED_ROUND_PARENTHESES) {
-			do {
-				var argument = retrieveItem(parseExpression(), "Missing argument expression");
-				arguments.add(argument);
-			} while (skipIf(TokenType.COMMA));
-		}
-
-		handleSkip(TokenType.CLOSED_ROUND_PARENTHESES);
-		return Optional.of(
-				new FunctionCallExpression(name.getName(), arguments)
 		);
 	}
 
