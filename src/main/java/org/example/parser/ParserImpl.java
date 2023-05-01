@@ -29,6 +29,7 @@ import org.example.ast.expression.MethodCallExpression;
 import org.example.ast.expression.SelectExpression;
 import org.example.ast.expression.TupleCallExpression;
 import org.example.ast.expression.TupleExpression;
+import org.example.ast.expression.ValueExpression;
 import org.example.ast.expression.arithmetic.AddArithmeticExpression;
 import org.example.ast.expression.arithmetic.DivideArithmeticExpression;
 import org.example.ast.expression.arithmetic.MultiplyArithmeticExpression;
@@ -334,7 +335,6 @@ public class ParserImpl implements Parser {
 			handleSkip(TokenType.SEMICOLON);
 			return Optional.of(parsed);
 		}
-		handleSkip(TokenType.EQUALS);
 		var expression = retrieveItem(parseExpression(), "Assignment should end with an expression");
 		handleSkip(TokenType.SEMICOLON);
 		return Optional.of(
@@ -577,20 +577,32 @@ public class ParserImpl implements Parser {
 			return Optional.of(new BooleanValue(negate));
 		}
 
-		var leftOptionalExpression = parseArithmeticExpression();
-		if (leftOptionalExpression.isEmpty()) {
-			return Optional.empty();
-		}
-		var left = leftOptionalExpression.get();
+		var expression = retrieveItem(parseExpression(), "Missing expression");
 
-		var type = currentToken.getType();
-		if (!relationExpressions.containsKey(type)) {
-			throw new CriticalParserException("Missing relation operator", currentToken);
-		}
-		var constructor = relationExpressions.get(type);
-		var right = retrieveItem(parseArithmeticExpression(), "Missing arithmetic expression");
+		// TODO: this won't work with map / function call :(
+		if (expression instanceof ValueExpression valueExpression) {
+			var type = currentToken.getType();
+			if (!relationExpressions.containsKey(type)) {
+				return Optional.of(valueExpression);
+			}
+			var constructor = relationExpressions.get(type);
+			var right = retrieveItem(parseArithmeticExpression(), "Missing arithmetic expression");
 
-		return Optional.of(constructor.apply(left, right));
+			return Optional.of(constructor.apply(valueExpression, right));
+		} else if (expression instanceof LogicalExpression logicalExpression) {
+			return Optional.of(logicalExpression);
+		} else if (expression instanceof ArithmeticExpression left) {
+			var type = currentToken.getType();
+			if (!relationExpressions.containsKey(type)) {
+				throw new CriticalParserException("Missing relation operator", currentToken);
+			}
+			var constructor = relationExpressions.get(type);
+			var right = retrieveItem(parseArithmeticExpression(), "Missing arithmetic expression");
+
+			return Optional.of(constructor.apply(left, right));
+		}
+
+		throw new CriticalParserException("Expected logical expression", currentToken);
 	}
 
 	private Optional<FunctionCallExpression> parseFunctionCall(String name) {
@@ -755,7 +767,7 @@ public class ParserImpl implements Parser {
 	}
 
 	private Optional<MapExpression> parseMapExpression() {
-		if (!skipIf(TokenType.OPEN_CURLY_PARENTHESES)) {
+		if (!skipIf(TokenType.OPEN_SQUARE_PARENTHESES)) {
 			return Optional.empty();
 		}
 
@@ -774,7 +786,7 @@ public class ParserImpl implements Parser {
 			}
 		}
 
-		handleSkip(TokenType.CLOSED_CURLY_PARENTHESES);
+		handleSkip(TokenType.CLOSED_SQUARE_PARENTHESES);
 		return Optional.of(
 				new MapExpression(map)
 		);

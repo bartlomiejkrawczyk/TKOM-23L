@@ -25,9 +25,9 @@ class ExpressionTest extends Specification {
 				)
 		)
 		expect:
-		expression.print() == """FunctionDefinitionStatement(name=main, arguments=[], returnType=TypeDeclaration(valueType=VOID, types=[]))
-`--- BlockExpression()
-     `--- AddArithmeticExpression()
+		expression.print() == """FunctionDefinitionStatement(name=main, arguments=[], returnType=TypeDeclaration(valueType=VOID, types=[]), body=BlockExpression(statements=[AddArithmeticExpression(left=IntegerValue(value=1), right=IntegerValue(value=2))]))
+`--- BlockExpression(statements=[AddArithmeticExpression(left=IntegerValue(value=1), right=IntegerValue(value=2))])
+     `--- AddArithmeticExpression(left=IntegerValue(value=1), right=IntegerValue(value=2))
           |--- IntegerValue(value=1)
           `--- IntegerValue(value=2)
 """

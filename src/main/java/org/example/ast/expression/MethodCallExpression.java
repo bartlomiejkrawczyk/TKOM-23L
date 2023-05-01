@@ -4,7 +4,7 @@ import lombok.Value;
 import org.example.ast.Expression;
 
 @Value
-public class MethodCallExpression implements Expression {
+public class MethodCallExpression implements ValueExpression {
 
 	Expression object;
 

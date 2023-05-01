@@ -4,7 +4,7 @@ import lombok.Value;
 import org.example.ast.Expression;
 
 @Value
-public class TupleCallExpression implements Expression {
+public class TupleCallExpression implements ValueExpression {
 
 	Expression object;
 	String identifier;
