@@ -10,7 +10,7 @@ import org.example.token.TokenType;
 @RequiredArgsConstructor
 public enum ValueType {
 	INTEGER(TokenType.INT, false),
-	FLOATING_POINT(TokenType.FLOATING_POINT_CONSTANT, false),
+	FLOATING_POINT(TokenType.DOUBLE, false),
 	STRING(TokenType.STRING, false),
 	BOOLEAN(TokenType.BOOLEAN, false),
 	MAP(TokenType.MAP, true),

@@ -8,7 +8,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
@@ -49,9 +51,11 @@ import org.example.ast.statement.WhileStatement;
 import org.example.ast.type.BooleanValue;
 import org.example.ast.type.FloatingPointValue;
 import org.example.ast.type.IntegerValue;
+import org.example.ast.type.StringValue;
 import org.example.ast.type.TypeDeclaration;
 import org.example.error.ErrorHandler;
 import org.example.lexer.Lexer;
+import org.example.lexer.LexerUtility;
 import org.example.parser.error.CriticalParserException;
 import org.example.parser.error.ExpectedTypeDeclarationException;
 import org.example.parser.error.UnexpectedTokenException;
@@ -307,6 +311,9 @@ public class ParserImpl implements Parser {
 		}
 		var identifier = currentToken.<String>getValue();
 		nextToken();
+		if (!skipIf(TokenType.EQUALS)) {
+			// TODO: parse single expression starting with provided identifier
+		}
 		handleSkip(TokenType.EQUALS);
 		var expression = retrieveItem(parseExpression(), "Assignment should end with an expression");
 		handleSkip(TokenType.SEMICOLON);
@@ -326,31 +333,119 @@ public class ParserImpl implements Parser {
 		return expression;
 	}
 
-	// TODO: extract to single function starting with identifier !!!
 	private final List<Supplier<Optional<? extends Expression>>> expressionSuppliers = List.of(
-			this::parseIdentifier,
-			this::parseArithmeticExpression,
-			this::parseLogicalExpression,
-			this::parseFunctionCall,
-//			this::parseMethodCall,
-//			this::parseTupleCall,
+			this::parseExpressionStartingWithParentheses,
+			this::parseExpressionStartingWithIdentifier,
+			this::parseExpressionStartingWithInteger,
+			this::parseExpressionStartingWithFloatingPoint,
+			this::parseExpressionStartingWithString,
+			this::parseExpressionStartingWithBoolean,
 			this::parseSelectExpression,
-//			this::parseTupleExpression,
 			this::parseMapExpression
 	);
 
-	@SuppressWarnings("unchecked")
 	private Optional<Expression> parseExpression() {
 		for (var supplier : expressionSuppliers) {
 			var expression = supplier.get();
 			if (expression.isPresent()) {
-				return (Optional<Expression>) expression;
+				var result = parseExpressionStartingWithExpression(expression.get());
+				return Optional.of(result);
 			}
 		}
 		return Optional.empty();
 	}
 
-	// TODO: parseIdentifierOrFunctionCallOrMethodCallOrTupleCall
+	private final List<UnaryOperator<Expression>> startingWithExpression = List.of(
+			// TODO: tuple / (tuple' / method call) / arithmetic / logical
+	);
+
+	private Expression parseExpressionStartingWithExpression(Expression expression) {
+		for (var function : startingWithExpression) {
+			var result = function.apply(expression);
+			if (result != expression) {
+				return result;
+			}
+		}
+		return expression;
+	}
+
+	private Optional<Expression> parseExpressionStartingWithParentheses() {
+		if (!skipIf(TokenType.OPEN_ROUND_PARENTHESES)) {
+			return Optional.empty();
+		}
+		var expression = retrieveItem(parseExpression(), "Missing expression");
+		handleSkip(TokenType.CLOSED_ROUND_PARENTHESES);
+		return Optional.of(expression);
+	}
+
+	private final List<Function<String, Optional<? extends Expression>>> startingWithIdentifier = List.of(
+			this::parseFunctionCall
+	);
+
+	@SuppressWarnings("unchecked")
+	private Optional<Expression> parseExpressionStartingWithIdentifier() {
+		if (currentToken.getType() != TokenType.IDENTIFIER) {
+			return Optional.empty();
+		}
+
+		var identifier = currentToken.<String>getValue();
+		nextToken();
+
+		for (var function : startingWithIdentifier) {
+			var result = (Optional<Expression>) function.apply(identifier);
+			if (result.isPresent()) {
+				return result;
+			}
+		}
+
+		return Optional.of(new IdentifierExpression(identifier));
+	}
+
+	// TODO: simplify those \/ \/ \/ to a parametrized function
+	private Optional<Expression> parseExpressionStartingWithInteger() {
+		if (currentToken.getType() != TokenType.INTEGER_CONSTANT) {
+			return Optional.empty();
+		}
+
+		var value = currentToken.<Integer>getValue();
+		nextToken();
+
+		return Optional.of(new IntegerValue(value));
+	}
+
+	private Optional<Expression> parseExpressionStartingWithFloatingPoint() {
+		if (currentToken.getType() != TokenType.FLOATING_POINT_CONSTANT) {
+			return Optional.empty();
+		}
+
+		var value = currentToken.<Double>getValue();
+		nextToken();
+
+		return Optional.of(new FloatingPointValue(value));
+	}
+
+	private Optional<Expression> parseExpressionStartingWithString() {
+		if (!LexerUtility.STRINGS.containsValue(currentToken.getType())) {
+			return Optional.empty();
+		}
+
+		var value = currentToken.<String>getValue();
+		nextToken();
+
+		return Optional.of(new StringValue(value));
+	}
+
+	private Optional<Expression> parseExpressionStartingWithBoolean() {
+		if (!LexerUtility.BOOLEANS.contains(currentToken.getType())) {
+			return Optional.empty();
+		}
+
+		var value = currentToken.<Boolean>getValue();
+		nextToken();
+
+		return Optional.of(new BooleanValue(value));
+	}
+
 	private Optional<IdentifierExpression> parseIdentifier() {
 		if (currentToken.getType() != TokenType.IDENTIFIER) {
 			return Optional.empty();
@@ -415,15 +510,6 @@ public class ParserImpl implements Parser {
 
 
 		return expression.map(it -> negate ? new NegationArithmeticExpression(it) : it);
-	}
-
-	private Optional<ArithmeticExpression> parseLiteral() {
-		if (currentToken.getType() == TokenType.INTEGER_CONSTANT) {
-			return Optional.of(new IntegerValue(currentToken.getValue()));
-		} else if (currentToken.getType() == TokenType.FLOATING_POINT_CONSTANT) {
-			return Optional.of(new FloatingPointValue(currentToken.getValue()));
-		}
-		return Optional.empty();
 	}
 
 	private Optional<LogicalExpression> parseLogicalExpression() {
@@ -499,6 +585,25 @@ public class ParserImpl implements Parser {
 		var right = retrieveItem(parseArithmeticExpression(), "Missing arithmetic expression");
 
 		return Optional.of(constructor.apply(left, right));
+	}
+
+	private Optional<FunctionCallExpression> parseFunctionCall(String name) {
+		if (!skipIf(TokenType.OPEN_ROUND_PARENTHESES)) {
+			return Optional.empty();
+		}
+
+		var arguments = new ArrayList<Expression>();
+		if (currentToken.getType() != TokenType.CLOSED_ROUND_PARENTHESES) {
+			do {
+				var argument = retrieveItem(parseExpression(), "Missing argument expression");
+				arguments.add(argument);
+			} while (skipIf(TokenType.COMMA));
+		}
+
+		handleSkip(TokenType.CLOSED_ROUND_PARENTHESES);
+		return Optional.of(
+				new FunctionCallExpression(name, arguments)
+		);
 	}
 
 	private Optional<FunctionCallExpression> parseFunctionCall() {
@@ -670,9 +775,6 @@ public class ParserImpl implements Parser {
 	private String getIdentifierOrThrow() {
 		var identifier = Optional.of(currentToken).filter(it -> it.getType() == TokenType.IDENTIFIER);
 		identifier.ifPresent(it -> nextToken());
-		return retrieveItem(
-				identifier,
-				"Missing identifier"
-		).getValue();
+		return retrieveItem(identifier, "Missing identifier").getValue();
 	}
 }
