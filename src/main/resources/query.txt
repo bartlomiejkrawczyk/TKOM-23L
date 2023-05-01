@@ -1,8 +1,8 @@
 fun prepareDatabase(): Map<String, int> {
-	Map<String, int> database = {
+	Map<String, int> database = [
 		"key_1" : 1,
 		"key_2" : 100,
-	};
+	];
 
 	int value = database["key_1"];
 
@@ -33,18 +33,18 @@ fun multiply(a: int, b: int): int {
 }
 
 fun prepareAdvancedQuery(): Iterable<String, Map<>> {
-	Map<String, Map<String, int>> database = {
-		"id_1" : {
+	Map<String, Map<String, int>> database = [
+		"id_1" : [
 			"property_1" : 1,
 			"property_2" : 2,
 			"property_3" : 3,
-		},
-		"id_2" : {
+		],
+		"id_2" : [
 			"property_1" : 2,
 			"property_2" : 3,
 			"property_3" : 4,
-		},
-	};
+		],
+	];
 
 	Iterable<String, int, int, int> result =
 		SELECT
@@ -60,31 +60,31 @@ fun prepareAdvancedQuery(): Iterable<String, Map<>> {
 }
 
 fun prepareAdvancedJoinQuery(): Iterable<String, Map<>> {
-	Map<String, Map<String, int>> database1 = {
-		"id_1" : {
+	Map<String, Map<String, int>> database1 = [
+		"id_1" : [
 			"property_1" : 1,
 			"property_2" : 2,
 			"property_3" : 3,
-		},
-		"id_2" : {
+		],
+		"id_2" : [
 			"property_1" : 2,
 			"property_2" : 3,
 			"property_3" : 4,
-		},
-	};
+		],
+	];
 
-	Map<String, Map<String, int>> database2 = {
-    		"id_1" : {
+	Map<String, Map<String, int>> database2 = [
+    		"id_1" : [
     			"property_1" : 1,
     			"property_2" : 2,
     			"property_3" : 3,
-    		},
-    		"id_2" : {
+    		],
+    		"id_2" : [
     			"property_1" : 2,
     			"property_2" : 3,
     			"property_3" : 4,
-    		},
-    	};
+    		],
+    	];
 
 	Iterable<String, int, int, int> result =
 		SELECT
