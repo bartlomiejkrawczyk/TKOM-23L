@@ -121,11 +121,11 @@ class Tuple<V1, V2, V3, ...>{
 	...
 }
 
-Tuple<String, int, double> tuple = (
+Tuple<String, int, double> tuple = |
 	value1 AS name1,
 	value2 AS name2,
 	value3 AS name3,
-);
+|;
 ```
 
 **Map<key, value>**
@@ -140,12 +140,12 @@ class Map<K, V> {
 	fun iterable(comparator: Comparator<K, V>): Iterable<K, V>;
 }
 
-fun operator{}: Map<key, value>;
+fun operator[]: Map<key, value>;
 
-Map<String, int> map = {
+Map<String, int> map = [
 	"id_1": 1,
 	"id_2": 2
-};
+];
 ```
 
 **Iterable<value, ...>**
@@ -273,7 +273,7 @@ while expression {
 **Iteracja po iterowalnych strukturach:**
 
 ```groovy
-Map<String, String> map = {};
+Map<String, String> map = [];
 for (Tuple<String, String> entry : map) {
 	# do something
 }
@@ -316,6 +316,7 @@ b = tmp;
 ```
 
 Semantyka przekazywania argumentów do funkcji:
+
 - obiekty przekazywane przez referencję
 
 Semantyka obsługi zmiennych:
@@ -469,7 +470,7 @@ EXPRESSION              = IDENTIFIER
                         | METHOD_CALL
                         | TUPLE_CALL
                         | SELECT_EXPRESSION
-                        | TUPLE_EXPRESSION
+                        | STANDALONE_TUPLE_EXP
                         | MAP_EXPRESSION
                         | "(", EXPRESSION, ")";
 
@@ -499,10 +500,11 @@ STATEMENT               = IF_STATEMENT
 BLOCK                   = "{", {STATEMENT} "}";
 
 MAP_ELEMENT             = EXPRESSION, ":", EXPRESSION;
-MAP_EXPRESSION          = "{", [MAP_ELEMENT, {",", MAP_ELEMENT}];
+MAP_EXPRESSION          = "[", [MAP_ELEMENT, {",", MAP_ELEMENT}], "]";
 
 TUPLE_ELEMENT           = EXPRESSION, "AS", IDENTIFIER
 TUPLE_EXPRESSION        = TUPLE_ELEMENT, {",", TUPLE_ELEMENT};
+STANDALONE_TUPLE_EXP    = "|", TUPLE_EXPRESSION, "|";
 
 ORDER_BY_EXPRESSION     = EXPRESSION, ["ASCENDING" | "DESCENDING"];
 
@@ -703,6 +705,7 @@ OPEN_SQUARE_PARENTHESES("["),
 CLOSED_CURLY_PARENTHESES("}"),
 CLOSED_ROUND_PARENTHESES(")"),
 CLOSED_SQUARE_PARENTHESES("]"),
+VERTICAL_BAR_PARENTHESES("|"),
 
 SEMICOLON(";"),
 COLON(":"),

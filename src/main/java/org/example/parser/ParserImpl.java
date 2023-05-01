@@ -259,7 +259,6 @@ public class ParserImpl implements Parser {
 				return (Optional<Statement>) statement;
 			}
 		}
-		// TODO: check for infinite loops :^o
 		if (skipIf(TokenType.SEMICOLON)) {
 			return Optional.of(new BlockExpression(List.of()));
 		}
@@ -345,7 +344,8 @@ public class ParserImpl implements Parser {
 	private final List<Supplier<Optional<? extends Expression>>> expressionSuppliers = List.of(
 			this::parseLogicalExpression,
 			this::parseSelectExpression,
-			this::parseMapExpression
+			this::parseMapExpression,
+			this::parseStandAloneTupleExpression
 	);
 
 	private Optional<Expression> parseExpression() {
@@ -360,8 +360,6 @@ public class ParserImpl implements Parser {
 	}
 
 	private final List<UnaryOperator<Expression>> startingWithExpression = List.of(
-			// TODO: arithmetic / logical
-			this::parseTupleExpression,
 			this::parseTupleOrMethodCall,
 			this::parseMapCall
 	);
@@ -482,7 +480,8 @@ public class ParserImpl implements Parser {
 		for (var function : termSuppliers) {
 			var expression = function.get();
 			if (expression.isPresent()) {
-				return expression.map(it -> negate ? new NegationArithmeticExpression(it) : it);
+				return expression.map(this::parseExpressionStartingWithExpression)
+						.map(it -> negate ? new NegationArithmeticExpression(it) : it);
 			}
 		}
 		return Optional.empty();
@@ -595,7 +594,7 @@ public class ParserImpl implements Parser {
 			return expression;
 		}
 		var argument = retrieveItem(parseExpression(), "Missing expression in map []");
-		handleSkip(TokenType.CLOSED_ROUND_PARENTHESES);
+		handleSkip(TokenType.CLOSED_SQUARE_PARENTHESES);
 		var functionCall = new FunctionCallExpression("operator[]", List.of(argument));
 
 		return new MethodCallExpression(expression, functionCall);
@@ -658,20 +657,13 @@ public class ParserImpl implements Parser {
 		return orderBy;
 	}
 
-	private Expression parseTupleExpression(Expression expression) {
-		if (!skipIf(TokenType.AS)) {
-			return expression;
+	private Optional<TupleExpression> parseStandAloneTupleExpression() {
+		if (!skipIf(TokenType.VERTICAL_BAR_PARENTHESES)) {
+			return Optional.empty();
 		}
-		var identifier = getIdentifierOrThrow();
-		var elements = new HashMap<String, Expression>();
-		elements.put(identifier, expression);
-
-		while (skipIf(TokenType.COMMA)) {
-			var element = getTupleElementOrThrow();
-			elements.put(element.getKey(), element.getValue());
-		}
-
-		return new TupleExpression(elements);
+		var expression = parseTupleExpression();
+		handleSkip(TokenType.VERTICAL_BAR_PARENTHESES);
+		return expression;
 	}
 
 	private Optional<TupleExpression> parseTupleExpression() {
