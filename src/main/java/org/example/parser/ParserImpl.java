@@ -356,7 +356,10 @@ public class ParserImpl implements Parser {
 	}
 
 	private final List<UnaryOperator<Expression>> startingWithExpression = List.of(
-			// TODO: tuple / (tuple' / method call) / arithmetic / logical
+			// TODO: (tuple call / method call) / arithmetic / logical
+			this::parseTupleExpression,
+			this::parseTupleOrMethodCall,
+			this::parseMapCall
 	);
 
 	private Expression parseExpressionStartingWithExpression(Expression expression) {
@@ -629,34 +632,28 @@ public class ParserImpl implements Parser {
 		);
 	}
 
-	private Optional<MethodCallExpression> parseMethodCall() {
-		var expression = parseExpression();
-		if (expression.isEmpty()) {
-			return Optional.empty();
+	private Expression parseTupleOrMethodCall(Expression expression) {
+		if (!skipIf(TokenType.DOT)) {
+			return expression;
 		}
-
-		FunctionCallExpression functionCall;
-		if (skipIf(TokenType.DOT)) {
-			functionCall = retrieveItem(parseFunctionCall(), "Missing function call expression");
-		} else if (skipIf(TokenType.OPEN_SQUARE_PARENTHESES)) {
-			var argument = retrieveItem(parseExpression(), "Missing expression in map []");
-			handleSkip(TokenType.CLOSED_ROUND_PARENTHESES);
-			functionCall = new FunctionCallExpression("operator[]", List.of(argument));
+		var identifier = getIdentifierOrThrow();
+		var function = parseFunctionCall(identifier);
+		if (function.isPresent()) {
+			return new MethodCallExpression(expression, function.get());
 		} else {
-			throw new CriticalParserException("Missing method call expression", currentToken);
+			return new TupleCallExpression(expression, identifier);
 		}
-
-		return Optional.of(new MethodCallExpression(expression.get(), functionCall));
 	}
 
-	private Optional<TupleCallExpression> parseTupleCall() {
-		var expression = parseExpression();
-		if (expression.isEmpty()) {
-			return Optional.empty();
+	private Expression parseMapCall(Expression expression) {
+		if (!skipIf(TokenType.OPEN_SQUARE_PARENTHESES)) {
+			return expression;
 		}
-		handleSkip(TokenType.DOT);
-		var identifier = getIdentifierOrThrow();
-		return Optional.of(new TupleCallExpression(expression.get(), identifier));
+		var argument = retrieveItem(parseExpression(), "Missing expression in map []");
+		handleSkip(TokenType.CLOSED_ROUND_PARENTHESES);
+		var functionCall = new FunctionCallExpression("operator[]", List.of(argument));
+
+		return new MethodCallExpression(expression, functionCall);
 	}
 
 	private Optional<SelectExpression> parseSelectExpression() {
@@ -716,6 +713,22 @@ public class ParserImpl implements Parser {
 		return orderBy;
 	}
 
+	private Expression parseTupleExpression(Expression expression) {
+		if (!skipIf(TokenType.AS)) {
+			return expression;
+		}
+		var identifier = getIdentifierOrThrow();
+		var elements = new HashMap<String, Expression>();
+		elements.put(identifier, expression);
+
+		while (skipIf(TokenType.COMMA)) {
+			var element = retrieveItem(parseTupleElement(), "Missing tuple element");
+			elements.put(element.getKey(), element.getValue());
+		}
+
+		return new TupleExpression(elements);
+	}
+
 	private Optional<TupleExpression> parseTupleExpression() {
 		var firstElement = parseTupleElement();
 		if (firstElement.isEmpty()) {
@@ -737,13 +750,28 @@ public class ParserImpl implements Parser {
 	}
 
 	private Optional<Map.Entry<String, Expression>> parseTupleElement() {
-		var expression = parseExpression();
+		var expression = parseExpressionDedicatedForTuple();
 		if (expression.isEmpty()) {
 			return Optional.empty();
 		}
 		handleSkip(TokenType.AS);
 		var identifier = getIdentifierOrThrow();
 		return Optional.of(Map.entry(identifier, expression.get()));
+	}
+
+	@SuppressWarnings("unchecked")
+	private Optional<Expression> parseExpressionDedicatedForTuple() {
+		for (var supplier : expressionSuppliers) {
+			var expression = supplier.get();
+			if (expression.isPresent()) {
+				if (currentToken.getType() != TokenType.AS) {
+					var result = parseExpressionStartingWithExpression(expression.get());
+					return Optional.of(result);
+				}
+				return (Optional<Expression>) expression;
+			}
+		}
+		return Optional.empty();
 	}
 
 	private Optional<MapExpression> parseMapExpression() {
