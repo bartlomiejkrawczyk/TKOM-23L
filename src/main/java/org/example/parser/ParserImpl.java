@@ -502,18 +502,56 @@ public class ParserImpl implements Parser {
 	}
 
 	private Optional<FunctionCallExpression> parseFunctionCall() {
-		// TODO: implement me!
-		return Optional.empty();
+		var identifier = parseIdentifier();
+		if (identifier.isEmpty()) {
+			return Optional.empty();
+		}
+		var name = identifier.get();
+
+		handleSkip(TokenType.OPEN_ROUND_PARENTHESES);
+
+		var arguments = new ArrayList<Expression>();
+		if (currentToken.getType() != TokenType.CLOSED_ROUND_PARENTHESES) {
+			do {
+				var argument = retrieveItem(parseExpression(), "Missing argument expression");
+				arguments.add(argument);
+			} while (skipIf(TokenType.COMMA));
+		}
+
+		handleSkip(TokenType.CLOSED_ROUND_PARENTHESES);
+		return Optional.of(
+				new FunctionCallExpression(name.getName(), arguments)
+		);
 	}
 
 	private Optional<MethodCallExpression> parseMethodCall() {
-		// TODO: implement me!
-		return Optional.empty();
+		var expression = parseExpression();
+		if (expression.isEmpty()) {
+			return Optional.empty();
+		}
+
+		FunctionCallExpression functionCall;
+		if (skipIf(TokenType.DOT)) {
+			functionCall = retrieveItem(parseFunctionCall(), "Missing function call expression");
+		} else if (skipIf(TokenType.OPEN_SQUARE_PARENTHESES)) {
+			var argument = retrieveItem(parseExpression(), "Missing expression in map []");
+			handleSkip(TokenType.CLOSED_ROUND_PARENTHESES);
+			functionCall = new FunctionCallExpression("operator[]", List.of(argument));
+		} else {
+			throw new CriticalParserException("Missing method call expression", currentToken);
+		}
+
+		return Optional.of(new MethodCallExpression(expression.get(), functionCall));
 	}
 
 	private Optional<TupleCallExpression> parseTupleCall() {
-		// TODO: implement me!
-		return Optional.empty();
+		var expression = parseExpression();
+		if (expression.isEmpty()) {
+			return Optional.empty();
+		}
+		handleSkip(TokenType.DOT);
+		var identifier = getIdentifierOrThrow();
+		return Optional.of(new TupleCallExpression(expression.get(), identifier));
 	}
 
 	private Optional<SelectExpression> parseSelectExpression() {
@@ -574,18 +612,59 @@ public class ParserImpl implements Parser {
 	}
 
 	private Optional<TupleExpression> parseTupleExpression() {
-		// TODO: implement me!
-		return Optional.empty();
+		var firstElement = parseTupleElement();
+		if (firstElement.isEmpty()) {
+			return Optional.empty();
+		}
+
+		var elements = new HashMap<String, Expression>();
+		var element = firstElement.get();
+		elements.put(element.getKey(), element.getValue());
+
+		while (skipIf(TokenType.COMMA)) {
+			element = retrieveItem(parseTupleElement(), "Missing tuple element");
+			elements.put(element.getKey(), element.getValue());
+		}
+
+		return Optional.of(
+				new TupleExpression(elements)
+		);
 	}
 
 	private Optional<Map.Entry<String, Expression>> parseTupleElement() {
-		// TODO: implement me!
-		return Optional.empty();
+		var expression = parseExpression();
+		if (expression.isEmpty()) {
+			return Optional.empty();
+		}
+		handleSkip(TokenType.AS);
+		var identifier = getIdentifierOrThrow();
+		return Optional.of(Map.entry(identifier, expression.get()));
 	}
 
 	private Optional<MapExpression> parseMapExpression() {
-		// TODO: implement me!
-		return Optional.empty();
+		if (!skipIf(TokenType.OPEN_CURLY_PARENTHESES)) {
+			return Optional.empty();
+		}
+
+		var map = new HashMap<Expression, Expression>();
+		var firstKey = parseExpression();
+		if (firstKey.isPresent()) {
+			handleSkip(TokenType.COLON);
+			var firstValue = retrieveItem(parseExpression(), "Missing value expression from map entry");
+			map.put(firstKey.get(), firstValue);
+
+			while (skipIf(TokenType.COMMA)) {
+				var key = retrieveItem(parseExpression(), "Missing key expression from map entry");
+				handleSkip(TokenType.COLON);
+				var value = retrieveItem(parseExpression(), "Missing value expression from map entry");
+				map.put(key, value);
+			}
+		}
+
+		handleSkip(TokenType.CLOSED_CURLY_PARENTHESES);
+		return Optional.of(
+				new MapExpression(map)
+		);
 	}
 
 	private String getIdentifierOrThrow() {
