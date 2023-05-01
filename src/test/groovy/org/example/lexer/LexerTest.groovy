@@ -1,7 +1,12 @@
 package org.example.lexer
 
 import org.example.error.ErrorHandler
-import org.example.lexer.error.*
+import org.example.lexer.error.EndOfFileReachedException
+import org.example.lexer.error.NumericOverflowException
+import org.example.lexer.error.ReaderException
+import org.example.lexer.error.TokenTooLongException
+import org.example.lexer.error.UnexpectedCharacterException
+import org.example.lexer.error.UnknownTypeException
 import org.example.token.Position
 import org.example.token.TokenType
 import org.example.token.type.IntegerToken

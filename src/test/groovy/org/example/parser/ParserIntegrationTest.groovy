@@ -2,10 +2,21 @@ package org.example.parser
 
 import org.example.ast.Program
 import org.example.ast.ValueType
-import org.example.ast.expression.*
+import org.example.ast.expression.Argument
+import org.example.ast.expression.BlockExpression
+import org.example.ast.expression.FunctionCallExpression
+import org.example.ast.expression.IdentifierExpression
+import org.example.ast.expression.MapExpression
+import org.example.ast.expression.SelectExpression
+import org.example.ast.expression.TupleCallExpression
+import org.example.ast.expression.TupleExpression
 import org.example.ast.statement.DeclarationStatement
 import org.example.ast.statement.FunctionDefinitionStatement
-import org.example.ast.type.*
+import org.example.ast.type.BooleanValue
+import org.example.ast.type.FloatingPointValue
+import org.example.ast.type.IntegerValue
+import org.example.ast.type.StringValue
+import org.example.ast.type.TypeDeclaration
 import org.example.error.ErrorHandler
 import org.example.lexer.LexerImpl
 import spock.lang.Specification
