@@ -259,9 +259,7 @@ public class ParserImpl implements Parser {
 				return (Optional<Statement>) statement;
 			}
 		}
-		if (skipIf(TokenType.SEMICOLON)) {
-			return Optional.of(new BlockExpression(List.of()));
-		}
+		skipIf(TokenType.SEMICOLON);
 		return Optional.empty();
 	}
 
@@ -299,14 +297,9 @@ public class ParserImpl implements Parser {
 		handleSkip(TokenType.OPEN_ROUND_PARENTHESES);
 		var type = retrieveItem(parseTypeDeclaration(), "Missing type declaration");
 		var identifier = getIdentifierOrThrow();
-		nextToken();
 		handleSkip(TokenType.COLON);
-
 		var iterable = retrieveItem(parseExpression(), "Missing iterable expression");
-
-		nextToken();
 		handleSkip(TokenType.CLOSED_ROUND_PARENTHESES);
-
 		var body = parseStatement().orElseGet(() -> new BlockExpression(List.of()));
 
 		return Optional.of(new ForStatement(new Argument(identifier, type), iterable, body));

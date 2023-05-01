@@ -17,6 +17,7 @@ import org.example.ast.expression.logical.AndLogicalExpression
 import org.example.ast.expression.logical.OrLogicalExpression
 import org.example.ast.statement.AssignmentStatement
 import org.example.ast.statement.DeclarationStatement
+import org.example.ast.statement.ForStatement
 import org.example.ast.statement.FunctionDefinitionStatement
 import org.example.ast.statement.IfStatement
 import org.example.ast.statement.ReturnStatement
@@ -63,6 +64,7 @@ class ParserIntegrationTest extends Specification {
 		where:
 		program                          || result
 		"fun main() {}"                  || new Program(Map.of("main", new FunctionDefinitionStatement("main", List.of(), new TypeDeclaration(ValueType.VOID), new BlockExpression(List.of()))), List.of())
+		"fun main() {;;}" || new Program(Map.of("main", new FunctionDefinitionStatement("main", List.of(), new TypeDeclaration(ValueType.VOID), new BlockExpression(List.of()))), List.of())
 		"fun main() {func();}"           || new Program(Map.of("main", new FunctionDefinitionStatement("main", List.of(), new TypeDeclaration(ValueType.VOID), new BlockExpression(List.of(new FunctionCallExpression("func", List.of()))))), List.of())
 		"fun main() {func1(); func2();}" || new Program(Map.of("main", new FunctionDefinitionStatement("main", List.of(), new TypeDeclaration(ValueType.VOID), new BlockExpression(List.of(new FunctionCallExpression("func1", List.of()), new FunctionCallExpression("func2", List.of()))))), List.of())
 		"fun main(): int {return 1;}"    || new Program(Map.of("main", new FunctionDefinitionStatement("main", List.of(), new TypeDeclaration(ValueType.INTEGER), new BlockExpression(List.of(new ReturnStatement(new IntegerValue(1)))))), List.of())
@@ -118,6 +120,34 @@ class ParserIntegrationTest extends Specification {
 		program                                              || result
 		"fun main() {boolean a = true; if a {a = false;}}"   || new Program(Map.of("main", new FunctionDefinitionStatement("main", List.of(), new TypeDeclaration(ValueType.VOID), new BlockExpression(List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.BOOLEAN)), new BooleanValue(true)), new IfStatement(new IdentifierExpression("a"), new BlockExpression(List.of(new AssignmentStatement("a", new BooleanValue(false)))), new BlockExpression(List.of())))))), List.of())
 		"fun main() {boolean a = true; if (a) {a = false;}}" || new Program(Map.of("main", new FunctionDefinitionStatement("main", List.of(), new TypeDeclaration(ValueType.VOID), new BlockExpression(List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.BOOLEAN)), new BooleanValue(true)), new IfStatement(new IdentifierExpression("a"), new BlockExpression(List.of(new AssignmentStatement("a", new BooleanValue(false)))), new BlockExpression(List.of())))))), List.of())
+	}
+
+	def 'Should be able to parse for statement'() {
+		given:
+		var parser = toParser(program)
+
+		expect:
+		parser.parseProgram() == result
+
+		where:
+		program                                              || result
+		"fun main() {for (Tuple<String> a : b) {print(a);}}" || new Program(Map.of("main", new FunctionDefinitionStatement("main", List.of(), new TypeDeclaration(ValueType.VOID), new BlockExpression(List.of(new ForStatement(new Argument("a", new TypeDeclaration(ValueType.TUPLE, List.of(new TypeDeclaration(ValueType.STRING)))), new IdentifierExpression("b"), new BlockExpression(List.of(new FunctionCallExpression("print", List.of(new IdentifierExpression("a")))))))))), List.of())
+	}
+
+	def 'Should be able to parse assignment statement'() {
+// TODO: add tests
+	}
+
+	def 'Should be able to parse single expression statement'() {
+
+	}
+
+	def 'Should be able to parse return statement'() {
+
+	}
+
+	def 'Should be able to parse nested block statement'() {
+
 	}
 
 	def 'Should be able to perform mathematical operations'() {
