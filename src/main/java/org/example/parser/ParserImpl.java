@@ -47,6 +47,7 @@ import org.example.ast.statement.DeclarationStatement;
 import org.example.ast.statement.ForStatement;
 import org.example.ast.statement.FunctionDefinitionStatement;
 import org.example.ast.statement.IfStatement;
+import org.example.ast.statement.ReturnStatement;
 import org.example.ast.statement.WhileStatement;
 import org.example.ast.type.BooleanValue;
 import org.example.ast.type.FloatingPointValue;
@@ -71,6 +72,7 @@ public class ParserImpl implements Parser {
 			this::parseForStatement,
 			this::parseDeclarationStatement,
 			this::parseAssignmentStatementOrSingleExpression,
+			this::parseReturnStatement,
 			this::parseBlock
 	);
 
@@ -226,6 +228,15 @@ public class ParserImpl implements Parser {
 			handleSkip(TokenType.GREATER);
 		}
 		return Optional.of(new TypeDeclaration(type, types));
+	}
+
+	private Optional<ReturnStatement> parseReturnStatement() {
+		if (!skipIf(TokenType.RETURN)) {
+			return Optional.empty();
+		}
+		var expression = retrieveItem(parseExpression(), "Missing return expression");
+		handleSkip(TokenType.SEMICOLON);
+		return Optional.of(new ReturnStatement(expression));
 	}
 
 	private Optional<BlockExpression> parseBlock() {
@@ -631,7 +642,7 @@ public class ParserImpl implements Parser {
 		}
 		var select = retrieveItem(parseTupleExpression(), "Missing tuple expression");
 		handleSkip(TokenType.FROM);
-		var from = retrieveItem(parseTupleElement(), "Missing tuple element");
+		var from = getTupleElementOrThrow();
 		var join = new ArrayList<Tuple3<String, Expression, LogicalExpression>>();
 
 		var where = skipIf(TokenType.WHERE)
@@ -691,7 +702,7 @@ public class ParserImpl implements Parser {
 		elements.put(identifier, expression);
 
 		while (skipIf(TokenType.COMMA)) {
-			var element = retrieveItem(parseTupleElement(), "Missing tuple element");
+			var element = getTupleElementOrThrow();
 			elements.put(element.getKey(), element.getValue());
 		}
 
@@ -709,7 +720,7 @@ public class ParserImpl implements Parser {
 		elements.put(element.getKey(), element.getValue());
 
 		while (skipIf(TokenType.COMMA)) {
-			element = retrieveItem(parseTupleElement(), "Missing tuple element");
+			element = getTupleElementOrThrow();
 			elements.put(element.getKey(), element.getValue());
 		}
 
@@ -773,5 +784,10 @@ public class ParserImpl implements Parser {
 		var identifier = Optional.of(currentToken).filter(it -> it.getType() == TokenType.IDENTIFIER);
 		identifier.ifPresent(it -> nextToken());
 		return retrieveItem(identifier, "Missing identifier").getValue();
+	}
+
+	private Map.Entry<String, Expression> getTupleElementOrThrow() {
+		var tupleElement = parseTupleElement();
+		return retrieveItem(tupleElement, "Missing tuple element");
 	}
 }
