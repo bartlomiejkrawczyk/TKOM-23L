@@ -1,6 +1,7 @@
 package org.example.parser;
 
 import io.vavr.Function2;
+import io.vavr.Tuple3;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -9,6 +10,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import lombok.NonNull;
+import org.apache.commons.lang3.tuple.Pair;
 import org.example.ast.Expression;
 import org.example.ast.Program;
 import org.example.ast.Statement;
@@ -515,11 +517,68 @@ public class ParserImpl implements Parser {
 	}
 
 	private Optional<SelectExpression> parseSelectExpression() {
+		if (!skipIf(TokenType.SELECT)) {
+			return Optional.empty();
+		}
+		var select = retrieveItem(parseTupleExpression(), "Missing tuple expression");
+		handleSkip(TokenType.FROM);
+		var from = retrieveItem(parseTupleElement(), "Missing tuple element");
+		var join = new ArrayList<Tuple3<String, Expression, LogicalExpression>>();
+
+		var where = skipIf(TokenType.WHERE)
+				? retrieveItem(parseLogicalExpression(), "Missing 'where' logical expression")
+				: new BooleanValue(true);
+
+		var groupByResult = parseGroupBy();
+		var groupBy = groupByResult.getKey();
+		var having = groupByResult.getValue();
+
+		var orderBy = parseOrderBy();
+
+		return Optional.of(
+				new SelectExpression(select, from, join, where, groupBy, having, orderBy)
+		);
+	}
+
+	private Pair<List<Expression>, LogicalExpression> parseGroupBy() {
+		var groupBy = new ArrayList<Expression>();
+		var having = (LogicalExpression) new BooleanValue(true);
+		if (skipIf(TokenType.GROUP) && skipIf(TokenType.BY)) {
+			do {
+				var expression = retrieveItem(parseExpression(), "Missing 'group by' expression");
+				groupBy.add(expression);
+			} while (skipIf(TokenType.COMMA));
+
+			having = skipIf(TokenType.HAVING)
+					? retrieveItem(parseLogicalExpression(), "Missing logical expression")
+					: having;
+		}
+		return Pair.of(groupBy, having);
+	}
+
+	private List<Pair<Expression, Boolean>> parseOrderBy() {
+		var orderBy = new ArrayList<Pair<Expression, Boolean>>();
+		if (skipIf(TokenType.ORDER) && skipIf(TokenType.BY)) {
+			do {
+				var expression = retrieveItem(parseExpression(), "Missing 'group by' expression");
+				var ascending = true;
+				if (skipIf(TokenType.DESCENDING)) {
+					ascending = false;
+				} else {
+					skipIf(TokenType.ASCENDING);
+				}
+				orderBy.add(Pair.of(expression, ascending));
+			} while (skipIf(TokenType.COMMA));
+		}
+		return orderBy;
+	}
+
+	private Optional<TupleExpression> parseTupleExpression() {
 		// TODO: implement me!
 		return Optional.empty();
 	}
 
-	private Optional<TupleExpression> parseTupleExpression() {
+	private Optional<Map.Entry<String, Expression>> parseTupleElement() {
 		// TODO: implement me!
 		return Optional.empty();
 	}
