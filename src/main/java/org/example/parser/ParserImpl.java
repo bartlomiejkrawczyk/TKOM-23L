@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.example.ast.Expression;
 import org.example.ast.Program;
@@ -57,6 +58,7 @@ import org.example.parser.error.UnexpectedTokenException;
 import org.example.token.Token;
 import org.example.token.TokenType;
 
+@Slf4j
 public class ParserImpl implements Parser {
 
 	private final List<Supplier<Optional<? extends Statement>>> statementSuppliers = List.of(
@@ -125,6 +127,7 @@ public class ParserImpl implements Parser {
 		while (currentToken.getType() != tokenType && currentToken.getType() != TokenType.END_OF_FILE) {
 			nextToken();
 		}
+		nextToken();
 	}
 
 	private void handleSkip(TokenType expected) {
@@ -149,14 +152,14 @@ public class ParserImpl implements Parser {
 		}
 		nextToken();
 		var name = getIdentifierOrThrow();
-		nextToken();
 		handleSkip(TokenType.OPEN_ROUND_PARENTHESES);
 
 		var arguments = new ArrayList<Argument>();
-		var argument = parseArgument();
-		while (argument.isPresent()) {
-			arguments.add(argument.get());
-			argument = parseArgument();
+		if (currentToken.getType() != TokenType.CLOSED_ROUND_PARENTHESES) {
+			do {
+				var argument = retrieveItem(parseArgument(), "Missing argument");
+				arguments.add(argument);
+			} while (skipIf(TokenType.COMMA));
 		}
 
 		handleSkip(TokenType.CLOSED_ROUND_PARENTHESES);
@@ -206,22 +209,17 @@ public class ParserImpl implements Parser {
 
 		if (valueType.isEmpty()) {
 			return Optional.empty();
-		} else {
-			nextToken();
 		}
+		nextToken();
 
 		var type = valueType.get();
 		var types = new ArrayList<TypeDeclaration>();
 		if (type.isComplex()) {
 			handleSkip(TokenType.LESS);
-			var declaration = parseTypeDeclaration();
-			while (declaration.isPresent()) {
-				types.add(declaration.get());
-				if (!skipIf(TokenType.COMMA)) {
-					break;
-				}
-				declaration = parseTypeDeclaration();
-			}
+			do {
+				var declaration = retrieveItem(parseTypeDeclaration(), "Missing type declaration");
+				types.add(declaration);
+			} while (skipIf(TokenType.COMMA));
 			handleSkip(TokenType.GREATER);
 		}
 		return Optional.of(new TypeDeclaration(type, types));
@@ -334,10 +332,10 @@ public class ParserImpl implements Parser {
 			this::parseArithmeticExpression,
 			this::parseLogicalExpression,
 			this::parseFunctionCall,
-			this::parseMethodCall,
-			this::parseTupleCall,
+//			this::parseMethodCall,
+//			this::parseTupleCall,
 			this::parseSelectExpression,
-			this::parseTupleExpression,
+//			this::parseTupleExpression,
 			this::parseMapExpression
 	);
 
@@ -357,7 +355,9 @@ public class ParserImpl implements Parser {
 		if (currentToken.getType() != TokenType.IDENTIFIER) {
 			return Optional.empty();
 		}
-		return Optional.of(new IdentifierExpression(currentToken.getValue()));
+		var name = currentToken.<String>getValue();
+		nextToken();
+		return Optional.of(new IdentifierExpression(name));
 	}
 
 	private Optional<ArithmeticExpression> parseArithmeticExpression() {
@@ -668,8 +668,10 @@ public class ParserImpl implements Parser {
 	}
 
 	private String getIdentifierOrThrow() {
+		var identifier = Optional.of(currentToken).filter(it -> it.getType() == TokenType.IDENTIFIER);
+		identifier.ifPresent(it -> nextToken());
 		return retrieveItem(
-				Optional.of(currentToken).filter(it -> it.getType() == TokenType.IDENTIFIER),
+				identifier,
 				"Missing identifier"
 		).getValue();
 	}
