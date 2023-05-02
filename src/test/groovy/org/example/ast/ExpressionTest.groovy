@@ -5,6 +5,7 @@ import org.example.ast.expression.arithmetic.AddArithmeticExpression
 import org.example.ast.statement.FunctionDefinitionStatement
 import org.example.ast.type.IntegerValue
 import org.example.ast.type.TypeDeclaration
+import org.example.interpreter.Environment
 import spock.lang.Specification
 
 class ExpressionTest extends Specification {
@@ -31,5 +32,17 @@ class ExpressionTest extends Specification {
           |--- IntegerValue(value=1)
           `--- IntegerValue(value=2)
 """
+	}
+
+	def 'Should evaluate correctly'() {
+		given:
+		var expression = new IntegerValue(1)
+		var environment = new Environment()
+
+		when:
+		expression.evaluate(environment)
+
+		then:
+		noExceptionThrown()
 	}
 }

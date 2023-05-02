@@ -95,7 +95,7 @@ fun prepareAdvancedJoinQuery(): Iterable<String, int, int, int> {
 			multiply(db1.value["property_3"]) AS property_3
 		FROM database1 AS db1
 		JOIN database2 AS db2 ON db1.key == db2.key
-		WHERE property_1 > property_2
+		WHERE NOT - property_1 > property_2
 		ORDER BY property_3 DESCENDING;
 
 	return result;
@@ -111,6 +111,11 @@ fun main() {
 	for (Tuple<String, int> row: result) {
 		print(row.id);
 		print(row.value);
+	}
+
+	int a = 0;
+	while (a < 10) {
+		a = a + 1;
 	}
 
 	Map<String, int> database = prepareDatabase();

@@ -35,6 +35,7 @@ import org.example.ast.expression.arithmetic.MultiplyArithmeticExpression;
 import org.example.ast.expression.arithmetic.NegationArithmeticExpression;
 import org.example.ast.expression.arithmetic.SubtractArithmeticExpression;
 import org.example.ast.expression.logical.AndLogicalExpression;
+import org.example.ast.expression.logical.NegateLogicalExpression;
 import org.example.ast.expression.logical.OrLogicalExpression;
 import org.example.ast.expression.relation.EqualityLogicalExpression;
 import org.example.ast.expression.relation.GreaterEqualLogicalExpression;
@@ -552,7 +553,9 @@ public class ParserImpl implements Parser {
 		nextToken();
 		var right = retrieveItem(parseArithmeticExpression(), "Missing arithmetic expression");
 
-		return Optional.of(constructor.apply(expression.get(), right));
+		var logicalExpression = constructor.apply(expression.get(), right);
+
+		return Optional.of(negate ? new NegateLogicalExpression(logicalExpression) : logicalExpression);
 	}
 
 	private Optional<FunctionCallExpression> parseFunctionCall(String name) {
