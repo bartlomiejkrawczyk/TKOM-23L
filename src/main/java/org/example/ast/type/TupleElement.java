@@ -1,21 +1,22 @@
-package org.example.ast.statement;
+package org.example.ast.type;
 
 import java.util.List;
 import lombok.ToString;
-import lombok.Value;
 import org.example.ast.Expression;
 import org.example.ast.Node;
-import org.example.ast.Statement;
+import org.example.ast.Value;
 
 @ToString(exclude = {"value"})
-@Value
-public class AssignmentStatement implements Statement {
+@lombok.Value
+public class TupleElement implements Value {
 
 	String name;
 	Expression value;
 
 	@Override
 	public Iterable<Node> getChildrenExpressions() {
-		return List.of(value);
+		return List.of(
+				value
+		);
 	}
 }

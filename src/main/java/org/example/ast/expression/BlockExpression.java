@@ -1,10 +1,12 @@
 package org.example.ast.expression;
 
 import java.util.List;
+import lombok.ToString;
 import lombok.Value;
 import org.example.ast.Node;
 import org.example.ast.Statement;
 
+@ToString(exclude = {"statements"})
 @Value
 public class BlockExpression implements Statement {
 
@@ -13,7 +15,7 @@ public class BlockExpression implements Statement {
 	@Override
 	public Iterable<Node> getChildrenExpressions() {
 		return statements.stream()
-				.map(it -> (Node) it)
+				.map(Node.class::cast)
 				.toList();
 	}
 }

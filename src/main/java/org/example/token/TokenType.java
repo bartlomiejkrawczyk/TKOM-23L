@@ -42,9 +42,9 @@ public enum TokenType {
 	COMMA(","),
 	DOT("."),
 
-	AND("and"),
-	NOT("not"),
-	OR("or"),
+	AND("and", false),
+	NOT("not", false),
+	OR("or", false),
 
 	EQUALITY("=="),
 	INEQUALITY("!="),
