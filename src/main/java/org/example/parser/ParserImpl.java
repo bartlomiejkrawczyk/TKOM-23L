@@ -1,6 +1,7 @@
 package org.example.parser;
 
 import io.vavr.Function2;
+import io.vavr.Tuple;
 import io.vavr.Tuple3;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -144,7 +145,9 @@ public class ParserImpl implements Parser {
 	@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 	private <T> T retrieveItem(@NonNull Optional<T> optional, String errorMessage) {
 		if (optional.isEmpty()) {
-			throw new CriticalParserException(errorMessage, currentToken);
+			var exception = new CriticalParserException(errorMessage, currentToken);
+			errorHandler.handleParserException(exception);
+			throw exception;
 		}
 		return optional.get();
 	}
@@ -202,6 +205,7 @@ public class ParserImpl implements Parser {
 			return Optional.empty();
 		}
 		var identifier = currentToken.<String>getValue();
+		nextToken();
 		handleSkip(TokenType.COLON);
 		var type = parseTypeDeclaration().orElseGet(() -> new TypeDeclaration(ValueType.INTEGER));
 		return Optional.of(new Argument(identifier, type));
@@ -545,6 +549,7 @@ public class ParserImpl implements Parser {
 			return expression;
 		}
 		var constructor = relationExpressions.get(type);
+		nextToken();
 		var right = retrieveItem(parseArithmeticExpression(), "Missing arithmetic expression");
 
 		return Optional.of(constructor.apply(expression.get(), right));
@@ -601,6 +606,16 @@ public class ParserImpl implements Parser {
 		handleSkip(TokenType.FROM);
 		var from = getTupleElementOrThrow();
 		var join = new ArrayList<Tuple3<String, Expression, Expression>>();
+
+		while (skipIf(TokenType.JOIN)) {
+			var joinTable = getTupleElementOrThrow();
+
+			var on = skipIf(TokenType.ON)
+					? retrieveItem(parseLogicalExpression(), "Missing 'on' logical expression in join")
+					: new BooleanValue(true);
+
+			join.add(Tuple.of(joinTable.getKey(), joinTable.getValue(), on));
+		}
 
 		var where = skipIf(TokenType.WHERE)
 				? retrieveItem(parseLogicalExpression(), "Missing 'where' logical expression")
