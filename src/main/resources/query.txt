@@ -1,7 +1,7 @@
 fun prepareDatabase(): Map<String, int> {
 	Map<String, int> database = [
 		"key_1" : 1,
-		"key_2" : 100,
+		"key_2" : 100
 	];
 
 	int value = database["key_1"];
@@ -19,9 +19,9 @@ fun prepareSimpleQuery(): Iterable<String, int> {
 
 	Iterable<String, int> result =
 		SELECT
-			key AS id,
-			value
-		FROM database
+			db.key AS id,
+			db.value AS value
+		FROM database AS db
 		WHERE value >= 100 AND id != "key_1"
 		ORDER BY value ASCENDING;
 
@@ -32,58 +32,58 @@ fun multiply(a: int, b: int): int {
 	return a * b;
 }
 
-fun prepareAdvancedQuery(): Iterable<String, Map<>> {
+fun prepareAdvancedQuery(): Iterable<String, int, int, int> {
 	Map<String, Map<String, int>> database = [
 		"id_1" : [
 			"property_1" : 1,
 			"property_2" : 2,
-			"property_3" : 3,
+			"property_3" : 3
 		],
 		"id_2" : [
 			"property_1" : 2,
 			"property_2" : 3,
-			"property_3" : 4,
-		],
+			"property_3" : 4
+		]
 	];
 
 	Iterable<String, int, int, int> result =
 		SELECT
-			key AS id,
-			value["property_1"] AS property_1,
-			value["property_2"] AS property_2,
-			multiply(value["property_3"]) AS property_3,
-		FROM database
+			db.key AS id,
+			db.value["property_1"] AS property_1,
+			db.value["property_2"] AS property_2,
+			multiply(db.value["property_3"], 2) AS property_3
+		FROM database AS db
 		WHERE property_1 < property_2
 		ORDER BY property_3 DESCENDING;
 
 	return result;
 }
 
-fun prepareAdvancedJoinQuery(): Iterable<String, Map<>> {
+fun prepareAdvancedJoinQuery(): Iterable<String, int, int, int> {
 	Map<String, Map<String, int>> database1 = [
 		"id_1" : [
 			"property_1" : 1,
 			"property_2" : 2,
-			"property_3" : 3,
+			"property_3" : 3
 		],
 		"id_2" : [
 			"property_1" : 2,
 			"property_2" : 3,
-			"property_3" : 4,
-		],
+			"property_3" : 4
+		]
 	];
 
 	Map<String, Map<String, int>> database2 = [
     		"id_1" : [
     			"property_1" : 1,
     			"property_2" : 2,
-    			"property_3" : 3,
+    			"property_3" : 3
     		],
     		"id_2" : [
     			"property_1" : 2,
     			"property_2" : 3,
-    			"property_3" : 4,
-    		],
+    			"property_3" : 4
+    		]
     	];
 
 	Iterable<String, int, int, int> result =
@@ -92,13 +92,17 @@ fun prepareAdvancedJoinQuery(): Iterable<String, Map<>> {
 			db2.key AS id2,
 			db2.value["property_1"] AS property_1,
 			db1.value["property_2"] AS property_2,
-			multiply(db1.value["property_3"]) AS property_3,
+			multiply(db1.value["property_3"]) AS property_3
 		FROM database1 AS db1
-		FROM database2 AS db2
-		WHERE property_1 > property_2 AND id1 == id2
+		JOIN database2 AS db2 ON db1.key == db2.key
+		WHERE property_1 > property_2
 		ORDER BY property_3 DESCENDING;
 
 	return result;
+}
+
+fun compare(first: Tuple<String, int>, second: Tuple<String, int>): int {
+	return first.value < second.value;
 }
 
 fun main() {
@@ -110,15 +114,9 @@ fun main() {
 	}
 
 	Map<String, int> database = prepareDatabase();
-	Comparator<Tuple<String, int>> compare = fun compare(first: Tuple<String, int>, second: Tuple<String, int>) {
-		return first.value < second.value;
-	}
+	Comparator<Tuple<String, int>> comparator = compare;
 
-	for (Tuple<String, int> entry: database[compare]) {
-		print(entry.key);
-	}
-
-	for (Tuple<String, int> entry: database.iterable(compare)) {
+	for (Tuple<String, int> entry: database.iterable(comparator)) {
 		print(entry.key);
 	}
 }
