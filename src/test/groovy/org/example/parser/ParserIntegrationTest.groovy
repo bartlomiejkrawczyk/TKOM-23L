@@ -5,6 +5,7 @@ import org.example.ast.Statement
 import org.example.ast.ValueType
 import org.example.ast.expression.Argument
 import org.example.ast.expression.BlockExpression
+import org.example.ast.expression.ExplicitCastExpression
 import org.example.ast.expression.FunctionCallExpression
 import org.example.ast.expression.IdentifierExpression
 import org.example.ast.expression.MapExpression
@@ -33,7 +34,7 @@ import org.example.ast.type.TypeDeclaration
 import org.example.error.ErrorHandler
 import org.example.lexer.LexerImpl
 import org.example.parser.error.CriticalParserException
-import org.example.parser.error.ExpectedTypeDeclarationException
+import org.example.parser.error.ParserException
 import org.example.parser.error.UnexpectedTokenException
 import spock.lang.Specification
 
@@ -180,10 +181,17 @@ class ParserIntegrationTest extends Specification {
 		parser.parseProgram() == result
 
 		where:
-		program                        || result
-		"fun main() {functionCall();}" || wrapStatements(List.of(new FunctionCallExpression("functionCall", List.of())))
-		"fun main() {i.methodCall();}" || wrapStatements(List.of(new MethodCallExpression(new IdentifierExpression("i"), new FunctionCallExpression("methodCall", List.of()))))
-		"fun main() {i.tupleCall;}"    || wrapStatements(List.of(new TupleCallExpression(new IdentifierExpression("i"), "tupleCall")))
+		program                                       || result
+		"fun main() {functionCall();}"                || wrapStatements(List.of(new FunctionCallExpression("functionCall", List.of())))
+		"fun main() {i[mapCall];}"                    || wrapStatements(List.of(new MethodCallExpression(new IdentifierExpression("i"), new FunctionCallExpression("operator[]", List.of(new IdentifierExpression("mapCall"))))))
+		"fun main() {i[mapCall1][mapCall2];}"         || wrapStatements(List.of(new MethodCallExpression(new MethodCallExpression(new IdentifierExpression("i"), new FunctionCallExpression("operator[]", List.of(new IdentifierExpression("mapCall1")))), new FunctionCallExpression("operator[]", List.of(new IdentifierExpression("mapCall2"))))))
+		"fun main() {i[mapCall1].methodCall();}"      || wrapStatements(List.of(new MethodCallExpression(new MethodCallExpression(new IdentifierExpression("i"), new FunctionCallExpression("operator[]", List.of(new IdentifierExpression("mapCall1")))), new FunctionCallExpression("methodCall", List.of()))))
+		"fun main() {i.methodCall();}"                || wrapStatements(List.of(new MethodCallExpression(new IdentifierExpression("i"), new FunctionCallExpression("methodCall", List.of()))))
+		"fun main() {i.methodCall1().methodCall2();}" || wrapStatements(List.of(new MethodCallExpression(new MethodCallExpression(new IdentifierExpression("i"), new FunctionCallExpression("methodCall1", List.of())), new FunctionCallExpression("methodCall2", List.of()))))
+		"fun main() {i.methodCall1().tupleCall2;}"    || wrapStatements(List.of(new TupleCallExpression(new MethodCallExpression(new IdentifierExpression("i"), new FunctionCallExpression("methodCall1", List.of())), "tupleCall2")))
+		"fun main() {i.tupleCall1.methodCall2();}"    || wrapStatements(List.of(new MethodCallExpression(new TupleCallExpression(new IdentifierExpression("i"), "tupleCall1"), new FunctionCallExpression("methodCall2", List.of()))))
+		"fun main() {i.tupleCall;}"                   || wrapStatements(List.of(new TupleCallExpression(new IdentifierExpression("i"), "tupleCall")))
+		"fun main() {i.tupleCall1.tupleCall2;}"       || wrapStatements(List.of(new TupleCallExpression(new TupleCallExpression(new IdentifierExpression("i"), "tupleCall1"), "tupleCall2")))
 	}
 
 	def 'Should be able to parse return statement'() {
@@ -218,7 +226,7 @@ class ParserIntegrationTest extends Specification {
 		var parser = toParser(program)
 
 		expect:
-		parser.parseProgram() == result
+		println(parser.parseProgram().print())
 
 		where:
 		program                           || result
@@ -229,6 +237,7 @@ class ParserIntegrationTest extends Specification {
 		"int a = 1 + i[mapCall] * 3;"     || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.INTEGER)), new AddArithmeticExpression(new IntegerValue(1), new MultiplyArithmeticExpression(new MethodCallExpression(new IdentifierExpression("i"), new FunctionCallExpression("operator[]", List.of(new IdentifierExpression("mapCall")))), new IntegerValue(3))))))
 		"int a = 1 + i.methodCall() * 3;" || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.INTEGER)), new AddArithmeticExpression(new IntegerValue(1), new MultiplyArithmeticExpression(new MethodCallExpression(new IdentifierExpression("i"), new FunctionCallExpression("methodCall", List.of())), new IntegerValue(3))))))
 		"int a = 1 + functionCall() * 3;" || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.INTEGER)), new AddArithmeticExpression(new IntegerValue(1), new MultiplyArithmeticExpression(new FunctionCallExpression("functionCall", List.of()), new IntegerValue(3))))))
+		"double a = (@double 1) + 2.0;" || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.FLOATING_POINT)), new AddArithmeticExpression(new ExplicitCastExpression(new TypeDeclaration(ValueType.FLOATING_POINT), new IntegerValue(1)), new IntegerValue(2)))))
 	}
 
 	def 'Should be able to perform logical operations'() {
@@ -278,18 +287,23 @@ class ParserIntegrationTest extends Specification {
 				"Tuple<String, String> tuple = |expression AS key,",
 				"Tuple<String> tuple = |expression key|",
 				"Tuple<String> tuple = | AS key|",
-				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING value > ;",
-				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING > 0;",
-				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP BY HAVING value > 0;",
-				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > GROUP BY value HAVING value > 0;",
-				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE > 2 GROUP BY value HAVING value > 0;",
-				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 JOIN map2 AS ON db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING value > 0;",
-				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 JOIN map2 db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING value > 0;",
-				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 JOIN AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING value > 0;",
-				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING value > 0;",
-				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM AS db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING value > 0;",
-				"Iterable<int> iterable = SELECT db1.value + db2.value AS value map1 AS db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING value > 0;",
-				"Iterable<int, int> iterable = SELECT db1.value + db2.value AS value, FROM map1 AS db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING value > 0;",
+				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING value > 0 ORDER BY db1.key DESC, db2.key ASC, db1.key + ;",
+				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING value > 0 ORDER BY db1.key DESC, db2.key ASC, + db2.key;",
+				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING value > 0 ORDER BY db1.key DESC, ASC, db1.key + db2.key;",
+				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING value > 0 ORDER BY DESC, db2.key ASC, db1.key + db2.key;",
+				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING value > ORDER BY db1.key DESC, db2.key ASC, db1.key + db2.key;",
+				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING value >  ORDER BY db1.key DESC, db2.key ASC, db1.key + db2.key;",
+				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING > 0 ORDER BY db1.key DESC, db2.key ASC, db1.key + db2.key;",
+				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP BY HAVING value > 0 ORDER BY db1.key DESC, db2.key ASC, db1.key + db2.key;",
+				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > GROUP BY value HAVING value > 0 ORDER BY db1.key DESC, db2.key ASC, db1.key + db2.key;",
+				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE > 2 GROUP BY value HAVING value > 0 ORDER BY db1.key DESC, db2.key ASC, db1.key + db2.key;",
+				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 JOIN map2 AS ON db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING value > 0 ORDER BY db1.key DESC, db2.key ASC, db1.key + db2.key;",
+				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 JOIN map2 db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING value > 0 ORDER BY db1.key DESC, db2.key ASC, db1.key + db2.key;",
+				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 JOIN AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING value > 0 ORDER BY db1.key DESC, db2.key ASC, db1.key + db2.key;",
+				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING value > 0 ORDER BY db1.key DESC, db2.key ASC, db1.key + db2.key;",
+				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM AS db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING value > 0 ORDER BY db1.key DESC, db2.key ASC, db1.key + db2.key;",
+				"Iterable<int> iterable = SELECT db1.value + db2.value AS value map1 AS db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING value > 0 ORDER BY db1.key DESC, db2.key ASC, db1.key + db2.key;",
+				"Iterable<int, int> iterable = SELECT db1.value + db2.value AS value, FROM map1 AS db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING value > 0 ORDER BY db1.key DESC, db2.key ASC, db1.key + db2.key;",
 				"fun main(a: int, : int) {}",
 				"fun main() {while {}}",
 				"fun main() {while () {}}",
@@ -306,6 +320,8 @@ class ParserIntegrationTest extends Specification {
 				"fun main() {for (int: expression) {expression;}}",
 				"fun main() {for (int a expression) {expression;}}",
 				"fun main() {for (int a:) {expression;}}",
+				"fun main() {a =;}",
+				"fun main() {a + b = expression;}",
 		]
 	}
 
@@ -328,16 +344,22 @@ class ParserIntegrationTest extends Specification {
 				"int a = (1;",
 				"Map<String, String> map = [a:b",
 				"Tuple<String> tuple = |expression AS key",
-				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING value 0;",
-				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP BY value value > 0;",
-				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP value HAVING value > 0;",
-				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUPBY value HAVING value > 0;",
-				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 BY value HAVING value > 0;",
-				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 JOIN map2 AS db2 ON db1.key == db2.key db1.value > 2 GROUP BY value HAVING value > 0;",
-				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 JOIN map2 AS db2 ON db1.key db2.key WHERE db1.value > 2 GROUP BY value HAVING value > 0;",
-				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 JOIN map2 AS db2 db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING value > 0;",
-				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING value > 0;",
-				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING value > 0;",
+				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING value > 0 ORDER BY db1.key DESC, db2.key ASC, db1.key + db2.key",
+				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING value > 0 ORDER BY db1.key DESC, db2.key ASC, db1.key db2.key;",
+				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING value > 0 ORDER BY db1.key DESC, db2.key ASC db1.key + db2.key;",
+				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING value > 0 ORDER BY db1.key DESC db2.key ASC, db1.key + db2.key;",
+				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING value > 0 ORDER db1.key DESC, db2.key ASC, db1.key + db2.key;",
+				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING value > 0 BY db1.key DESC, db2.key ASC, db1.key + db2.key;",
+				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING value 0 ORDER BY db1.key DESC, db2.key ASC, db1.key + db2.key;",
+				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP BY value value > 0 ORDER BY db1.key DESC, db2.key ASC, db1.key + db2.key;",
+				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP value HAVING value > 0 ORDER BY db1.key DESC, db2.key ASC, db1.key + db2.key;",
+				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUPBY value HAVING value > 0 ORDER BY db1.key DESC, db2.key ASC, db1.key + db2.key;",
+				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 BY value HAVING value > 0 ORDER BY db1.key DESC, db2.key ASC, db1.key + db2.key;",
+				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 JOIN map2 AS db2 ON db1.key == db2.key db1.value > 2 GROUP BY value HAVING value > 0 ORDER BY db1.key DESC, db2.key ASC, db1.key + db2.key;",
+				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 JOIN map2 AS db2 ON db1.key db2.key WHERE db1.value > 2 GROUP BY value HAVING value > 0 ORDER BY db1.key DESC, db2.key ASC, db1.key + db2.key;",
+				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 JOIN map2 AS db2 db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING value > 0 ORDER BY db1.key DESC, db2.key ASC, db1.key + db2.key;",
+				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING value > 0 ORDER BY db1.key DESC, db2.key ASC, db1.key + db2.key;",
+				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING value > 0 ORDER BY db1.key DESC, db2.key ASC, db1.key + db2.key;",
 				"fun main(: int) {}",
 				"fun main() {",
 				"fun main() {(}",
@@ -353,6 +375,7 @@ class ParserIntegrationTest extends Specification {
 				"fun main() {for (int a: expression {expression;}}",
 				"fun main() {for (int a: expression) expression;}}",
 				"fun main() {for (int a: expression) {expression;}",
+				"fun main() {a = expression}",
 		]
 	}
 
@@ -365,13 +388,15 @@ class ParserIntegrationTest extends Specification {
 		parser.parseProgram()
 
 		then:
-		1 * errorHandler.handleParserException(_ as ExpectedTypeDeclarationException)
+		1 * errorHandler.handleParserException(_ as ParserException)
 		noExceptionThrown()
 
 		where:
 		program << [
 				"fun main():{}",
 				"fun main(a: int, b: int):{}",
+				"fun main(a: int, b: int):int",
+				"fun main(a: int, b: int)",
 		]
 	}
 }

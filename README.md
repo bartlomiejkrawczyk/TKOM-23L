@@ -488,7 +488,7 @@ SELECT_EXPRESSION       = "SELECT", TUPLE_EXPRESSION, "FROM", TUPLE_ELEMENT,
                           {"JOIN", TUPLE_ELEMENT, ["ON", EXPRESSION]},
                           ["WHERE", EXPRESSION],
                           ["GROUP", "BY", EXPRESSION, {",", EXPRESSION}, ["HAVING", EXPRESSION]],
-                          ["ORDER", "BY", EXPRESSION, ["ASCENDING" | "DESCENDING"], {"," ORDER_BY_EXPRESSION}];
+                          ["ORDER", "BY", EXPRESSION, ["ASC" | "DESC"], {"," ORDER_BY_EXPRESSION}];
 
 MAP_EXPRESSION          = "[", [EXPRESSION, ":", EXPRESSION, {",", EXPRESSION, ":", EXPRESSION}], "]";
 

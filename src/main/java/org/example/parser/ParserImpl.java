@@ -72,7 +72,6 @@ import org.example.parser.error.UnexpectedTokenException;
 import org.example.token.Token;
 import org.example.token.TokenType;
 
-@SuppressWarnings("ALL")
 @Slf4j
 public class ParserImpl implements Parser {
 
@@ -371,6 +370,7 @@ public class ParserImpl implements Parser {
 
 		if (expression instanceof IdentifierExpression identifier) {
 			var value = retrieveItem(parseExpression(), MissingExpressionException::new);
+			handleSkip(TokenType.SEMICOLON);
 			return Optional.of(
 					new AssignmentStatement(
 							identifier.getName(),
@@ -589,17 +589,16 @@ public class ParserImpl implements Parser {
 		if (optionalExpression.isEmpty()) {
 			return Optional.empty();
 		}
-		if (!skipIf(TokenType.DOT)) {
-			return optionalExpression;
+		var expression = optionalExpression.get();
+		while (skipIf(TokenType.DOT)) {
+			var identifier = getIdentifier();
+
+			var parameters = parseFunctionArguments();
+
+			expression = parameters.isPresent()
+					? new MethodCallExpression(expression, new FunctionCallExpression(identifier, parameters.get()))
+					: new TupleCallExpression(expression, identifier);
 		}
-		var identifier = getIdentifier();
-
-		var parameters = parseFunctionArguments();
-
-		var expression = parameters.isPresent()
-				? new MethodCallExpression(optionalExpression.get(), new FunctionCallExpression(identifier, parameters.get()))
-				: new TupleCallExpression(optionalExpression.get(), identifier);
-
 		return Optional.of(expression);
 	}
 
@@ -633,21 +632,21 @@ public class ParserImpl implements Parser {
 			return Optional.empty();
 		}
 
-		if (!skipIf(TokenType.OPEN_SQUARE_PARENTHESES)) {
-			return optionalExpression;
+		var expression = optionalExpression.get();
+
+		while (skipIf(TokenType.OPEN_SQUARE_PARENTHESES)) {
+			var argument = retrieveItem(parseExpression(), MissingExpressionException::new);
+
+			handleSkip(TokenType.CLOSED_SQUARE_PARENTHESES);
+
+			var functionCall = new FunctionCallExpression("operator[]", List.of(argument));
+			expression = new MethodCallExpression(expression, functionCall);
 		}
 
-		var argument = retrieveItem(parseExpression(), MissingExpressionException::new);
-
-		handleSkip(TokenType.CLOSED_SQUARE_PARENTHESES);
-
-		var functionCall = new FunctionCallExpression("operator[]", List.of(argument));
-		var methodCall = new MethodCallExpression(optionalExpression.get(), functionCall);
-
-		return Optional.of(methodCall);
+		return Optional.of(expression);
 	}
 
-	private final List<Supplier<Optional<? extends Expression>>> simpleExpressionSuppliers = List.of(
+	private final List<Supplier<Optional<Expression>>> simpleExpressionSuppliers = List.of(
 			this::parseIdentifierOrFunctionCall,
 			this::parseSelectExpression,
 			this::parseMapExpression,
@@ -699,9 +698,9 @@ public class ParserImpl implements Parser {
 	 * <p>{"JOIN", TUPLE_ELEMENT, ["ON", EXPRESSION]},
 	 * <p>["WHERE", EXPRESSION],
 	 * <p>["GROUP", "BY", EXPRESSION, {",", EXPRESSION}, ["HAVING", EXPRESSION]],
-	 * <p>["ORDER", "BY", EXPRESSION, ["ASCENDING" | "DESCENDING"], {"," ORDER_BY_EXPRESSION}];
+	 * <p>["ORDER", "BY", EXPRESSION, ["ASC" | "DESC"], {"," ORDER_BY_EXPRESSION}];
 	 */
-	private Optional<SelectExpression> parseSelectExpression() {
+	private Optional<Expression> parseSelectExpression() {
 		if (!skipIf(TokenType.SELECT)) {
 			return Optional.empty();
 		}
@@ -755,7 +754,7 @@ public class ParserImpl implements Parser {
 		var orderBy = new ArrayList<Pair<Expression, Boolean>>();
 		if (skipIf(TokenType.ORDER) && skipIf(TokenType.BY)) {
 			do {
-				var expression = retrieveItem(parseExpression(), "Missing 'group by' expression");
+				var expression = retrieveItem(parseExpression(), "Missing 'order by' expression");
 				var ascending = true;
 				if (skipIf(TokenType.DESCENDING)) {
 					ascending = false;
@@ -771,7 +770,7 @@ public class ParserImpl implements Parser {
 	/**
 	 * MAP_EXPRESSION = "[", [EXPRESSION, ":", EXPRESSION, {",", EXPRESSION, ":", EXPRESSION}], "]";
 	 */
-	private Optional<MapExpression> parseMapExpression() {
+	private Optional<Expression> parseMapExpression() {
 		if (!skipIf(TokenType.OPEN_SQUARE_PARENTHESES)) {
 			return Optional.empty();
 		}
@@ -800,13 +799,13 @@ public class ParserImpl implements Parser {
 	/**
 	 * STANDALONE_TUPLE_EXP = "|", TUPLE_EXPRESSION, "|";
 	 */
-	private Optional<TupleExpression> parseStandAloneTupleExpression() {
+	private Optional<Expression> parseStandAloneTupleExpression() {
 		if (!skipIf(TokenType.VERTICAL_BAR_PARENTHESES)) {
 			return Optional.empty();
 		}
 		var expression = parseTupleExpression();
 		handleSkip(TokenType.VERTICAL_BAR_PARENTHESES);
-		return expression;
+		return expression.map(Expression.class::cast);
 	}
 
 	/**
@@ -872,7 +871,7 @@ public class ParserImpl implements Parser {
 
 	private String getIdentifier() {
 		if (currentToken.getType() != TokenType.IDENTIFIER) {
-			handleCriticalException(MissingIdentifierException::new);
+			throw handleCriticalException(MissingIdentifierException::new);
 		}
 		var identifier = currentToken.<String>getValue();
 		nextToken();
@@ -923,7 +922,7 @@ public class ParserImpl implements Parser {
 	@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 	private <T> T retrieveItem(@NonNull Optional<T> optional, String errorMessage) {
 		if (optional.isEmpty()) {
-			handleCriticalException(errorMessage);
+			throw handleCriticalException(errorMessage);
 		}
 		return optional.get();
 	}
@@ -932,7 +931,7 @@ public class ParserImpl implements Parser {
 	@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 	private <T> T retrieveItem(@NonNull Optional<T> optional, Function<Token, ? extends CriticalParserException> exceptionProvider) {
 		if (optional.isEmpty()) {
-			handleCriticalException(exceptionProvider);
+			throw handleCriticalException(exceptionProvider);
 		}
 		return optional.get();
 	}
@@ -943,7 +942,7 @@ public class ParserImpl implements Parser {
 		throw exception;
 	}
 
-	private void handleCriticalException(String errorMessage) {
+	private CriticalParserException handleCriticalException(String errorMessage) {
 		var exception = new CriticalParserException(errorMessage, currentToken);
 		errorHandler.handleParserException(exception);
 		throw exception;

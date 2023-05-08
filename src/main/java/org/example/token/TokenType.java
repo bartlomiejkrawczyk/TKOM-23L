@@ -24,8 +24,8 @@ public enum TokenType {
 	HAVING("having", false),
 	ORDER("order", false),
 	BY("by", false),
-	ASCENDING("ascending", false),
-	DESCENDING("descending", false),
+	ASCENDING("asc", false),
+	DESCENDING("desc", false),
 
 	AS("as", false),
 
