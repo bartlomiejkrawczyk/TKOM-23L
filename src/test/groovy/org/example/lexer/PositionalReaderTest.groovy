@@ -96,11 +96,11 @@ class PositionalReaderTest extends Specification {
 
 		where:
 		content       || position
-		" "           || Position.builder().line(0).characterNumber(1).build()
-		""            || Position.builder().line(0).characterNumber(0).build()
-		"\n"          || Position.builder().line(1).characterNumber(0).build()
-		"\n \n \n"    || Position.builder().line(3).characterNumber(0).build()
-		"\n \n \n   " || Position.builder().line(3).characterNumber(3).build()
+		" "           || Position.builder().line(1).characterNumber(2).build()
+		""            || Position.builder().line(1).characterNumber(1).build()
+		"\n"          || Position.builder().line(2).characterNumber(1).build()
+		"\n \n \n"    || Position.builder().line(4).characterNumber(1).build()
+		"\n \n \n   " || Position.builder().line(4).characterNumber(4).build()
 	}
 
 }

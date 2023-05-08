@@ -31,14 +31,14 @@ class LexerTest extends Specification {
 
 		where:
 		content             || position
-		"123"               || Position.builder().line(0).characterNumber(0).build()
-		" 123"              || Position.builder().line(0).characterNumber(1).build()
-		"abc"               || Position.builder().line(0).characterNumber(0).build()
-		"  abc "            || Position.builder().line(0).characterNumber(2).build()
-		"\n1"               || Position.builder().line(1).characterNumber(0).build()
-		"\nnewline"         || Position.builder().line(1).characterNumber(0).build()
-		"\n\nnewline"       || Position.builder().line(2).characterNumber(0).build()
-		" ąĄćĆęĘłŁóÓśŚźŹżŻ" || Position.builder().line(0).characterNumber(1).build()
+		"123"               || Position.builder().line(1).characterNumber(1).build()
+		" 123"              || Position.builder().line(1).characterNumber(2).build()
+		"abc"               || Position.builder().line(1).characterNumber(1).build()
+		"  abc "            || Position.builder().line(1).characterNumber(3).build()
+		"\n1"               || Position.builder().line(2).characterNumber(1).build()
+		"\nnewline"         || Position.builder().line(2).characterNumber(1).build()
+		"\n\nnewline"       || Position.builder().line(3).characterNumber(1).build()
+		" ąĄćĆęĘłŁóÓśŚźŹżŻ" || Position.builder().line(1).characterNumber(2).build()
 	}
 
 	def 'Should be able to parse multiple tokens correctly'() {

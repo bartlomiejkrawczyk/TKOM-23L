@@ -1,35 +1,40 @@
 package org.example.token;
 
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Value;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.experimental.FieldDefaults;
 
 @Builder(toBuilder = true)
 @AllArgsConstructor
-@Value
+@EqualsAndHashCode
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class Position implements Comparable<Position> {
 
-	private static final int BEFORE_FIRST_LETTER = -1;
+	private static final int BEFORE_FIRST_LETTER = 0;
 
+	@Getter
 	int line;
 	int characterNumber;
 
 	public Position() {
-		this.line = 0;
+		this.line = 1;
 		this.characterNumber = BEFORE_FIRST_LETTER;
 	}
 
-	public Position nextCharacter() {
-		return toBuilder()
-				.characterNumber(characterNumber + 1)
-				.build();
+	public void nextCharacter() {
+		characterNumber++;
 	}
 
-	public Position nextLine() {
-		return Position.builder()
-				.characterNumber(BEFORE_FIRST_LETTER)
-				.line(line + 1)
-				.build();
+	public void nextLine() {
+		characterNumber = BEFORE_FIRST_LETTER;
+		line++;
+	}
+
+	public Position copy() {
+		return this.toBuilder().build();
 	}
 
 	@Override
@@ -44,6 +49,6 @@ public class Position implements Comparable<Position> {
 	}
 
 	public String toPositionString() {
-		return "line " + (line + 1) + ", character " + (characterNumber + 1);
+		return "line " + line + ", character " + characterNumber;
 	}
 }

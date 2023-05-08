@@ -65,7 +65,7 @@ public class ErrorHandlerImpl implements ErrorHandler {
 	}
 
 	private StringBuilder formatLine(PositionalReader reader) {
-		var line = String.format("%4d: ", reader.getLine() + 1);
+		var line = String.format("%4d: ", reader.getLine());
 		return new StringBuilder(line);
 	}
 

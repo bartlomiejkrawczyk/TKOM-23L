@@ -6,7 +6,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.Map;
-import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.example.lexer.error.InconsistentNewLine;
 import org.example.token.Position;
@@ -27,13 +26,16 @@ public class PositionalReaderImpl implements PositionalReader {
 	private final BufferedReader reader;
 	private String newLineCharacter;
 
-	@Getter
-	private Position position;
+	private final Position position;
 
 	public PositionalReaderImpl(Reader reader) {
 		this.reader = toBufferedReader(reader);
 		this.position = new Position();
 		this.newLineCharacter = null;
+	}
+
+	public Position getPosition() {
+		return position.copy();
 	}
 
 	@Override
@@ -86,11 +88,11 @@ public class PositionalReaderImpl implements PositionalReader {
 	}
 
 	private void advanceLine() {
-		position = position.nextLine();
+		position.nextLine();
 	}
 
 	private void advanceCharacter() {
-		position = position.nextCharacter();
+		position.nextCharacter();
 	}
 
 	private BufferedReader toBufferedReader(Reader abstractReader) {
