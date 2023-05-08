@@ -41,6 +41,7 @@ public enum TokenType {
 	COLON(":"),
 	COMMA(","),
 	DOT("."),
+	EXPLICIT_CAST("@"),
 
 	AND("and", false),
 	NOT("not", false),

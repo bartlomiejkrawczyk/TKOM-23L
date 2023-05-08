@@ -415,104 +415,90 @@ COMPLEX_TYPE            = "Map"
 
 [//]: # (EBNF)
 
-[//]: # (TODO: reduce types to beginning with the same token)
-
 ```
+FUNCTION_DEFINITION    = "fun", IDENTIFIER, "(", [ARGUMENT_LIST], ")", [":", TYPE_DECLARATION], BLOCK;
+ARGUMENT_LIST           = ARGUMENT_DECLARATION, {",", ARGUMENT_DECLARATION};
+ARGUMENT_DECLARATION    = IDENTIFIER, ":", TYPE_DECLARATION;
+
 TYPE_DECLARATION        = SIMPLE_TYPE
                         | COMPLEX_TYPE, "<", TYPE_DECLARATION, {",", TYPE_DECLARATION} ,">";
-                        
-EXPLICIT_CAST           = "(", ("int" | "double"), ")", FACTOR;
 
-FACTOR                  = "(", ARITHMETIC_EXPRESSION ")"
-                        | ["-"], NUMBER
-                        | IDENTIFIER
-                        | FUNCTION_CALL
-                        | METHOD_CALL
-                        | EXPLICIT_CAST;
+DECLARATION             = TYPE_DECLARATION, IDENTIFIER, "=", EXPRESSION, ";";
 
-TERM                    = FACTOR, {multiplication_operator, FACTOR};
+// STATEMENTS
 
-ARITHMETIC_EXPRESSION   = TERM, {addition_operator, TERM};
+BLOCK                   = "{", {STATEMENT} "}";
 
-LOGICAL_VALUE           = IDENTIFIER
-                        | BOOLEAN
-                        | FUNCTION_CALL
-                        | METHOD_CALL
-                        | ARITHMETIC_EXPRESSION, relation_operator, ARITHMETIC_EXPRESSION;
-
-LOGICAL_AND_EXPRESSION  = LOGICAL_VALUE, {"and", LOGICAL_VALUE};
-
-LOGICAL_OR_EXPRESSION   = LOGICAL_AND_EXPRESSION, {"or", LOGICAL_AND_EXPRESSION};
-
-
-LOGICAL_EXPRESSION      = LOGICAL_OR_EXPRESSION
-                        | "not", LOGICAL_EXPRESSION
-                        | "(", LOGICAL_EXPRESSION, ")";
-
-
-ARGUMENT_DECLARATION    = IDENTIFIER, ":", TYPE_DECLARATION;
-ARGUMENT_LIST           = ARGUMENT_DECLARATION, {",", ARGUMENT_DECLARATION};
-FUNCTION_DEFINITION    = "fun", IDENTIFIER, "(", [ARGUMENT_LIST], ")", [":", TYPE_DECLARATION], BLOCK;
-
-LAMBDA_DECLARATION      = "fun", "(", [ARGUMENT_LIST], ")", [":", TYPE_DECLARATION], BLOCK; (* Reconsider this*)
-
-FUNCTION_CALL           = IDENTIFIER, "(", [EXPRESSION, {",", EXPRESSION}], ")";
-
-TUPLE_CALL              = EXPRESSION, ".", IDENTIFIER;
-
-METHOD_CALL             = EXPRESSION, ".", FUNCTION_CALL
-                        | EXPRESSION, "[", EXPRESSION, "]";
-
-EXPRESSION              = IDENTIFIER
-                        | ARITHMETIC_EXPRESSION
-                        | LOGICAL_EXPRESSION
-                        | FUNCTION_CALL
-                        | METHOD_CALL
-                        | TUPLE_CALL
-                        | SELECT_EXPRESSION
-                        | STANDALONE_TUPLE_EXP
-                        | MAP_EXPRESSION
-                        | "(", EXPRESSION, ")";
+STATEMENT               = IF_STATEMENT
+                        | WHILE_STATEMENT
+                        | FOR_STATEMENT
+                        | DECLARATION
+                        | ASSIGNMENT_OR_IDENTIFIER_EXPRESSION
+                        | RETURN_STATEMENT
+                        | EXPRESSION, ";"
+                        | BLOCK
+                        | ";";
 
 IF_STATEMENT            = "if", LOGICAL_EXPRESSION, STATEMENT,
                           ["else", STATEMENT];
 
 WHILE_STATEMENT         = "while", LOGICAL_EXPRESSION, STATEMENT;
 
+FOR_STATEMENT           = "for", "(", TYPE_DECLARATION, IDENTIFIER, ":", EXPRESSION, ")", STATEMENT;
+
+ASSIGNMENT_OR_IDENTIFIER_EXPRESSION = [IDENTIFIER, "="], EXPRESSION, ";";
+
 RETURN_STATEMENT        = "return", EXPRESSION, ";";
 
-FOR_EACH_EXPRESSION     = "(", TYPE_DECLARATION, IDENTIFIER, ":", EXPRESSION, ")";
-FOR_STATEMENT           = "for", FOR_EACH_EXPRESSION, STATEMENT;
+// EXPRESSION
 
-DECLARATION             = TYPE_DECLARATION, IDENTIFIER, "=", EXPRESSION, ";";
+EXPRESSION              = LOGICAL_EXPRESSION;
 
-ASSIGNMENT              = IDENTIFIER, "=", EXPRESSION, ";";
+LOGICAL_EXPRESSION      = LOGICAL_OR_EXPRESSION;
 
-STATEMENT               = IF_STATEMENT
-                        | WHILE_STATEMENT
-                        | FOR_STATEMENT
-                        | DECLARATION
-                        | ASSIGNMENT
-                        | EXPRESSION, ";"
-                        | BLOCK
-                        | ";";
+LOGICAL_OR_EXPRESSION   = LOGICAL_AND_EXPRESSION, {"or", LOGICAL_AND_EXPRESSION};
 
-BLOCK                   = "{", {STATEMENT} "}";
+LOGICAL_AND_EXPRESSION  = RELATION, {"and", RELATION};
 
-MAP_ELEMENT             = EXPRESSION, ":", EXPRESSION;
-MAP_EXPRESSION          = "[", [MAP_ELEMENT, {",", MAP_ELEMENT}], "]";
+RELATION                = ["not"], (BOOLEAN | ARITHMETIC_EXPRESSION, [relation_operator, ARITHMETIC_EXPRESSION]);
 
-TUPLE_ELEMENT           = EXPRESSION, "AS", IDENTIFIER
-TUPLE_EXPRESSION        = TUPLE_ELEMENT, {",", TUPLE_ELEMENT};
-STANDALONE_TUPLE_EXP    = "|", TUPLE_EXPRESSION, "|";
+ARITHMETIC_EXPRESSION   = FACTOR, {addition_operator, FACTOR};
 
-ORDER_BY_EXPRESSION     = EXPRESSION, ["ASCENDING" | "DESCENDING"];
+FACTOR                  = TERM, {multiplication_operator, TERM};
+
+TERM                    = ["-"], (SIMPLE_TYPE | TUPLE_OR_METHOD_CALL);
+
+SIMPLE_TYPE             = NUMBER | STRING;
+
+TUPLE_OR_METHOD_CALL    = MAP_CALL, {".", IDENTIFIER, [FUNCTION_ARGUMENTS]};
+FUNCTION_ARGUMENTS      = "(", [EXPRESSION, {",", EXPRESSION}], ")";
+
+MAP_CALL                = SIMPLE_EXPRESSION, "[", EXPRESSION, "]";
+
+SIMPLE_EXPRESSION       = IDENTIFIER_OR_FUNCTION_CALL
+                        | SELECT_EXPRESSION
+                        | STANDALONE_TUPLE_EXP
+                        | MAP_EXPRESSION
+                        | EXPLICIT_CAST
+                        | PARENTHESES_EXPRESSION;
+
+IDENTIFIER_OR_FUNCTION_CALL = IDENTIFIER, [FUNCTION_ARGUMENTS];
 
 SELECT_EXPRESSION       = "SELECT", TUPLE_EXPRESSION, "FROM", TUPLE_ELEMENT,
                           {"JOIN", TUPLE_ELEMENT, ["ON", EXPRESSION]},
                           ["WHERE", EXPRESSION],
                           ["GROUP", "BY", EXPRESSION, {",", EXPRESSION}, ["HAVING", EXPRESSION]],
-                          ["ORDER", "BY", ORDER_BY_EXPRESSION, {"," ORDER_BY_EXPRESSION}];
+                          ["ORDER", "BY", EXPRESSION, ["ASCENDING" | "DESCENDING"], {"," ORDER_BY_EXPRESSION}];
+
+MAP_EXPRESSION          = "[", [EXPRESSION, ":", EXPRESSION, {",", EXPRESSION, ":", EXPRESSION}], "]";
+
+STANDALONE_TUPLE_EXP    = "|", TUPLE_EXPRESSION, "|";
+TUPLE_EXPRESSION        = TUPLE_ELEMENT, {",", TUPLE_ELEMENT};
+TUPLE_ELEMENT           = EXPRESSION, "AS", IDENTIFIER;
+
+EXPLICIT_CAST           = "@", TYPE_DECLARATION, EXPRESSION;
+
+PARENTHESES_EXPRESSION  = "(", EXPRESSION, ")";
 ```
 
 ## Symbol startowy
