@@ -63,9 +63,13 @@ import org.example.parser.error.CriticalParserException;
 import org.example.parser.error.ExpectedBlockException;
 import org.example.parser.error.ExpectedTypeDeclarationException;
 import org.example.parser.error.MissingArgumentException;
+import org.example.parser.error.MissingArithmeticExpression;
 import org.example.parser.error.MissingExpressionException;
 import org.example.parser.error.MissingIdentifierException;
+import org.example.parser.error.MissingLogicalExpressionException;
 import org.example.parser.error.MissingStatementException;
+import org.example.parser.error.MissingTupleElementException;
+import org.example.parser.error.MissingTupleExpressionException;
 import org.example.parser.error.MissingTypeDeclaration;
 import org.example.parser.error.ParserException;
 import org.example.parser.error.UnexpectedTokenException;
@@ -410,43 +414,38 @@ public class ParserImpl implements Parser {
 		return parseLogicalOrExpression();
 	}
 
-	/**
-	 * LOGICAL_OR_EXPRESSION   = LOGICAL_AND_EXPRESSION, {"or", LOGICAL_AND_EXPRESSION};
-	 */
-	private Optional<Expression> parseLogicalOrExpression() {
-		var leftOptional = parseLogicalAndExpression();
+	private Optional<Expression> parseGenericLogicalExpression(
+			TokenType type,
+			Supplier<Optional<Expression>> supplier,
+			Function2<Expression, Expression, Expression> wrapper
+	) {
+		var leftOptional = supplier.get();
 		if (leftOptional.isEmpty()) {
 			return Optional.empty();
 		}
+
 		var left = leftOptional.get();
 
-		while (skipIf(TokenType.OR)) {
-			var right = retrieveItem(parseLogicalAndExpression(), MissingExpressionException::new);
-			left = new OrLogicalExpression(left, right);
+		while (skipIf(type)) {
+			var right = retrieveItem(supplier.get(), MissingLogicalExpressionException::new);
+			left = wrapper.apply(left, right);
 		}
 
 		return Optional.of(left);
 	}
 
-	// TODO: simplify !!!
+	/**
+	 * LOGICAL_OR_EXPRESSION   = LOGICAL_AND_EXPRESSION, {"or", LOGICAL_AND_EXPRESSION};
+	 */
+	private Optional<Expression> parseLogicalOrExpression() {
+		return parseGenericLogicalExpression(TokenType.OR, this::parseLogicalAndExpression, OrLogicalExpression::new);
+	}
 
 	/**
 	 * LOGICAL_AND_EXPRESSION  = RELATION, {"and", RELATION};
 	 */
 	private Optional<Expression> parseLogicalAndExpression() {
-		var leftOptional = parseRelation();
-		if (leftOptional.isEmpty()) {
-			return Optional.empty();
-		}
-
-		var left = leftOptional.get();
-
-		while (skipIf(TokenType.AND)) {
-			var right = retrieveItem(parseRelation(), MissingExpressionException::new);
-			left = new AndLogicalExpression(left, right);
-		}
-
-		return Optional.of(left);
+		return parseGenericLogicalExpression(TokenType.AND, this::parseRelation, AndLogicalExpression::new);
 	}
 
 	private final Map<TokenType, Function2<Expression, Expression, Expression>> relationExpressions = Map.of(
@@ -483,7 +482,7 @@ public class ParserImpl implements Parser {
 		var constructor = relationExpressions.get(type);
 		nextToken();
 
-		var right = retrieveItem(parseArithmeticExpression(), MissingExpressionException::new);
+		var right = retrieveItem(parseArithmeticExpression(), MissingArithmeticExpression::new);
 
 		var logicalExpression = constructor.apply(expression.get(), right);
 
@@ -503,10 +502,10 @@ public class ParserImpl implements Parser {
 		// TODO: consider how to refactor
 		while (currentToken.getType() != TokenType.END_OF_FILE) {
 			if (skipIf(TokenType.PLUS)) {
-				var right = retrieveItem(parseFactor(), MissingExpressionException::new);
+				var right = retrieveItem(parseFactor(), MissingArithmeticExpression::new);
 				left = new AddArithmeticExpression(left, right);
 			} else if (skipIf(TokenType.MINUS)) {
-				var right = retrieveItem(parseFactor(), MissingExpressionException::new);
+				var right = retrieveItem(parseFactor(), MissingArithmeticExpression::new);
 				left = new SubtractArithmeticExpression(left, right);
 			} else {
 				break;
@@ -528,10 +527,10 @@ public class ParserImpl implements Parser {
 
 		while (currentToken.getType() != TokenType.END_OF_FILE) {
 			if (skipIf(TokenType.TIMES)) {
-				var right = retrieveItem(parseTerm(), MissingExpressionException::new);
+				var right = retrieveItem(parseTerm(), MissingArithmeticExpression::new);
 				left = new MultiplyArithmeticExpression(left, right);
 			} else if (skipIf(TokenType.DIVIDE)) {
-				var right = retrieveItem(parseTerm(), MissingExpressionException::new);
+				var right = retrieveItem(parseTerm(), MissingArithmeticExpression::new);
 				left = new DivideArithmeticExpression(left, right);
 			} else {
 				break;
@@ -668,7 +667,7 @@ public class ParserImpl implements Parser {
 		for (var supplier : simpleExpressionSuppliers) {
 			var expression = supplier.get();
 			if (expression.isPresent()) {
-				return (Optional<Expression>) expression;
+				return expression;
 			}
 		}
 		return Optional.empty();
@@ -704,23 +703,23 @@ public class ParserImpl implements Parser {
 		if (!skipIf(TokenType.SELECT)) {
 			return Optional.empty();
 		}
-		var select = retrieveItem(parseTupleExpression(), "Missing tuple expression");
+		var select = retrieveItem(parseTupleExpression(), MissingTupleExpressionException::new);
 		handleSkip(TokenType.FROM);
-		var from = getTupleElementOrThrow();
+		var from = retrieveItem(parseTupleElement(), MissingTupleElementException::new);
 		var join = new ArrayList<Tuple3<String, Expression, Expression>>();
 
 		while (skipIf(TokenType.JOIN)) {
-			var joinTable = getTupleElementOrThrow();
+			var joinTable = retrieveItem(parseTupleElement(), MissingTupleElementException::new);
 
 			var on = skipIf(TokenType.ON)
-					? retrieveItem(parseLogicalExpression(), "Missing 'on' logical expression in join")
+					? retrieveItem(parseLogicalExpression(), MissingLogicalExpressionException::new)
 					: new BooleanValue(true);
 
 			join.add(Tuple.of(joinTable.getKey(), joinTable.getValue(), on));
 		}
 
 		var where = skipIf(TokenType.WHERE)
-				? retrieveItem(parseLogicalExpression(), "Missing 'where' logical expression")
+				? retrieveItem(parseLogicalExpression(), MissingLogicalExpressionException::new)
 				: new BooleanValue(true);
 
 		var groupByResult = parseGroupBy();
@@ -739,12 +738,12 @@ public class ParserImpl implements Parser {
 		var having = (Expression) new BooleanValue(true);
 		if (skipIf(TokenType.GROUP) && skipIf(TokenType.BY)) {
 			do {
-				var expression = retrieveItem(parseExpression(), "Missing 'group by' expression");
+				var expression = retrieveItem(parseExpression(), MissingExpressionException::new);
 				groupBy.add(expression);
 			} while (skipIf(TokenType.COMMA));
 
 			having = skipIf(TokenType.HAVING)
-					? retrieveItem(parseLogicalExpression(), "Missing logical expression")
+					? retrieveItem(parseLogicalExpression(), MissingLogicalExpressionException::new)
 					: having;
 		}
 		return Pair.of(groupBy, having);
@@ -754,7 +753,7 @@ public class ParserImpl implements Parser {
 		var orderBy = new ArrayList<Pair<Expression, Boolean>>();
 		if (skipIf(TokenType.ORDER) && skipIf(TokenType.BY)) {
 			do {
-				var expression = retrieveItem(parseExpression(), "Missing 'order by' expression");
+				var expression = retrieveItem(parseExpression(), MissingExpressionException::new);
 				var ascending = true;
 				if (skipIf(TokenType.DESCENDING)) {
 					ascending = false;
@@ -822,7 +821,7 @@ public class ParserImpl implements Parser {
 		elements.put(element.getKey(), element.getValue());
 
 		while (skipIf(TokenType.COMMA)) {
-			element = getTupleElementOrThrow();
+			element = retrieveItem(parseTupleElement(), MissingTupleElementException::new);
 			elements.put(element.getKey(), element.getValue());
 		}
 
@@ -878,11 +877,6 @@ public class ParserImpl implements Parser {
 		return identifier;
 	}
 
-	private Map.Entry<String, Expression> getTupleElementOrThrow() {
-		var tupleElement = parseTupleElement();
-		return retrieveItem(tupleElement, "Missing tuple element");
-	}
-
 	private <T> Optional<Boolean> fillIn(Supplier<Optional<T>> supplier, Consumer<T> consumer) {
 		return supplier.get()
 				.map(it -> {
@@ -906,7 +900,8 @@ public class ParserImpl implements Parser {
 			} else {
 				handleNonCriticalException(expected);
 				skipUntil(expected);
-				// handleCriticalException(token -> new MissingTokenException(token, expected));
+				// Throwing an exception might be a better idea:
+				// handleCriticalException(token -> new MissingTokenException(token, expected))
 			}
 		}
 	}
@@ -920,15 +915,6 @@ public class ParserImpl implements Parser {
 
 	@NonNull
 	@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-	private <T> T retrieveItem(@NonNull Optional<T> optional, String errorMessage) {
-		if (optional.isEmpty()) {
-			throw handleCriticalException(errorMessage);
-		}
-		return optional.get();
-	}
-
-	@NonNull
-	@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 	private <T> T retrieveItem(@NonNull Optional<T> optional, Function<Token, ? extends CriticalParserException> exceptionProvider) {
 		if (optional.isEmpty()) {
 			throw handleCriticalException(exceptionProvider);
@@ -938,12 +924,6 @@ public class ParserImpl implements Parser {
 
 	private CriticalParserException handleCriticalException(Function<Token, ? extends CriticalParserException> exceptionProvider) {
 		var exception = exceptionProvider.apply(currentToken);
-		errorHandler.handleParserException(exception);
-		throw exception;
-	}
-
-	private CriticalParserException handleCriticalException(String errorMessage) {
-		var exception = new CriticalParserException(errorMessage, currentToken);
 		errorHandler.handleParserException(exception);
 		throw exception;
 	}

@@ -304,6 +304,7 @@ class ParserIntegrationTest extends Specification {
 				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM AS db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING value > 0 ORDER BY db1.key DESC, db2.key ASC, db1.key + db2.key;",
 				"Iterable<int> iterable = SELECT db1.value + db2.value AS value map1 AS db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING value > 0 ORDER BY db1.key DESC, db2.key ASC, db1.key + db2.key;",
 				"Iterable<int, int> iterable = SELECT db1.value + db2.value AS value, FROM map1 AS db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING value > 0 ORDER BY db1.key DESC, db2.key ASC, db1.key + db2.key;",
+				"Iterable<int, int> iterable = SELECT;",
 				"fun main(a: int, : int) {}",
 				"fun main() {while {}}",
 				"fun main() {while () {}}",
