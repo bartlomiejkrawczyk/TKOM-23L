@@ -318,7 +318,7 @@ class LexerTest extends Specification {
 
 		where:
 		content || value
-		"@abc"  || "abc"
+		"^abc" || "abc"
 		"~abc"  || "abc"
 	}
 
