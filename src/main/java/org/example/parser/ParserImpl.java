@@ -556,7 +556,7 @@ public class ParserImpl implements Parser {
 
 	private final List<Supplier<Optional<Expression>>> termSuppliers = List.of(
 			this::parseSimpleTypeExpression,
-			this::parseTupleOrMethodCall
+			this::parseTupleOrMethodOrMapCall
 	);
 
 	/**
@@ -597,23 +597,31 @@ public class ParserImpl implements Parser {
 	}
 
 	/**
-	 * TUPLE_OR_METHOD_CALL    = SIMPLE_EXPRESSION, {".", IDENTIFIER, [FUNCTION_ARGUMENTS]};
+	 * TUPLE_METHOD_MAP_CALL = SIMPLE_EXPRESSION, { (".", IDENTIFIER, [FUNCTION_ARGUMENTS] | "[", EXPRESSION,"]" ) };
 	 */
-	private Optional<Expression> parseTupleOrMethodCall() {
-		var optionalExpression = parseMapCall();
+	private Optional<Expression> parseTupleOrMethodOrMapCall() {
+		var optionalExpression = parseSimpleExpression();
 		if (optionalExpression.isEmpty()) {
 			return Optional.empty();
 		}
 		var expression = optionalExpression.get();
 		var position = currentToken.getPosition();
-		while (skipIf(TokenType.DOT)) {
-			var identifier = getIdentifier();
-
-			var parameters = parseFunctionArguments();
-
-			expression = parameters.isPresent()
-					? new MethodCallExpression(expression, new FunctionCallExpression(identifier, parameters.get(), position), position)
-					: new TupleCallExpression(expression, identifier, position);
+		var parse = true;
+		while (parse) {
+			if (skipIf(TokenType.DOT)) {
+				var identifier = getIdentifier();
+				var parameters = parseFunctionArguments();
+				expression = parameters.isPresent()
+						? new MethodCallExpression(expression, new FunctionCallExpression(identifier, parameters.get(), position), position)
+						: new TupleCallExpression(expression, identifier, position);
+			} else if (skipIf(TokenType.OPEN_SQUARE_PARENTHESES)) {
+				var argument = retrieveItem(parseExpression(), MissingExpressionException::new);
+				handleSkip(TokenType.CLOSED_SQUARE_PARENTHESES);
+				var functionCall = new FunctionCallExpression("operator[]", List.of(argument), position);
+				expression = new MethodCallExpression(expression, functionCall, position);
+			} else {
+				parse = false;
+			}
 			position = currentToken.getPosition();
 		}
 		return Optional.of(expression);
@@ -638,30 +646,6 @@ public class ParserImpl implements Parser {
 		handleSkip(TokenType.CLOSED_ROUND_PARENTHESES);
 
 		return Optional.of(arguments);
-	}
-
-	/**
-	 * MAP_CALL = SIMPLE_EXPRESSION, "[", EXPRESSION, "]";
-	 */
-	private Optional<Expression> parseMapCall() {
-		var optionalExpression = parseSimpleExpression();
-		if (optionalExpression.isEmpty()) {
-			return Optional.empty();
-		}
-
-		var expression = optionalExpression.get();
-		var position = currentToken.getPosition();
-		while (skipIf(TokenType.OPEN_SQUARE_PARENTHESES)) {
-			var argument = retrieveItem(parseExpression(), MissingExpressionException::new);
-
-			handleSkip(TokenType.CLOSED_SQUARE_PARENTHESES);
-
-			var functionCall = new FunctionCallExpression("operator[]", List.of(argument), position);
-			expression = new MethodCallExpression(expression, functionCall, position);
-			position = currentToken.getPosition();
-		}
-
-		return Optional.of(expression);
 	}
 
 	private final List<Supplier<Optional<Expression>>> simpleExpressionSuppliers = List.of(
