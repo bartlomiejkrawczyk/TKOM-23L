@@ -226,7 +226,7 @@ class ParserIntegrationTest extends Specification {
 		var parser = toParser(program)
 
 		expect:
-		println(parser.parseProgram().print())
+		parser.parseProgram() == result
 
 		where:
 		program                           || result
@@ -237,7 +237,7 @@ class ParserIntegrationTest extends Specification {
 		"int a = 1 + i[mapCall] * 3;"     || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.INTEGER)), new AddArithmeticExpression(new IntegerValue(1), new MultiplyArithmeticExpression(new MethodCallExpression(new IdentifierExpression("i"), new FunctionCallExpression("operator[]", List.of(new IdentifierExpression("mapCall")))), new IntegerValue(3))))))
 		"int a = 1 + i.methodCall() * 3;" || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.INTEGER)), new AddArithmeticExpression(new IntegerValue(1), new MultiplyArithmeticExpression(new MethodCallExpression(new IdentifierExpression("i"), new FunctionCallExpression("methodCall", List.of())), new IntegerValue(3))))))
 		"int a = 1 + functionCall() * 3;" || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.INTEGER)), new AddArithmeticExpression(new IntegerValue(1), new MultiplyArithmeticExpression(new FunctionCallExpression("functionCall", List.of()), new IntegerValue(3))))))
-		"double a = (@double 1) + 2.0;" || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.FLOATING_POINT)), new AddArithmeticExpression(new ExplicitCastExpression(new TypeDeclaration(ValueType.FLOATING_POINT), new IntegerValue(1)), new IntegerValue(2)))))
+		"double a = (@double 1) + 2.0;" || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.FLOATING_POINT)), new AddArithmeticExpression(new ExplicitCastExpression(new TypeDeclaration(ValueType.FLOATING_POINT), new IntegerValue(1)), new FloatingPointValue(2)))))
 	}
 
 	def 'Should be able to perform logical operations'() {

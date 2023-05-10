@@ -17,6 +17,7 @@ import org.example.parser.ParserImpl;
 import org.example.parser.error.CriticalParserException;
 import org.example.token.Token;
 import org.example.token.TokenType;
+import org.example.visitor.PrintingVisitor;
 
 @Slf4j
 public class Main {
@@ -71,7 +72,9 @@ public class Main {
 	@SuppressWarnings("unused")
 	private static void testParser(Parser parser) {
 		var program = parser.parseProgram();
-		log.info(program.print());
+		var visitor = new PrintingVisitor();
+		visitor.accept(program);
+		log.info(visitor.print());
 	}
 
 }

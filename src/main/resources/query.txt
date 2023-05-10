@@ -23,7 +23,7 @@ fun prepareSimpleQuery(): Iterable<String, int> {
 			db.value AS value
 		FROM database AS db
 		WHERE value >= 100 AND id != "key_1"
-		ORDER BY value ASCENDING;
+		ORDER BY value ASC;
 
 	return result;
 }
@@ -54,7 +54,7 @@ fun prepareAdvancedQuery(): Iterable<String, int, int, int> {
 			multiply(db.value["property_3"], 2) AS property_3
 		FROM database AS db
 		WHERE property_1 < property_2
-		ORDER BY property_3 DESCENDING;
+		ORDER BY property_3 DESC;
 
 	return result;
 }
@@ -96,7 +96,7 @@ fun prepareAdvancedJoinQuery(): Iterable<String, int, int, int> {
 		FROM database1 AS db1
 		JOIN database2 AS db2 ON db1.key == db2.key
 		WHERE NOT - property_1 > property_2
-		ORDER BY property_3 DESCENDING;
+		ORDER BY property_3 DESC;
 
 	return result;
 }
