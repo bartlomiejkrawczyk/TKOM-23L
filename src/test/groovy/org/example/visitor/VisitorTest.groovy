@@ -6,10 +6,13 @@ import org.example.ast.expression.arithmetic.AddArithmeticExpression
 import org.example.ast.statement.FunctionDefinitionStatement
 import org.example.ast.type.IntegerValue
 import org.example.ast.type.TypeDeclaration
+import org.example.token.Position
 import spock.lang.Specification
 
 
 class VisitorTest extends Specification {
+
+	var position = Position.builder().characterNumber(1).line(1).build()
 
 	def 'Should print tree correctly'() {
 		given:
@@ -20,11 +23,14 @@ class VisitorTest extends Specification {
 				new BlockExpression(
 						List.of(
 								new AddArithmeticExpression(
-										new IntegerValue(1),
-										new IntegerValue(2)
+										new IntegerValue(1, position),
+										new IntegerValue(2, position),
+										position
 								)
-						)
-				)
+						),
+						position
+				),
+				position
 		)
 		var visitor = new PrintingVisitor()
 
@@ -32,11 +38,11 @@ class VisitorTest extends Specification {
 		visitor.accept(expression)
 
 		then:
-		visitor.print() == """FunctionDefinitionStatement(name=main, arguments=[], returnType=TypeDeclaration(valueType=VOID, types=[]))
-`--- BlockExpression()
-     `--- AddArithmeticExpression()
-          |--- IntegerValue(value=1)
-          `--- IntegerValue(value=2)
+		visitor.print() == """FunctionDefinitionStatement(name=main, arguments=[], returnType=TypeDeclaration(valueType=VOID, types=[]), position=Position(line=1, characterNumber=1))
+`--- BlockExpression(position=Position(line=1, characterNumber=1))
+     `--- AddArithmeticExpression(position=Position(line=1, characterNumber=1))
+          |--- IntegerValue(value=1, position=Position(line=1, characterNumber=1))
+          `--- IntegerValue(value=2, position=Position(line=1, characterNumber=1))
 """
 	}
 }

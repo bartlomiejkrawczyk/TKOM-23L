@@ -117,6 +117,7 @@ fun main() {
 	while (a < 10) {
 		a = a + 1;
 	}
+	double b = @double 2;
 
 	Map<String, int> database = prepareDatabase();
 	Comparator<Tuple<String, int>> comparator = compare;

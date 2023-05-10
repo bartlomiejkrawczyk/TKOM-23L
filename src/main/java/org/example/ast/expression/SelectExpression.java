@@ -4,14 +4,17 @@ import io.vavr.Tuple3;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
+import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import lombok.Value;
 import org.apache.commons.lang3.tuple.Pair;
 import org.example.ast.Expression;
 import org.example.ast.Node;
 import org.example.ast.type.TupleElement;
+import org.example.token.Position;
 
 @ToString(exclude = {"select", "from", "join", "where", "having", "orderBy"})
+@EqualsAndHashCode(exclude = "position")
 @Value
 public class SelectExpression implements Expression {
 
@@ -22,6 +25,8 @@ public class SelectExpression implements Expression {
 	List<Expression> groupBy;
 	Expression having;
 	List<Pair<Expression, Boolean>> orderBy;
+
+	Position position;
 
 	@Override
 	public Iterable<Node> getChildrenExpressions() {

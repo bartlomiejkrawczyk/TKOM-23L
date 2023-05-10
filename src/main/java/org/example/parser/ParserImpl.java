@@ -1,6 +1,6 @@
 package org.example.parser;
 
-import io.vavr.Function2;
+import io.vavr.Function3;
 import io.vavr.Tuple;
 import io.vavr.Tuple3;
 import java.util.ArrayList;
@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -73,6 +74,7 @@ import org.example.parser.error.MissingTupleExpressionException;
 import org.example.parser.error.MissingTypeDeclaration;
 import org.example.parser.error.ParserException;
 import org.example.parser.error.UnexpectedTokenException;
+import org.example.token.Position;
 import org.example.token.Token;
 import org.example.token.TokenType;
 
@@ -124,6 +126,7 @@ public class ParserImpl implements Parser {
 			return Optional.empty();
 		}
 
+		var position = currentToken.getPosition();
 		var name = getIdentifier();
 
 		handleSkip(TokenType.OPEN_ROUND_PARENTHESES);
@@ -143,10 +146,10 @@ public class ParserImpl implements Parser {
 		var block = parseBlock()
 				.orElseGet(() -> {
 					handleNonCriticalException(ExpectedBlockException::new);
-					return new BlockExpression(List.of());
+					return new BlockExpression(List.of(), currentToken.getPosition());
 				});
 
-		return Optional.of(new FunctionDefinitionStatement(name, arguments, returnType, block));
+		return Optional.of(new FunctionDefinitionStatement(name, arguments, returnType, block, position));
 	}
 
 	/**
@@ -224,6 +227,7 @@ public class ParserImpl implements Parser {
 			return Optional.empty();
 		}
 
+		var position = currentToken.getPosition();
 		var identifier = getIdentifier();
 
 		handleSkip(TokenType.EQUALS);
@@ -232,13 +236,14 @@ public class ParserImpl implements Parser {
 
 		handleSkip(TokenType.SEMICOLON);
 
-		return Optional.of(new DeclarationStatement(new Argument(identifier, typeDeclaration.get()), expression));
+		return Optional.of(new DeclarationStatement(new Argument(identifier, typeDeclaration.get()), expression, position));
 	}
 
 	/**
 	 * DECLARATION = TYPE_DECLARATION, IDENTIFIER, "=", EXPRESSION, ";";
 	 */
 	private Optional<BlockExpression> parseBlock() {
+		var position = currentToken.getPosition();
 		if (!skipIf(TokenType.OPEN_CURLY_PARENTHESES)) {
 			return Optional.empty();
 		}
@@ -252,7 +257,7 @@ public class ParserImpl implements Parser {
 
 		handleSkip(TokenType.CLOSED_CURLY_PARENTHESES);
 
-		return Optional.of(new BlockExpression(statements));
+		return Optional.of(new BlockExpression(statements, position));
 	}
 
 	private final List<Supplier<Optional<? extends Statement>>> statementSuppliers = List.of(
@@ -291,6 +296,7 @@ public class ParserImpl implements Parser {
 	 * IF_STATEMENT = "if", LOGICAL_EXPRESSION, STATEMENT, ["else", STATEMENT];
 	 */
 	private Optional<IfStatement> parseIfStatement() {
+		var position = currentToken.getPosition();
 		if (!skipIf(TokenType.IF)) {
 			return Optional.empty();
 		}
@@ -304,7 +310,7 @@ public class ParserImpl implements Parser {
 				: Optional.empty();
 
 		return Optional.of(
-				new IfStatement(condition, ifTrue, ifFalse.orElseGet(() -> new BlockExpression(List.of())))
+				new IfStatement(condition, ifTrue, ifFalse.orElseGet(() -> new BlockExpression(List.of(), currentToken.getPosition())), position)
 		);
 	}
 
@@ -312,6 +318,7 @@ public class ParserImpl implements Parser {
 	 * WHILE_STATEMENT = "while", LOGICAL_EXPRESSION, STATEMENT;
 	 */
 	private Optional<WhileStatement> parseWhileStatement() {
+		var position = currentToken.getPosition();
 		if (!skipIf(TokenType.WHILE)) {
 			return Optional.empty();
 		}
@@ -320,11 +327,11 @@ public class ParserImpl implements Parser {
 		var statement = parseStatement()
 				.orElseGet(() -> {
 					handleNonCriticalException(MissingStatementException::new);
-					return new BlockExpression(List.of());
+					return new BlockExpression(List.of(), currentToken.getPosition());
 				});
 
 		return Optional.of(
-				new WhileStatement(condition, statement)
+				new WhileStatement(condition, statement, position)
 		);
 	}
 
@@ -332,6 +339,7 @@ public class ParserImpl implements Parser {
 	 * FOR_STATEMENT = "for", "(", TYPE_DECLARATION, IDENTIFIER, ":", EXPRESSION, ")", STATEMENT;
 	 */
 	private Optional<ForStatement> parseForStatement() {
+		var position = currentToken.getPosition();
 		if (!skipIf(TokenType.FOR)) {
 			return Optional.empty();
 		}
@@ -351,10 +359,10 @@ public class ParserImpl implements Parser {
 		var body = parseStatement()
 				.orElseGet(() -> {
 					handleNonCriticalException(MissingStatementException::new);
-					return new BlockExpression(List.of());
+					return new BlockExpression(List.of(), currentToken.getPosition());
 				});
 
-		return Optional.of(new ForStatement(new Argument(identifier, type), iterable, body));
+		return Optional.of(new ForStatement(new Argument(identifier, type), iterable, body, position));
 	}
 
 	/**
@@ -378,7 +386,8 @@ public class ParserImpl implements Parser {
 			return Optional.of(
 					new AssignmentStatement(
 							identifier.getName(),
-							value
+							value,
+							expression.getPosition()
 					)
 			);
 		}
@@ -389,6 +398,7 @@ public class ParserImpl implements Parser {
 	 * RETURN_STATEMENT = "return", EXPRESSION, ";";
 	 */
 	private Optional<ReturnStatement> parseReturnStatement() {
+		var position = currentToken.getPosition();
 		if (!skipIf(TokenType.RETURN)) {
 			return Optional.empty();
 		}
@@ -397,7 +407,7 @@ public class ParserImpl implements Parser {
 
 		handleSkip(TokenType.SEMICOLON);
 
-		return Optional.of(new ReturnStatement(expression));
+		return Optional.of(new ReturnStatement(expression, position));
 	}
 
 	/**
@@ -417,7 +427,7 @@ public class ParserImpl implements Parser {
 	private Optional<Expression> parseGenericLogicalExpression(
 			TokenType type,
 			Supplier<Optional<Expression>> supplier,
-			Function2<Expression, Expression, Expression> wrapper
+			Function3<Expression, Expression, Position, Expression> wrapper
 	) {
 		var leftOptional = supplier.get();
 		if (leftOptional.isEmpty()) {
@@ -425,10 +435,11 @@ public class ParserImpl implements Parser {
 		}
 
 		var left = leftOptional.get();
-
+		var position = currentToken.getPosition();
 		while (skipIf(type)) {
 			var right = retrieveItem(supplier.get(), MissingLogicalExpressionException::new);
-			left = wrapper.apply(left, right);
+			left = wrapper.apply(left, right, position);
+			position = currentToken.getPosition();
 		}
 
 		return Optional.of(left);
@@ -448,26 +459,27 @@ public class ParserImpl implements Parser {
 		return parseGenericLogicalExpression(TokenType.AND, this::parseRelation, AndLogicalExpression::new);
 	}
 
-	private final Map<TokenType, Function2<Expression, Expression, Expression>> relationExpressions = Map.of(
-			TokenType.LESS, Function2.of(LessLogicalExpression::new),
-			TokenType.LESS_EQUAL, Function2.of(LessEqualLogicalExpression::new),
-			TokenType.EQUALITY, Function2.of(EqualityLogicalExpression::new),
-			TokenType.GREATER_EQUAL, Function2.of(GreaterEqualLogicalExpression::new),
-			TokenType.GREATER, Function2.of(GreaterLogicalExpression::new),
-			TokenType.INEQUALITY, Function2.of(InequalityLogicalExpression::new)
+	private final Map<TokenType, Function3<Expression, Expression, Position, Expression>> relationExpressions = Map.of(
+			TokenType.LESS, Function3.of(LessLogicalExpression::new),
+			TokenType.LESS_EQUAL, Function3.of(LessEqualLogicalExpression::new),
+			TokenType.EQUALITY, Function3.of(EqualityLogicalExpression::new),
+			TokenType.GREATER_EQUAL, Function3.of(GreaterEqualLogicalExpression::new),
+			TokenType.GREATER, Function3.of(GreaterLogicalExpression::new),
+			TokenType.INEQUALITY, Function3.of(InequalityLogicalExpression::new)
 	);
 
 	/**
 	 * RELATION = ["not"], (BOOLEAN | ARITHMETIC_EXPRESSION, [relation_operator, ARITHMETIC_EXPRESSION]);
 	 */
 	private Optional<Expression> parseRelation() {
+		var position = currentToken.getPosition();
 		var negate = skipIf(TokenType.NOT);
 
 		if (skipIf(TokenType.BOOLEAN_TRUE)) {
-			return Optional.of(new BooleanValue(!negate));
+			return Optional.of(new BooleanValue(!negate, currentToken.getPosition()));
 		}
 		if (skipIf(TokenType.BOOLEAN_FALSE)) {
-			return Optional.of(new BooleanValue(negate));
+			return Optional.of(new BooleanValue(negate, currentToken.getPosition()));
 		}
 
 		var expression = parseArithmeticExpression();
@@ -480,13 +492,14 @@ public class ParserImpl implements Parser {
 			return expression;
 		}
 		var constructor = relationExpressions.get(type);
+		var relationPosition = currentToken.getPosition();
 		nextToken();
 
 		var right = retrieveItem(parseArithmeticExpression(), MissingArithmeticExpression::new);
 
-		var logicalExpression = constructor.apply(expression.get(), right);
+		var logicalExpression = constructor.apply(expression.get(), right, relationPosition);
 
-		return Optional.of(negate ? new NegateLogicalExpression(logicalExpression) : logicalExpression);
+		return Optional.of(negate ? new NegateLogicalExpression(logicalExpression, position) : logicalExpression);
 	}
 
 	/**
@@ -501,12 +514,13 @@ public class ParserImpl implements Parser {
 
 		// TODO: consider how to refactor
 		while (currentToken.getType() != TokenType.END_OF_FILE) {
+			var position = currentToken.getPosition();
 			if (skipIf(TokenType.PLUS)) {
 				var right = retrieveItem(parseFactor(), MissingArithmeticExpression::new);
-				left = new AddArithmeticExpression(left, right);
+				left = new AddArithmeticExpression(left, right, position);
 			} else if (skipIf(TokenType.MINUS)) {
 				var right = retrieveItem(parseFactor(), MissingArithmeticExpression::new);
-				left = new SubtractArithmeticExpression(left, right);
+				left = new SubtractArithmeticExpression(left, right, position);
 			} else {
 				break;
 			}
@@ -526,12 +540,13 @@ public class ParserImpl implements Parser {
 		var left = leftOptional.get();
 
 		while (currentToken.getType() != TokenType.END_OF_FILE) {
+			var position = currentToken.getPosition();
 			if (skipIf(TokenType.TIMES)) {
 				var right = retrieveItem(parseTerm(), MissingArithmeticExpression::new);
-				left = new MultiplyArithmeticExpression(left, right);
+				left = new MultiplyArithmeticExpression(left, right, position);
 			} else if (skipIf(TokenType.DIVIDE)) {
 				var right = retrieveItem(parseTerm(), MissingArithmeticExpression::new);
-				left = new DivideArithmeticExpression(left, right);
+				left = new DivideArithmeticExpression(left, right, position);
 			} else {
 				break;
 			}
@@ -548,21 +563,22 @@ public class ParserImpl implements Parser {
 	 * TERM = ["-"], (SIMPLE_TYPE | TUPLE_OR_METHOD_CALL);
 	 */
 	private Optional<Expression> parseTerm() {
+		var position = currentToken.getPosition();
 		var negate = skipIf(TokenType.MINUS);
 
 		for (var function : termSuppliers) {
 			var expression = function.get();
 			if (expression.isPresent()) {
-				return expression.map(it -> negate ? new NegationArithmeticExpression(it) : it);
+				return expression.map(it -> negate ? new NegationArithmeticExpression(it, position) : it);
 			}
 		}
 		return Optional.empty();
 	}
 
-	private final List<Pair<Predicate<TokenType>, Function<?, Expression>>> simpleTypeParser = List.of(
-			Pair.of(it -> it == TokenType.INTEGER_CONSTANT, (Function<Integer, Expression>) IntegerValue::new),
-			Pair.of(it -> it == TokenType.FLOATING_POINT_CONSTANT, (Function<Double, Expression>) FloatingPointValue::new),
-			Pair.of(LexerUtility.STRINGS::containsValue, (Function<String, Expression>) StringValue::new)
+	private final List<Pair<Predicate<TokenType>, BiFunction<?, Position, Expression>>> simpleTypeParser = List.of(
+			Pair.of(it -> it == TokenType.INTEGER_CONSTANT, (BiFunction<Integer, Position, Expression>) IntegerValue::new),
+			Pair.of(it -> it == TokenType.FLOATING_POINT_CONSTANT, (BiFunction<Double, Position, Expression>) FloatingPointValue::new),
+			Pair.of(LexerUtility.STRINGS::containsValue, (BiFunction<String, Position, Expression>) StringValue::new)
 	);
 
 	/**
@@ -572,7 +588,7 @@ public class ParserImpl implements Parser {
 		var type = currentToken.getType();
 		for (var pair : simpleTypeParser) {
 			if (pair.getKey().test(type)) {
-				var result = pair.getValue().apply(currentToken.getValue());
+				var result = pair.getValue().apply(currentToken.getValue(), currentToken.getPosition());
 				nextToken();
 				return Optional.of(result);
 			}
@@ -589,14 +605,16 @@ public class ParserImpl implements Parser {
 			return Optional.empty();
 		}
 		var expression = optionalExpression.get();
+		var position = currentToken.getPosition();
 		while (skipIf(TokenType.DOT)) {
 			var identifier = getIdentifier();
 
 			var parameters = parseFunctionArguments();
 
 			expression = parameters.isPresent()
-					? new MethodCallExpression(expression, new FunctionCallExpression(identifier, parameters.get()))
-					: new TupleCallExpression(expression, identifier);
+					? new MethodCallExpression(expression, new FunctionCallExpression(identifier, parameters.get(), position), position)
+					: new TupleCallExpression(expression, identifier, position);
+			position = currentToken.getPosition();
 		}
 		return Optional.of(expression);
 	}
@@ -632,14 +650,15 @@ public class ParserImpl implements Parser {
 		}
 
 		var expression = optionalExpression.get();
-
+		var position = currentToken.getPosition();
 		while (skipIf(TokenType.OPEN_SQUARE_PARENTHESES)) {
 			var argument = retrieveItem(parseExpression(), MissingExpressionException::new);
 
 			handleSkip(TokenType.CLOSED_SQUARE_PARENTHESES);
 
-			var functionCall = new FunctionCallExpression("operator[]", List.of(argument));
-			expression = new MethodCallExpression(expression, functionCall);
+			var functionCall = new FunctionCallExpression("operator[]", List.of(argument), position);
+			expression = new MethodCallExpression(expression, functionCall, position);
+			position = currentToken.getPosition();
 		}
 
 		return Optional.of(expression);
@@ -680,13 +699,14 @@ public class ParserImpl implements Parser {
 		if (currentToken.getType() != TokenType.IDENTIFIER) {
 			return Optional.empty();
 		}
+		var position = currentToken.getPosition();
 		var name = getIdentifier();
 
 		var arguments = parseFunctionArguments();
 
 		var expression = arguments.isPresent()
-				? new FunctionCallExpression(name, arguments.get())
-				: new IdentifierExpression(name);
+				? new FunctionCallExpression(name, arguments.get(), position)
+				: new IdentifierExpression(name, position);
 
 		return Optional.of(expression);
 	}
@@ -700,6 +720,7 @@ public class ParserImpl implements Parser {
 	 * <p>["ORDER", "BY", EXPRESSION, ["ASC" | "DESC"], {"," ORDER_BY_EXPRESSION}];
 	 */
 	private Optional<Expression> parseSelectExpression() {
+		var position = currentToken.getPosition();
 		if (!skipIf(TokenType.SELECT)) {
 			return Optional.empty();
 		}
@@ -713,14 +734,14 @@ public class ParserImpl implements Parser {
 
 			var on = skipIf(TokenType.ON)
 					? retrieveItem(parseLogicalExpression(), MissingLogicalExpressionException::new)
-					: new BooleanValue(true);
+					: new BooleanValue(true, currentToken.getPosition());
 
 			join.add(Tuple.of(joinTable.getKey(), joinTable.getValue(), on));
 		}
 
 		var where = skipIf(TokenType.WHERE)
 				? retrieveItem(parseLogicalExpression(), MissingLogicalExpressionException::new)
-				: new BooleanValue(true);
+				: new BooleanValue(true, currentToken.getPosition());
 
 		var groupByResult = parseGroupBy();
 		var groupBy = groupByResult.getKey();
@@ -729,13 +750,13 @@ public class ParserImpl implements Parser {
 		var orderBy = parseOrderBy();
 
 		return Optional.of(
-				new SelectExpression(select, from, join, where, groupBy, having, orderBy)
+				new SelectExpression(select, from, join, where, groupBy, having, orderBy, position)
 		);
 	}
 
 	private Pair<List<Expression>, Expression> parseGroupBy() {
 		var groupBy = new ArrayList<Expression>();
-		var having = (Expression) new BooleanValue(true);
+		var having = (Expression) new BooleanValue(true, currentToken.getPosition());
 		if (skipIf(TokenType.GROUP) && skipIf(TokenType.BY)) {
 			do {
 				var expression = retrieveItem(parseExpression(), MissingExpressionException::new);
@@ -770,6 +791,7 @@ public class ParserImpl implements Parser {
 	 * MAP_EXPRESSION = "[", [EXPRESSION, ":", EXPRESSION, {",", EXPRESSION, ":", EXPRESSION}], "]";
 	 */
 	private Optional<Expression> parseMapExpression() {
+		var position = currentToken.getPosition();
 		if (!skipIf(TokenType.OPEN_SQUARE_PARENTHESES)) {
 			return Optional.empty();
 		}
@@ -791,7 +813,7 @@ public class ParserImpl implements Parser {
 
 		handleSkip(TokenType.CLOSED_SQUARE_PARENTHESES);
 		return Optional.of(
-				new MapExpression(map)
+				new MapExpression(map, position)
 		);
 	}
 
@@ -811,6 +833,7 @@ public class ParserImpl implements Parser {
 	 * TUPLE_EXPRESSION = TUPLE_ELEMENT, {",", TUPLE_ELEMENT};
 	 */
 	private Optional<TupleExpression> parseTupleExpression() {
+		var position = currentToken.getPosition();
 		var firstElement = parseTupleElement();
 		if (firstElement.isEmpty()) {
 			return Optional.empty();
@@ -826,7 +849,7 @@ public class ParserImpl implements Parser {
 		}
 
 		return Optional.of(
-				new TupleExpression(elements)
+				new TupleExpression(elements, position)
 		);
 	}
 
@@ -847,12 +870,13 @@ public class ParserImpl implements Parser {
 	 * EXPLICIT_CAST = "@", TYPE_DECLARATION, EXPRESSION;
 	 */
 	private Optional<Expression> parseExplicitCast() {
+		var position = currentToken.getPosition();
 		if (!skipIf(TokenType.EXPLICIT_CAST)) {
 			return Optional.empty();
 		}
 		var type = retrieveItem(parseTypeDeclaration(), MissingTypeDeclaration::new);
 		var expression = retrieveItem(parseExpression(), MissingExpressionException::new);
-		return Optional.of(new ExplicitCastExpression(type, expression));
+		return Optional.of(new ExplicitCastExpression(type, expression, position));
 	}
 
 	/**

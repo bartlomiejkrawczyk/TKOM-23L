@@ -36,9 +36,14 @@ import org.example.lexer.LexerImpl
 import org.example.parser.error.CriticalParserException
 import org.example.parser.error.ParserException
 import org.example.parser.error.UnexpectedTokenException
+import org.example.token.Position
+import spock.lang.Shared
 import spock.lang.Specification
 
 class ParserIntegrationTest extends Specification {
+
+	@Shared
+	var position = Position.builder().characterNumber(1).line(1).build()
 
 	Parser toParser(String content) {
 		var errorHandler = Mock(ErrorHandler)
@@ -59,7 +64,8 @@ class ParserIntegrationTest extends Specification {
 								"main",
 								List.of(),
 								new TypeDeclaration(ValueType.VOID),
-								new BlockExpression(statements)
+								new BlockExpression(statements, position),
+								position
 						)
 				),
 				List.of()
@@ -91,11 +97,11 @@ class ParserIntegrationTest extends Specification {
 		program                          || result
 		"fun main() {}"                  || wrapStatements(List.of())
 		"fun main() {;;}"                || wrapStatements(List.of())
-		"fun main() {func();}"           || wrapStatements(List.of(new FunctionCallExpression("func", List.of())))
-		"fun main() {func1(); func2();}" || wrapStatements(List.of(new FunctionCallExpression("func1", List.of()), new FunctionCallExpression("func2", List.of())))
-		"fun main(): int {return 1;}"    || new Program(Map.of("main", new FunctionDefinitionStatement("main", List.of(), new TypeDeclaration(ValueType.INTEGER), new BlockExpression(List.of(new ReturnStatement(new IntegerValue(1)))))), List.of())
-		"fun main(a: int) {}"            || new Program(Map.of("main", new FunctionDefinitionStatement("main", List.of(new Argument("a", new TypeDeclaration(ValueType.INTEGER))), new TypeDeclaration(ValueType.VOID), new BlockExpression(List.of()))), List.of())
-		"fun main(a: int, b: int) {}"    || new Program(Map.of("main", new FunctionDefinitionStatement("main", List.of(new Argument("a", new TypeDeclaration(ValueType.INTEGER)), new Argument("b", new TypeDeclaration(ValueType.INTEGER))), new TypeDeclaration(ValueType.VOID), new BlockExpression(List.of()))), List.of())
+		"fun main() {func();}"           || wrapStatements(List.of(new FunctionCallExpression("func", List.of(), position)))
+		"fun main() {func1(); func2();}" || wrapStatements(List.of(new FunctionCallExpression("func1", List.of(), position), new FunctionCallExpression("func2", List.of(), position)))
+		"fun main(): int {return 1;}"    || new Program(Map.of("main", new FunctionDefinitionStatement("main", List.of(), new TypeDeclaration(ValueType.INTEGER), new BlockExpression(List.of(new ReturnStatement(new IntegerValue(1, position), position)), position), position)), List.of())
+		"fun main(a: int) {}"            || new Program(Map.of("main", new FunctionDefinitionStatement("main", List.of(new Argument("a", new TypeDeclaration(ValueType.INTEGER))), new TypeDeclaration(ValueType.VOID), new BlockExpression(List.of(), position), position)), List.of())
+		"fun main(a: int, b: int) {}"    || new Program(Map.of("main", new FunctionDefinitionStatement("main", List.of(new Argument("a", new TypeDeclaration(ValueType.INTEGER)), new Argument("b", new TypeDeclaration(ValueType.INTEGER))), new TypeDeclaration(ValueType.VOID), new BlockExpression(List.of(), position), position)), List.of())
 	}
 
 	def 'Should be able to parse basic declaration statement'() {
@@ -107,20 +113,20 @@ class ParserIntegrationTest extends Specification {
 
 		where:
 		program                                                        || result
-		"int a = 1;"                                                   || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.INTEGER)), new IntegerValue(1))))
-		"int a = b;"                                                   || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.INTEGER)), new IdentifierExpression("b"))))
-		"double a = 1.0;"                                              || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.FLOATING_POINT)), new FloatingPointValue(1.0))))
-		"boolean a = true;"                                            || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.BOOLEAN)), new BooleanValue(true))))
-		"String a = 'b';"                                              || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.STRING)), new StringValue("b"))))
-		"Comparator<int> a = func;"                                    || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.COMPARATOR, List.of(new TypeDeclaration(ValueType.INTEGER)))), new IdentifierExpression("func"))))
-		"Tuple<String> a = |b AS c|;"                                  || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.TUPLE, List.of(new TypeDeclaration(ValueType.STRING)))), new TupleExpression(Map.of("c", new IdentifierExpression("b"))))))
-		"Tuple<String, int> a = |b AS c, d AS e|;"                     || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.TUPLE, List.of(new TypeDeclaration(ValueType.STRING), new TypeDeclaration(ValueType.INTEGER)))), new TupleExpression(Map.of("c", new IdentifierExpression("b"), "e", new IdentifierExpression("d"))))))
-		"Tuple<String, int> a = (|b AS c, d AS e|);"                   || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.TUPLE, List.of(new TypeDeclaration(ValueType.STRING), new TypeDeclaration(ValueType.INTEGER)))), new TupleExpression(Map.of("c", new IdentifierExpression("b"), "e", new IdentifierExpression("d"))))))
-		"Map<int, String> a = [];"                                     || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.MAP, List.of(new TypeDeclaration(ValueType.INTEGER), new TypeDeclaration(ValueType.STRING)))), new MapExpression(Map.of()))))
-		"Map<int, String> a = [b : c];"                                || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.MAP, List.of(new TypeDeclaration(ValueType.INTEGER), new TypeDeclaration(ValueType.STRING)))), new MapExpression(Map.of(new IdentifierExpression("b"), new IdentifierExpression("c"))))))
-		"Map<int, String> a = [b : c, d : e];"                         || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.MAP, List.of(new TypeDeclaration(ValueType.INTEGER), new TypeDeclaration(ValueType.STRING)))), new MapExpression(Map.of(new IdentifierExpression("b"), new IdentifierExpression("c"), new IdentifierExpression("d"), new IdentifierExpression("e"))))))
-		"Map<int, String> a = [b : c, d : []];" || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.MAP, List.of(new TypeDeclaration(ValueType.INTEGER), new TypeDeclaration(ValueType.STRING)))), new MapExpression(Map.of(new IdentifierExpression("b"), new IdentifierExpression("c"), new IdentifierExpression("d"), new MapExpression(Map.of()))))))
-		"Iterable<int> a = SELECT entry.key AS key FROM map AS entry;" || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.ITERABLE, List.of(new TypeDeclaration(ValueType.INTEGER)))), new SelectExpression(new TupleExpression(Map.of("key", new TupleCallExpression(new IdentifierExpression("entry"), "key"))), Map.entry("entry", new IdentifierExpression("map")), List.of(), new BooleanValue(true), List.of(), new BooleanValue(true), List.of()))))
+		"int a = 1;"                                                   || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.INTEGER)), new IntegerValue(1, position), position)))
+		"int a = b;"                                                   || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.INTEGER)), new IdentifierExpression("b", position), position)))
+		"double a = 1.0;"                                              || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.FLOATING_POINT)), new FloatingPointValue(1.0, position), position)))
+		"boolean a = true;"                                            || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.BOOLEAN)), new BooleanValue(true, position), position)))
+		"String a = 'b';"                                              || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.STRING)), new StringValue("b", position), position)))
+		"Comparator<int> a = func;"                                    || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.COMPARATOR, List.of(new TypeDeclaration(ValueType.INTEGER)))), new IdentifierExpression("func", position), position)))
+		"Tuple<String> a = |b AS c|;"                                  || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.TUPLE, List.of(new TypeDeclaration(ValueType.STRING)))), new TupleExpression(Map.of("c", new IdentifierExpression("b", position)), position), position)))
+		"Tuple<String, int> a = |b AS c, d AS e|;"                     || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.TUPLE, List.of(new TypeDeclaration(ValueType.STRING), new TypeDeclaration(ValueType.INTEGER)))), new TupleExpression(Map.of("c", new IdentifierExpression("b", position), "e", new IdentifierExpression("d", position)), position), position)))
+		"Tuple<String, int> a = (|b AS c, d AS e|);"                   || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.TUPLE, List.of(new TypeDeclaration(ValueType.STRING), new TypeDeclaration(ValueType.INTEGER)))), new TupleExpression(Map.of("c", new IdentifierExpression("b", position), "e", new IdentifierExpression("d", position)), position), position)))
+		"Map<int, String> a = [];"                                     || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.MAP, List.of(new TypeDeclaration(ValueType.INTEGER), new TypeDeclaration(ValueType.STRING)))), new MapExpression(Map.of(), position), position)))
+		"Map<int, String> a = [b : c];"                                || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.MAP, List.of(new TypeDeclaration(ValueType.INTEGER), new TypeDeclaration(ValueType.STRING)))), new MapExpression(Map.of(new IdentifierExpression("b", position), new IdentifierExpression("c", position)), position), position)))
+		"Map<int, String> a = [b : c, d : e];"                         || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.MAP, List.of(new TypeDeclaration(ValueType.INTEGER), new TypeDeclaration(ValueType.STRING)))), new MapExpression(Map.of(new IdentifierExpression("b", position), new IdentifierExpression("c", position), new IdentifierExpression("d", position), new IdentifierExpression("e", position)), position), position)))
+		"Map<int, String> a = [b : c, d : []];"                        || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.MAP, List.of(new TypeDeclaration(ValueType.INTEGER), new TypeDeclaration(ValueType.STRING)))), new MapExpression(Map.of(new IdentifierExpression("b", position), new IdentifierExpression("c", position), new IdentifierExpression("d", position), new MapExpression(Map.of(), position)), position), position)))
+		"Iterable<int> a = SELECT entry.key AS key FROM map AS entry;" || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.ITERABLE, List.of(new TypeDeclaration(ValueType.INTEGER)))), new SelectExpression(new TupleExpression(Map.of("key", new TupleCallExpression(new IdentifierExpression("entry", position), "key", position)), position), Map.entry("entry", new IdentifierExpression("map", position)), List.of(), new BooleanValue(true, position), List.of(), new BooleanValue(true, position), List.of(), position), position)))
 	}
 
 	def 'Should be able to parse while loop'() {
@@ -132,8 +138,8 @@ class ParserIntegrationTest extends Specification {
 
 		where:
 		program                                                 || result
-		"fun main() {boolean a = true; while a {a = false;}}"   || wrapStatements(List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.BOOLEAN)), new BooleanValue(true)), new WhileStatement(new IdentifierExpression("a"), new BlockExpression(List.of(new AssignmentStatement("a", new BooleanValue(false)))))))
-		"fun main() {boolean a = true; while (a) {a = false;}}" || wrapStatements(List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.BOOLEAN)), new BooleanValue(true)), new WhileStatement(new IdentifierExpression("a"), new BlockExpression(List.of(new AssignmentStatement("a", new BooleanValue(false)))))))
+		"fun main() {boolean a = true; while a {a = false;}}"   || wrapStatements(List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.BOOLEAN)), new BooleanValue(true, position), position), new WhileStatement(new IdentifierExpression("a", position), new BlockExpression(List.of(new AssignmentStatement("a", new BooleanValue(false, position), position)), position), position)))
+		"fun main() {boolean a = true; while (a) {a = false;}}" || wrapStatements(List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.BOOLEAN)), new BooleanValue(true, position), position), new WhileStatement(new IdentifierExpression("a", position), new BlockExpression(List.of(new AssignmentStatement("a", new BooleanValue(false, position), position)), position), position)))
 	}
 
 	def 'Should be able to parse if statement'() {
@@ -145,8 +151,8 @@ class ParserIntegrationTest extends Specification {
 
 		where:
 		program                                              || result
-		"fun main() {boolean a = true; if a {a = false;}}"   || wrapStatements(List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.BOOLEAN)), new BooleanValue(true)), new IfStatement(new IdentifierExpression("a"), new BlockExpression(List.of(new AssignmentStatement("a", new BooleanValue(false)))), new BlockExpression(List.of()))))
-		"fun main() {boolean a = true; if (a) {a = false;}}" || wrapStatements(List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.BOOLEAN)), new BooleanValue(true)), new IfStatement(new IdentifierExpression("a"), new BlockExpression(List.of(new AssignmentStatement("a", new BooleanValue(false)))), new BlockExpression(List.of()))))
+		"fun main() {boolean a = true; if a {a = false;}}"   || wrapStatements(List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.BOOLEAN)), new BooleanValue(true, position), position), new IfStatement(new IdentifierExpression("a", position), new BlockExpression(List.of(new AssignmentStatement("a", new BooleanValue(false, position), position)), position), new BlockExpression(List.of(), position), position)))
+		"fun main() {boolean a = true; if (a) {a = false;}}" || wrapStatements(List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.BOOLEAN)), new BooleanValue(true, position), position), new IfStatement(new IdentifierExpression("a", position), new BlockExpression(List.of(new AssignmentStatement("a", new BooleanValue(false, position), position)), position), new BlockExpression(List.of(), position), position)))
 	}
 
 	def 'Should be able to parse for statement'() {
@@ -158,7 +164,7 @@ class ParserIntegrationTest extends Specification {
 
 		where:
 		program                                              || result
-		"fun main() {for (Tuple<String> a : b) {print(a);}}" || wrapStatements(List.of(new ForStatement(new Argument("a", new TypeDeclaration(ValueType.TUPLE, List.of(new TypeDeclaration(ValueType.STRING)))), new IdentifierExpression("b"), new BlockExpression(List.of(new FunctionCallExpression("print", List.of(new IdentifierExpression("a"))))))))
+		"fun main() {for (Tuple<String> a : b) {print(a);}}" || wrapStatements(List.of(new ForStatement(new Argument("a", new TypeDeclaration(ValueType.TUPLE, List.of(new TypeDeclaration(ValueType.STRING)))), new IdentifierExpression("b", position), new BlockExpression(List.of(new FunctionCallExpression("print", List.of(new IdentifierExpression("a", position)), position)), position), position)))
 	}
 
 	def 'Should be able to parse assignment statement'() {
@@ -170,7 +176,7 @@ class ParserIntegrationTest extends Specification {
 
 		where:
 		program                    || result
-		"fun main() {a = b or c;}" || wrapStatements(List.of(new AssignmentStatement("a", new OrLogicalExpression(new IdentifierExpression("b"), new IdentifierExpression("c")))))
+		"fun main() {a = b or c;}" || wrapStatements(List.of(new AssignmentStatement("a", new OrLogicalExpression(new IdentifierExpression("b", position), new IdentifierExpression("c", position), position), position)))
 	}
 
 	def 'Should be able to parse single expression statement'() {
@@ -182,16 +188,16 @@ class ParserIntegrationTest extends Specification {
 
 		where:
 		program                                       || result
-		"fun main() {functionCall();}"                || wrapStatements(List.of(new FunctionCallExpression("functionCall", List.of())))
-		"fun main() {i[mapCall];}"                    || wrapStatements(List.of(new MethodCallExpression(new IdentifierExpression("i"), new FunctionCallExpression("operator[]", List.of(new IdentifierExpression("mapCall"))))))
-		"fun main() {i[mapCall1][mapCall2];}"         || wrapStatements(List.of(new MethodCallExpression(new MethodCallExpression(new IdentifierExpression("i"), new FunctionCallExpression("operator[]", List.of(new IdentifierExpression("mapCall1")))), new FunctionCallExpression("operator[]", List.of(new IdentifierExpression("mapCall2"))))))
-		"fun main() {i[mapCall1].methodCall();}"      || wrapStatements(List.of(new MethodCallExpression(new MethodCallExpression(new IdentifierExpression("i"), new FunctionCallExpression("operator[]", List.of(new IdentifierExpression("mapCall1")))), new FunctionCallExpression("methodCall", List.of()))))
-		"fun main() {i.methodCall();}"                || wrapStatements(List.of(new MethodCallExpression(new IdentifierExpression("i"), new FunctionCallExpression("methodCall", List.of()))))
-		"fun main() {i.methodCall1().methodCall2();}" || wrapStatements(List.of(new MethodCallExpression(new MethodCallExpression(new IdentifierExpression("i"), new FunctionCallExpression("methodCall1", List.of())), new FunctionCallExpression("methodCall2", List.of()))))
-		"fun main() {i.methodCall1().tupleCall2;}"    || wrapStatements(List.of(new TupleCallExpression(new MethodCallExpression(new IdentifierExpression("i"), new FunctionCallExpression("methodCall1", List.of())), "tupleCall2")))
-		"fun main() {i.tupleCall1.methodCall2();}"    || wrapStatements(List.of(new MethodCallExpression(new TupleCallExpression(new IdentifierExpression("i"), "tupleCall1"), new FunctionCallExpression("methodCall2", List.of()))))
-		"fun main() {i.tupleCall;}"                   || wrapStatements(List.of(new TupleCallExpression(new IdentifierExpression("i"), "tupleCall")))
-		"fun main() {i.tupleCall1.tupleCall2;}"       || wrapStatements(List.of(new TupleCallExpression(new TupleCallExpression(new IdentifierExpression("i"), "tupleCall1"), "tupleCall2")))
+		"fun main() {functionCall();}"                || wrapStatements(List.of(new FunctionCallExpression("functionCall", List.of(), position)))
+		"fun main() {i[mapCall];}"                    || wrapStatements(List.of(new MethodCallExpression(new IdentifierExpression("i", position), new FunctionCallExpression("operator[]", List.of(new IdentifierExpression("mapCall", position)), position), position)))
+		"fun main() {i[mapCall1][mapCall2];}"         || wrapStatements(List.of(new MethodCallExpression(new MethodCallExpression(new IdentifierExpression("i", position), new FunctionCallExpression("operator[]", List.of(new IdentifierExpression("mapCall1", position)), position), position), new FunctionCallExpression("operator[]", List.of(new IdentifierExpression("mapCall2", position)), position), position)))
+		"fun main() {i[mapCall1].methodCall();}"      || wrapStatements(List.of(new MethodCallExpression(new MethodCallExpression(new IdentifierExpression("i", position), new FunctionCallExpression("operator[]", List.of(new IdentifierExpression("mapCall1", position)), position), position), new FunctionCallExpression("methodCall", List.of(), position), position)))
+		"fun main() {i.methodCall();}"                || wrapStatements(List.of(new MethodCallExpression(new IdentifierExpression("i", position), new FunctionCallExpression("methodCall", List.of(), position), position)))
+		"fun main() {i.methodCall1().methodCall2();}" || wrapStatements(List.of(new MethodCallExpression(new MethodCallExpression(new IdentifierExpression("i", position), new FunctionCallExpression("methodCall1", List.of(), position), position), new FunctionCallExpression("methodCall2", List.of(), position), position)))
+		"fun main() {i.methodCall1().tupleCall2;}"    || wrapStatements(List.of(new TupleCallExpression(new MethodCallExpression(new IdentifierExpression("i", position), new FunctionCallExpression("methodCall1", List.of(), position), position), "tupleCall2", position)))
+		"fun main() {i.tupleCall1.methodCall2();}"    || wrapStatements(List.of(new MethodCallExpression(new TupleCallExpression(new IdentifierExpression("i", position), "tupleCall1", position), new FunctionCallExpression("methodCall2", List.of(), position), position)))
+		"fun main() {i.tupleCall;}"                   || wrapStatements(List.of(new TupleCallExpression(new IdentifierExpression("i", position), "tupleCall", position)))
+		"fun main() {i.tupleCall1.tupleCall2;}"       || wrapStatements(List.of(new TupleCallExpression(new TupleCallExpression(new IdentifierExpression("i", position), "tupleCall1", position), "tupleCall2", position)))
 	}
 
 	def 'Should be able to parse return statement'() {
@@ -203,10 +209,10 @@ class ParserIntegrationTest extends Specification {
 
 		where:
 		program                           || result
-		"fun main(): int {return 1 + 2;}" || new Program(Map.of("main", new FunctionDefinitionStatement("main", List.of(), new TypeDeclaration(ValueType.INTEGER), new BlockExpression(List.of(new ReturnStatement(new AddArithmeticExpression(new IntegerValue(1), new IntegerValue(2))))))), List.of())
-		"fun main(): int {return 1 - 2;}" || new Program(Map.of("main", new FunctionDefinitionStatement("main", List.of(), new TypeDeclaration(ValueType.INTEGER), new BlockExpression(List.of(new ReturnStatement(new SubtractArithmeticExpression(new IntegerValue(1), new IntegerValue(2))))))), List.of())
-		"fun main(): int {return 1 / 2;}" || new Program(Map.of("main", new FunctionDefinitionStatement("main", List.of(), new TypeDeclaration(ValueType.INTEGER), new BlockExpression(List.of(new ReturnStatement(new DivideArithmeticExpression(new IntegerValue(1), new IntegerValue(2))))))), List.of())
-		"fun main(): int {return 1 * 2;}" || new Program(Map.of("main", new FunctionDefinitionStatement("main", List.of(), new TypeDeclaration(ValueType.INTEGER), new BlockExpression(List.of(new ReturnStatement(new MultiplyArithmeticExpression(new IntegerValue(1), new IntegerValue(2))))))), List.of())
+		"fun main(): int {return 1 + 2;}" || new Program(Map.of("main", new FunctionDefinitionStatement("main", List.of(), new TypeDeclaration(ValueType.INTEGER), new BlockExpression(List.of(new ReturnStatement(new AddArithmeticExpression(new IntegerValue(1, position), new IntegerValue(2, position), position), position)), position), position)), List.of())
+		"fun main(): int {return 1 - 2;}" || new Program(Map.of("main", new FunctionDefinitionStatement("main", List.of(), new TypeDeclaration(ValueType.INTEGER), new BlockExpression(List.of(new ReturnStatement(new SubtractArithmeticExpression(new IntegerValue(1, position), new IntegerValue(2, position), position), position)), position), position)), List.of())
+		"fun main(): int {return 1 / 2;}" || new Program(Map.of("main", new FunctionDefinitionStatement("main", List.of(), new TypeDeclaration(ValueType.INTEGER), new BlockExpression(List.of(new ReturnStatement(new DivideArithmeticExpression(new IntegerValue(1, position), new IntegerValue(2, position), position), position)), position), position)), List.of())
+		"fun main(): int {return 1 * 2;}" || new Program(Map.of("main", new FunctionDefinitionStatement("main", List.of(), new TypeDeclaration(ValueType.INTEGER), new BlockExpression(List.of(new ReturnStatement(new MultiplyArithmeticExpression(new IntegerValue(1, position), new IntegerValue(2, position), position), position)), position), position)), List.of())
 	}
 
 	def 'Should be able to parse nested block statement'() {
@@ -218,7 +224,7 @@ class ParserIntegrationTest extends Specification {
 
 		where:
 		program                          || result
-		"fun main() {{functionCall();}}" || wrapStatements(List.of(new BlockExpression(List.of(new FunctionCallExpression("functionCall", List.of())))))
+		"fun main() {{functionCall();}}" || wrapStatements(List.of(new BlockExpression(List.of(new FunctionCallExpression("functionCall", List.of(), position)), position)))
 	}
 
 	def 'Should be able to perform mathematical operations'() {
@@ -230,14 +236,14 @@ class ParserIntegrationTest extends Specification {
 
 		where:
 		program                           || result
-		"int a = 1 + 2 * 3;"              || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.INTEGER)), new AddArithmeticExpression(new IntegerValue(1), new MultiplyArithmeticExpression(new IntegerValue(2), new IntegerValue(3))))))
-		"int a = (1 + 2) * 3;"            || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.INTEGER)), new MultiplyArithmeticExpression(new AddArithmeticExpression(new IntegerValue(1), new IntegerValue(2)), new IntegerValue(3)))))
-		"int a = 1 + i * 3;"              || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.INTEGER)), new AddArithmeticExpression(new IntegerValue(1), new MultiplyArithmeticExpression(new IdentifierExpression("i"), new IntegerValue(3))))))
-		"int a = 1 + i.tupleCall * 3;"    || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.INTEGER)), new AddArithmeticExpression(new IntegerValue(1), new MultiplyArithmeticExpression(new TupleCallExpression(new IdentifierExpression("i"), "tupleCall"), new IntegerValue(3))))))
-		"int a = 1 + i[mapCall] * 3;"     || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.INTEGER)), new AddArithmeticExpression(new IntegerValue(1), new MultiplyArithmeticExpression(new MethodCallExpression(new IdentifierExpression("i"), new FunctionCallExpression("operator[]", List.of(new IdentifierExpression("mapCall")))), new IntegerValue(3))))))
-		"int a = 1 + i.methodCall() * 3;" || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.INTEGER)), new AddArithmeticExpression(new IntegerValue(1), new MultiplyArithmeticExpression(new MethodCallExpression(new IdentifierExpression("i"), new FunctionCallExpression("methodCall", List.of())), new IntegerValue(3))))))
-		"int a = 1 + functionCall() * 3;" || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.INTEGER)), new AddArithmeticExpression(new IntegerValue(1), new MultiplyArithmeticExpression(new FunctionCallExpression("functionCall", List.of()), new IntegerValue(3))))))
-		"double a = (@double 1) + 2.0;" || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.FLOATING_POINT)), new AddArithmeticExpression(new ExplicitCastExpression(new TypeDeclaration(ValueType.FLOATING_POINT), new IntegerValue(1)), new FloatingPointValue(2)))))
+		"int a = 1 + 2 * 3;"              || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.INTEGER)), new AddArithmeticExpression(new IntegerValue(1, position), new MultiplyArithmeticExpression(new IntegerValue(2, position), new IntegerValue(3, position), position), position), position)))
+		"int a = (1 + 2) * 3;"            || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.INTEGER)), new MultiplyArithmeticExpression(new AddArithmeticExpression(new IntegerValue(1, position), new IntegerValue(2, position), position), new IntegerValue(3, position), position), position)))
+		"int a = 1 + i * 3;"              || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.INTEGER)), new AddArithmeticExpression(new IntegerValue(1, position), new MultiplyArithmeticExpression(new IdentifierExpression("i", position), new IntegerValue(3, position), position), position), position)))
+		"int a = 1 + i.tupleCall * 3;"    || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.INTEGER)), new AddArithmeticExpression(new IntegerValue(1, position), new MultiplyArithmeticExpression(new TupleCallExpression(new IdentifierExpression("i", position), "tupleCall", position), new IntegerValue(3, position), position), position), position)))
+		"int a = 1 + i[mapCall] * 3;"     || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.INTEGER)), new AddArithmeticExpression(new IntegerValue(1, position), new MultiplyArithmeticExpression(new MethodCallExpression(new IdentifierExpression("i", position), new FunctionCallExpression("operator[]", List.of(new IdentifierExpression("mapCall", position)), position), position), new IntegerValue(3, position), position), position), position)))
+		"int a = 1 + i.methodCall() * 3;" || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.INTEGER)), new AddArithmeticExpression(new IntegerValue(1, position), new MultiplyArithmeticExpression(new MethodCallExpression(new IdentifierExpression("i", position), new FunctionCallExpression("methodCall", List.of(), position), position), new IntegerValue(3, position), position), position), position)))
+		"int a = 1 + functionCall() * 3;" || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.INTEGER)), new AddArithmeticExpression(new IntegerValue(1, position), new MultiplyArithmeticExpression(new FunctionCallExpression("functionCall", List.of(), position), new IntegerValue(3, position), position), position), position)))
+		"double a = (@double 1) + 2.0;"   || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.FLOATING_POINT)), new AddArithmeticExpression(new ExplicitCastExpression(new TypeDeclaration(ValueType.FLOATING_POINT), new IntegerValue(1, position), position), new FloatingPointValue(2, position), position), position)))
 	}
 
 	def 'Should be able to perform logical operations'() {
@@ -249,10 +255,10 @@ class ParserIntegrationTest extends Specification {
 
 		where:
 		program                                  || result
-		"boolean a = false or true and false;"   || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.BOOLEAN)), new OrLogicalExpression(new BooleanValue(false), new AndLogicalExpression(new BooleanValue(true), new BooleanValue(false))))))
-		"boolean a = (false or true) and false;" || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.BOOLEAN)), new AndLogicalExpression(new OrLogicalExpression(new BooleanValue(false), new BooleanValue(true)), new BooleanValue(false)))))
-		"boolean a = false or b and false;"      || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.BOOLEAN)), new OrLogicalExpression(new BooleanValue(false), new AndLogicalExpression(new IdentifierExpression("b"), new BooleanValue(false))))))
-		"boolean a = not false;"                 || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.BOOLEAN)), new BooleanValue(true))))
+		"boolean a = false or true and false;"   || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.BOOLEAN)), new OrLogicalExpression(new BooleanValue(false, position), new AndLogicalExpression(new BooleanValue(true, position), new BooleanValue(false, position), position), position), position)))
+		"boolean a = (false or true) and false;" || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.BOOLEAN)), new AndLogicalExpression(new OrLogicalExpression(new BooleanValue(false, position), new BooleanValue(true, position), position), new BooleanValue(false, position), position), position)))
+		"boolean a = false or b and false;"      || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.BOOLEAN)), new OrLogicalExpression(new BooleanValue(false, position), new AndLogicalExpression(new IdentifierExpression("b", position), new BooleanValue(false, position), position), position), position)))
+		"boolean a = not false;"                 || new Program(Map.of(), List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.BOOLEAN)), new BooleanValue(true, position), position)))
 	}
 
 	// ERRORS

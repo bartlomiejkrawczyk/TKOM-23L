@@ -17,7 +17,7 @@ import spock.lang.Subject
 
 class ParserTest extends Specification {
 
-	var position = Position.builder().characterNumber(0).line(0).build()
+	var position = Position.builder().characterNumber(1).line(1).build()
 
 	Parser toParser(List<Token> tokens) {
 		var errorHandler = Mock(ErrorHandler)
@@ -62,7 +62,8 @@ class ParserTest extends Specification {
 						new FunctionDefinitionStatement(
 								"main",
 								List.of(),
-								new TypeDeclaration(ValueType.VOID), new BlockExpression(List.of())
+								new TypeDeclaration(ValueType.VOID), new BlockExpression(List.of(), position),
+								position
 						)
 				),
 				List.of()

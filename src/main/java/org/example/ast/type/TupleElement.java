@@ -5,6 +5,7 @@ import lombok.ToString;
 import org.example.ast.Expression;
 import org.example.ast.Node;
 import org.example.ast.Value;
+import org.example.token.Position;
 
 @ToString(exclude = {"value"})
 @lombok.Value
@@ -12,6 +13,11 @@ public class TupleElement implements Value {
 
 	String name;
 	Expression value;
+
+	@Override
+	public Position getPosition() {
+		return value.getPosition();
+	}
 
 	@Override
 	public Iterable<Node> getChildrenExpressions() {
