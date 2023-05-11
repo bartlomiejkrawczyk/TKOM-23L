@@ -164,7 +164,7 @@ public class ParserImpl implements Parser {
 		arguments.add(firstArgument.get());
 
 		while (skipIf(TokenType.COMMA)) {
-			var argument = retrieveItem(parseArgument(), MissingArgumentException::new);
+			var argument = retrieveItem(this::parseArgument, MissingArgumentException::new);
 			arguments.add(argument);
 		}
 
@@ -210,7 +210,7 @@ public class ParserImpl implements Parser {
 		handleSkip(TokenType.LESS);
 
 		do {
-			var declaration = retrieveItem(parseTypeDeclaration(), MissingTypeDeclaration::new);
+			var declaration = retrieveItem(this::parseTypeDeclaration, MissingTypeDeclaration::new);
 			types.add(declaration);
 		} while (skipIf(TokenType.COMMA));
 
@@ -232,7 +232,7 @@ public class ParserImpl implements Parser {
 
 		handleSkip(TokenType.EQUALS);
 
-		var expression = retrieveItem(parseExpression(), MissingExpressionException::new);
+		var expression = retrieveItem(this::parseExpression, MissingExpressionException::new);
 
 		handleSkip(TokenType.SEMICOLON);
 
@@ -301,9 +301,9 @@ public class ParserImpl implements Parser {
 			return Optional.empty();
 		}
 
-		var condition = retrieveItem(parseLogicalExpression(), MissingExpressionException::new);
+		var condition = retrieveItem(this::parseLogicalExpression, MissingExpressionException::new);
 
-		var ifTrue = retrieveItem(parseStatement(), MissingStatementException::new);
+		var ifTrue = retrieveItem(this::parseStatement, MissingStatementException::new);
 
 		Optional<Statement> ifFalse = skipIf(TokenType.ELSE)
 				? parseStatement()
@@ -322,7 +322,7 @@ public class ParserImpl implements Parser {
 		if (!skipIf(TokenType.WHILE)) {
 			return Optional.empty();
 		}
-		var condition = retrieveItem(parseLogicalExpression(), MissingExpressionException::new);
+		var condition = retrieveItem(this::parseLogicalExpression, MissingExpressionException::new);
 
 		var statement = parseStatement()
 				.orElseGet(() -> {
@@ -346,13 +346,13 @@ public class ParserImpl implements Parser {
 
 		handleSkip(TokenType.OPEN_ROUND_PARENTHESES);
 
-		var type = retrieveItem(parseTypeDeclaration(), MissingTypeDeclaration::new);
+		var type = retrieveItem(this::parseTypeDeclaration, MissingTypeDeclaration::new);
 
 		var identifier = getIdentifier();
 
 		handleSkip(TokenType.COLON);
 
-		var iterable = retrieveItem(parseExpression(), MissingExpressionException::new);
+		var iterable = retrieveItem(this::parseExpression, MissingExpressionException::new);
 
 		handleSkip(TokenType.CLOSED_ROUND_PARENTHESES);
 
@@ -381,7 +381,7 @@ public class ParserImpl implements Parser {
 		}
 
 		if (expression instanceof IdentifierExpression identifier) {
-			var value = retrieveItem(parseExpression(), MissingExpressionException::new);
+			var value = retrieveItem(this::parseExpression, MissingExpressionException::new);
 			handleSkip(TokenType.SEMICOLON);
 			return Optional.of(
 					new AssignmentStatement(
@@ -403,7 +403,7 @@ public class ParserImpl implements Parser {
 			return Optional.empty();
 		}
 
-		var expression = retrieveItem(parseExpression(), MissingExpressionException::new);
+		var expression = retrieveItem(this::parseExpression, MissingExpressionException::new);
 
 		handleSkip(TokenType.SEMICOLON);
 
@@ -437,7 +437,7 @@ public class ParserImpl implements Parser {
 		var left = leftOptional.get();
 		var position = currentToken.getPosition();
 		while (skipIf(type)) {
-			var right = retrieveItem(supplier.get(), MissingLogicalExpressionException::new);
+			var right = retrieveItem(supplier, MissingLogicalExpressionException::new);
 			left = wrapper.apply(left, right, position);
 			position = currentToken.getPosition();
 		}
@@ -495,7 +495,7 @@ public class ParserImpl implements Parser {
 		var relationPosition = currentToken.getPosition();
 		nextToken();
 
-		var right = retrieveItem(parseArithmeticExpression(), MissingArithmeticExpression::new);
+		var right = retrieveItem(this::parseArithmeticExpression, MissingArithmeticExpression::new);
 
 		var logicalExpression = constructor.apply(expression.get(), right, relationPosition);
 
@@ -516,10 +516,10 @@ public class ParserImpl implements Parser {
 		while (currentToken.getType() != TokenType.END_OF_FILE) {
 			var position = currentToken.getPosition();
 			if (skipIf(TokenType.PLUS)) {
-				var right = retrieveItem(parseFactor(), MissingArithmeticExpression::new);
+				var right = retrieveItem(this::parseFactor, MissingArithmeticExpression::new);
 				left = new AddArithmeticExpression(left, right, position);
 			} else if (skipIf(TokenType.MINUS)) {
-				var right = retrieveItem(parseFactor(), MissingArithmeticExpression::new);
+				var right = retrieveItem(this::parseFactor, MissingArithmeticExpression::new);
 				left = new SubtractArithmeticExpression(left, right, position);
 			} else {
 				break;
@@ -542,10 +542,10 @@ public class ParserImpl implements Parser {
 		while (currentToken.getType() != TokenType.END_OF_FILE) {
 			var position = currentToken.getPosition();
 			if (skipIf(TokenType.TIMES)) {
-				var right = retrieveItem(parseTerm(), MissingArithmeticExpression::new);
+				var right = retrieveItem(this::parseTerm, MissingArithmeticExpression::new);
 				left = new MultiplyArithmeticExpression(left, right, position);
 			} else if (skipIf(TokenType.DIVIDE)) {
-				var right = retrieveItem(parseTerm(), MissingArithmeticExpression::new);
+				var right = retrieveItem(this::parseTerm, MissingArithmeticExpression::new);
 				left = new DivideArithmeticExpression(left, right, position);
 			} else {
 				break;
@@ -615,7 +615,7 @@ public class ParserImpl implements Parser {
 						? new MethodCallExpression(expression, new FunctionCallExpression(identifier, parameters.get(), position), position)
 						: new TupleCallExpression(expression, identifier, position);
 			} else if (skipIf(TokenType.OPEN_SQUARE_PARENTHESES)) {
-				var argument = retrieveItem(parseExpression(), MissingExpressionException::new);
+				var argument = retrieveItem(this::parseExpression, MissingExpressionException::new);
 				handleSkip(TokenType.CLOSED_SQUARE_PARENTHESES);
 				var functionCall = new FunctionCallExpression("operator[]", List.of(argument), position);
 				expression = new MethodCallExpression(expression, functionCall, position);
@@ -638,7 +638,7 @@ public class ParserImpl implements Parser {
 		var arguments = new ArrayList<Expression>();
 		if (currentToken.getType() != TokenType.CLOSED_ROUND_PARENTHESES) {
 			do {
-				var argument = retrieveItem(parseExpression(), MissingExpressionException::new);
+				var argument = retrieveItem(this::parseExpression, MissingExpressionException::new);
 				arguments.add(argument);
 			} while (skipIf(TokenType.COMMA));
 		}
@@ -708,23 +708,23 @@ public class ParserImpl implements Parser {
 		if (!skipIf(TokenType.SELECT)) {
 			return Optional.empty();
 		}
-		var select = retrieveItem(parseTupleExpression(), MissingTupleExpressionException::new);
+		var select = retrieveItem(this::parseTupleExpression, MissingTupleExpressionException::new);
 		handleSkip(TokenType.FROM);
-		var from = retrieveItem(parseTupleElement(), MissingTupleElementException::new);
+		var from = retrieveItem(this::parseTupleElement, MissingTupleElementException::new);
 		var join = new ArrayList<Tuple3<String, Expression, Expression>>();
 
 		while (skipIf(TokenType.JOIN)) {
-			var joinTable = retrieveItem(parseTupleElement(), MissingTupleElementException::new);
+			var joinTable = retrieveItem(this::parseTupleElement, MissingTupleElementException::new);
 
 			var on = skipIf(TokenType.ON)
-					? retrieveItem(parseLogicalExpression(), MissingLogicalExpressionException::new)
+					? retrieveItem(this::parseLogicalExpression, MissingLogicalExpressionException::new)
 					: new BooleanValue(true, currentToken.getPosition());
 
 			join.add(Tuple.of(joinTable.getKey(), joinTable.getValue(), on));
 		}
 
 		var where = skipIf(TokenType.WHERE)
-				? retrieveItem(parseLogicalExpression(), MissingLogicalExpressionException::new)
+				? retrieveItem(this::parseLogicalExpression, MissingLogicalExpressionException::new)
 				: new BooleanValue(true, currentToken.getPosition());
 
 		var groupByResult = parseGroupBy();
@@ -743,12 +743,12 @@ public class ParserImpl implements Parser {
 		var having = (Expression) new BooleanValue(true, currentToken.getPosition());
 		if (skipIf(TokenType.GROUP) && skipIf(TokenType.BY)) {
 			do {
-				var expression = retrieveItem(parseExpression(), MissingExpressionException::new);
+				var expression = retrieveItem(this::parseExpression, MissingExpressionException::new);
 				groupBy.add(expression);
 			} while (skipIf(TokenType.COMMA));
 
 			having = skipIf(TokenType.HAVING)
-					? retrieveItem(parseLogicalExpression(), MissingLogicalExpressionException::new)
+					? retrieveItem(this::parseLogicalExpression, MissingLogicalExpressionException::new)
 					: having;
 		}
 		return Pair.of(groupBy, having);
@@ -758,7 +758,7 @@ public class ParserImpl implements Parser {
 		var orderBy = new ArrayList<Pair<Expression, Boolean>>();
 		if (skipIf(TokenType.ORDER) && skipIf(TokenType.BY)) {
 			do {
-				var expression = retrieveItem(parseExpression(), MissingExpressionException::new);
+				var expression = retrieveItem(this::parseExpression, MissingExpressionException::new);
 				var ascending = true;
 				if (skipIf(TokenType.DESCENDING)) {
 					ascending = false;
@@ -784,13 +784,13 @@ public class ParserImpl implements Parser {
 		var firstKey = parseExpression();
 		if (firstKey.isPresent()) {
 			handleSkip(TokenType.COLON);
-			var firstValue = retrieveItem(parseExpression(), MissingExpressionException::new);
+			var firstValue = retrieveItem(this::parseExpression, MissingExpressionException::new);
 			map.put(firstKey.get(), firstValue);
 
 			while (skipIf(TokenType.COMMA)) {
-				var key = retrieveItem(parseExpression(), MissingExpressionException::new);
+				var key = retrieveItem(this::parseExpression, MissingExpressionException::new);
 				handleSkip(TokenType.COLON);
-				var value = retrieveItem(parseExpression(), MissingExpressionException::new);
+				var value = retrieveItem(this::parseExpression, MissingExpressionException::new);
 				map.put(key, value);
 			}
 		}
@@ -828,7 +828,7 @@ public class ParserImpl implements Parser {
 		elements.put(element.getKey(), element.getValue());
 
 		while (skipIf(TokenType.COMMA)) {
-			element = retrieveItem(parseTupleElement(), MissingTupleElementException::new);
+			element = retrieveItem(this::parseTupleElement, MissingTupleElementException::new);
 			elements.put(element.getKey(), element.getValue());
 		}
 
@@ -858,8 +858,8 @@ public class ParserImpl implements Parser {
 		if (!skipIf(TokenType.EXPLICIT_CAST)) {
 			return Optional.empty();
 		}
-		var type = retrieveItem(parseTypeDeclaration(), MissingTypeDeclaration::new);
-		var expression = retrieveItem(parseExpression(), MissingExpressionException::new);
+		var type = retrieveItem(this::parseTypeDeclaration, MissingTypeDeclaration::new);
+		var expression = retrieveItem(this::parseExpression, MissingExpressionException::new);
 		return Optional.of(new ExplicitCastExpression(type, expression, position));
 	}
 
@@ -922,8 +922,8 @@ public class ParserImpl implements Parser {
 	}
 
 	@NonNull
-	@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-	private <T> T retrieveItem(@NonNull Optional<T> optional, Function<Token, ? extends CriticalParserException> exceptionProvider) {
+	private <T> T retrieveItem(@NonNull Supplier<Optional<T>> supplier, Function<Token, ? extends CriticalParserException> exceptionProvider) {
+		var optional = supplier.get();
 		if (optional.isEmpty()) {
 			throw handleCriticalException(exceptionProvider);
 		}
