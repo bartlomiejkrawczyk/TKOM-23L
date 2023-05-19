@@ -7,7 +7,7 @@ import lombok.Value;
 import org.example.ast.Node;
 import org.example.ast.Statement;
 import org.example.ast.expression.Argument;
-import org.example.ast.expression.BlockExpression;
+import org.example.ast.expression.BlockStatement;
 import org.example.ast.type.TypeDeclaration;
 import org.example.token.Position;
 
@@ -19,7 +19,7 @@ public class FunctionDefinitionStatement implements Statement {
 	String name;
 	List<Argument> arguments;
 	TypeDeclaration returnType;
-	BlockExpression body;
+	BlockStatement body;
 
 	Position position;
 

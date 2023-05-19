@@ -1,7 +1,7 @@
 package org.example.visitor
 
 import org.example.ast.ValueType
-import org.example.ast.expression.BlockExpression
+import org.example.ast.expression.BlockStatement
 import org.example.ast.expression.arithmetic.AddArithmeticExpression
 import org.example.ast.statement.FunctionDefinitionStatement
 import org.example.ast.type.IntegerValue
@@ -20,7 +20,7 @@ class VisitorTest extends Specification {
 				"main",
 				List.of(),
 				new TypeDeclaration(ValueType.VOID),
-				new BlockExpression(
+				new BlockStatement(
 						List.of(
 								new AddArithmeticExpression(
 										new IntegerValue(1, position),
@@ -39,7 +39,7 @@ class VisitorTest extends Specification {
 
 		then:
 		visitor.print() == """FunctionDefinitionStatement(name=main, arguments=[], returnType=TypeDeclaration(valueType=VOID, types=[]), position=Position(line=1, characterNumber=1))
-`--- BlockExpression(position=Position(line=1, characterNumber=1))
+`--- BlockStatement(position=Position(line=1, characterNumber=1))
      `--- AddArithmeticExpression(position=Position(line=1, characterNumber=1))
           |--- IntegerValue(value=1, position=Position(line=1, characterNumber=1))
           `--- IntegerValue(value=2, position=Position(line=1, characterNumber=1))

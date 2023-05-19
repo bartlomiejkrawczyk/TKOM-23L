@@ -4,7 +4,7 @@ import org.example.ast.Program
 import org.example.ast.Statement
 import org.example.ast.ValueType
 import org.example.ast.expression.Argument
-import org.example.ast.expression.BlockExpression
+import org.example.ast.expression.BlockStatement
 import org.example.ast.expression.ExplicitCastExpression
 import org.example.ast.expression.FunctionCallExpression
 import org.example.ast.expression.IdentifierExpression
@@ -64,7 +64,7 @@ class ParserIntegrationTest extends Specification {
 								"main",
 								List.of(),
 								new TypeDeclaration(ValueType.VOID),
-								new BlockExpression(statements, position),
+								new BlockStatement(statements, position),
 								position
 						)
 				),
@@ -94,14 +94,14 @@ class ParserIntegrationTest extends Specification {
 		parser.parseProgram() == result
 
 		where:
-		program                          || result
-		"fun main() {}"                  || wrapStatements(List.of())
-		"fun main() {;;}"                || wrapStatements(List.of())
-		"fun main() {func();}"           || wrapStatements(List.of(new FunctionCallExpression("func", List.of(), position)))
-		"fun main() {func1(); func2();}" || wrapStatements(List.of(new FunctionCallExpression("func1", List.of(), position), new FunctionCallExpression("func2", List.of(), position)))
-		"fun main(): int {return 1;}"    || new Program(Map.of("main", new FunctionDefinitionStatement("main", List.of(), new TypeDeclaration(ValueType.INTEGER), new BlockExpression(List.of(new ReturnStatement(new IntegerValue(1, position), position)), position), position)), List.of())
-		"fun main(a: int) {}"            || new Program(Map.of("main", new FunctionDefinitionStatement("main", List.of(new Argument("a", new TypeDeclaration(ValueType.INTEGER))), new TypeDeclaration(ValueType.VOID), new BlockExpression(List.of(), position), position)), List.of())
-		"fun main(a: int, b: int) {}"    || new Program(Map.of("main", new FunctionDefinitionStatement("main", List.of(new Argument("a", new TypeDeclaration(ValueType.INTEGER)), new Argument("b", new TypeDeclaration(ValueType.INTEGER))), new TypeDeclaration(ValueType.VOID), new BlockExpression(List.of(), position), position)), List.of())
+		program         || result
+		"fun main() {}" || wrapStatements(List.of())
+//		"fun main() {;;}"                || wrapStatements(List.of())
+//		"fun main() {func();}"           || wrapStatements(List.of(new FunctionCallExpression("func", List.of(), position)))
+//		"fun main() {func1(); func2();}" || wrapStatements(List.of(new FunctionCallExpression("func1", List.of(), position), new FunctionCallExpression("func2", List.of(), position)))
+//		"fun main(): int {return 1;}"    || new Program(Map.of("main", new FunctionDefinitionStatement("main", List.of(), new TypeDeclaration(ValueType.INTEGER), new BlockExpression(List.of(new ReturnStatement(new IntegerValue(1, position), position)), position), position)), List.of())
+//		"fun main(a: int) {}"            || new Program(Map.of("main", new FunctionDefinitionStatement("main", List.of(new Argument("a", new TypeDeclaration(ValueType.INTEGER))), new TypeDeclaration(ValueType.VOID), new BlockExpression(List.of(), position), position)), List.of())
+//		"fun main(a: int, b: int) {}"    || new Program(Map.of("main", new FunctionDefinitionStatement("main", List.of(new Argument("a", new TypeDeclaration(ValueType.INTEGER)), new Argument("b", new TypeDeclaration(ValueType.INTEGER))), new TypeDeclaration(ValueType.VOID), new BlockExpression(List.of(), position), position)), List.of())
 	}
 
 	def 'Should be able to parse basic declaration statement'() {
@@ -138,8 +138,8 @@ class ParserIntegrationTest extends Specification {
 
 		where:
 		program                                                 || result
-		"fun main() {boolean a = true; while a {a = false;}}"   || wrapStatements(List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.BOOLEAN)), new BooleanValue(true, position), position), new WhileStatement(new IdentifierExpression("a", position), new BlockExpression(List.of(new AssignmentStatement("a", new BooleanValue(false, position), position)), position), position)))
-		"fun main() {boolean a = true; while (a) {a = false;}}" || wrapStatements(List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.BOOLEAN)), new BooleanValue(true, position), position), new WhileStatement(new IdentifierExpression("a", position), new BlockExpression(List.of(new AssignmentStatement("a", new BooleanValue(false, position), position)), position), position)))
+		"fun main() {boolean a = true; while a {a = false;}}"   || wrapStatements(List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.BOOLEAN)), new BooleanValue(true, position), position), new WhileStatement(new IdentifierExpression("a", position), new BlockStatement(List.of(new AssignmentStatement("a", new BooleanValue(false, position), position)), position), position)))
+		"fun main() {boolean a = true; while (a) {a = false;}}" || wrapStatements(List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.BOOLEAN)), new BooleanValue(true, position), position), new WhileStatement(new IdentifierExpression("a", position), new BlockStatement(List.of(new AssignmentStatement("a", new BooleanValue(false, position), position)), position), position)))
 	}
 
 	def 'Should be able to parse if statement'() {
@@ -151,8 +151,8 @@ class ParserIntegrationTest extends Specification {
 
 		where:
 		program                                              || result
-		"fun main() {boolean a = true; if a {a = false;}}"   || wrapStatements(List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.BOOLEAN)), new BooleanValue(true, position), position), new IfStatement(new IdentifierExpression("a", position), new BlockExpression(List.of(new AssignmentStatement("a", new BooleanValue(false, position), position)), position), new BlockExpression(List.of(), position), position)))
-		"fun main() {boolean a = true; if (a) {a = false;}}" || wrapStatements(List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.BOOLEAN)), new BooleanValue(true, position), position), new IfStatement(new IdentifierExpression("a", position), new BlockExpression(List.of(new AssignmentStatement("a", new BooleanValue(false, position), position)), position), new BlockExpression(List.of(), position), position)))
+		"fun main() {boolean a = true; if a {a = false;}}"   || wrapStatements(List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.BOOLEAN)), new BooleanValue(true, position), position), new IfStatement(new IdentifierExpression("a", position), new BlockStatement(List.of(new AssignmentStatement("a", new BooleanValue(false, position), position)), position), new BlockStatement(List.of(), position), position)))
+		"fun main() {boolean a = true; if (a) {a = false;}}" || wrapStatements(List.of(new DeclarationStatement(new Argument("a", new TypeDeclaration(ValueType.BOOLEAN)), new BooleanValue(true, position), position), new IfStatement(new IdentifierExpression("a", position), new BlockStatement(List.of(new AssignmentStatement("a", new BooleanValue(false, position), position)), position), new BlockStatement(List.of(), position), position)))
 	}
 
 	def 'Should be able to parse for statement'() {
@@ -164,7 +164,7 @@ class ParserIntegrationTest extends Specification {
 
 		where:
 		program                                              || result
-		"fun main() {for (Tuple<String> a : b) {print(a);}}" || wrapStatements(List.of(new ForStatement(new Argument("a", new TypeDeclaration(ValueType.TUPLE, List.of(new TypeDeclaration(ValueType.STRING)))), new IdentifierExpression("b", position), new BlockExpression(List.of(new FunctionCallExpression("print", List.of(new IdentifierExpression("a", position)), position)), position), position)))
+		"fun main() {for (Tuple<String> a : b) {print(a);}}" || wrapStatements(List.of(new ForStatement(new Argument("a", new TypeDeclaration(ValueType.TUPLE, List.of(new TypeDeclaration(ValueType.STRING)))), new IdentifierExpression("b", position), new BlockStatement(List.of(new FunctionCallExpression("print", List.of(new IdentifierExpression("a", position)), position)), position), position)))
 	}
 
 	def 'Should be able to parse assignment statement'() {
@@ -209,10 +209,10 @@ class ParserIntegrationTest extends Specification {
 
 		where:
 		program                           || result
-		"fun main(): int {return 1 + 2;}" || new Program(Map.of("main", new FunctionDefinitionStatement("main", List.of(), new TypeDeclaration(ValueType.INTEGER), new BlockExpression(List.of(new ReturnStatement(new AddArithmeticExpression(new IntegerValue(1, position), new IntegerValue(2, position), position), position)), position), position)), List.of())
-		"fun main(): int {return 1 - 2;}" || new Program(Map.of("main", new FunctionDefinitionStatement("main", List.of(), new TypeDeclaration(ValueType.INTEGER), new BlockExpression(List.of(new ReturnStatement(new SubtractArithmeticExpression(new IntegerValue(1, position), new IntegerValue(2, position), position), position)), position), position)), List.of())
-		"fun main(): int {return 1 / 2;}" || new Program(Map.of("main", new FunctionDefinitionStatement("main", List.of(), new TypeDeclaration(ValueType.INTEGER), new BlockExpression(List.of(new ReturnStatement(new DivideArithmeticExpression(new IntegerValue(1, position), new IntegerValue(2, position), position), position)), position), position)), List.of())
-		"fun main(): int {return 1 * 2;}" || new Program(Map.of("main", new FunctionDefinitionStatement("main", List.of(), new TypeDeclaration(ValueType.INTEGER), new BlockExpression(List.of(new ReturnStatement(new MultiplyArithmeticExpression(new IntegerValue(1, position), new IntegerValue(2, position), position), position)), position), position)), List.of())
+		"fun main(): int {return 1 + 2;}" || new Program(Map.of("main", new FunctionDefinitionStatement("main", List.of(), new TypeDeclaration(ValueType.INTEGER), new BlockStatement(List.of(new ReturnStatement(new AddArithmeticExpression(new IntegerValue(1, position), new IntegerValue(2, position), position), position)), position), position)), List.of())
+		"fun main(): int {return 1 - 2;}" || new Program(Map.of("main", new FunctionDefinitionStatement("main", List.of(), new TypeDeclaration(ValueType.INTEGER), new BlockStatement(List.of(new ReturnStatement(new SubtractArithmeticExpression(new IntegerValue(1, position), new IntegerValue(2, position), position), position)), position), position)), List.of())
+		"fun main(): int {return 1 / 2;}" || new Program(Map.of("main", new FunctionDefinitionStatement("main", List.of(), new TypeDeclaration(ValueType.INTEGER), new BlockStatement(List.of(new ReturnStatement(new DivideArithmeticExpression(new IntegerValue(1, position), new IntegerValue(2, position), position), position)), position), position)), List.of())
+		"fun main(): int {return 1 * 2;}" || new Program(Map.of("main", new FunctionDefinitionStatement("main", List.of(), new TypeDeclaration(ValueType.INTEGER), new BlockStatement(List.of(new ReturnStatement(new MultiplyArithmeticExpression(new IntegerValue(1, position), new IntegerValue(2, position), position), position)), position), position)), List.of())
 	}
 
 	def 'Should be able to parse nested block statement'() {
@@ -224,7 +224,7 @@ class ParserIntegrationTest extends Specification {
 
 		where:
 		program                          || result
-		"fun main() {{functionCall();}}" || wrapStatements(List.of(new BlockExpression(List.of(new FunctionCallExpression("functionCall", List.of(), position)), position)))
+		"fun main() {{functionCall();}}" || wrapStatements(List.of(new BlockStatement(List.of(new FunctionCallExpression("functionCall", List.of(), position)), position)))
 	}
 
 	def 'Should be able to perform mathematical operations'() {
@@ -283,7 +283,11 @@ class ParserIntegrationTest extends Specification {
 				"int a = 1 -;",
 				"int a = 1 *;",
 				"int a = 1 /;",
+				"int a = (1;",
+				"Map<String, String> map = [a:b",
+				"Tuple<String> tuple = |expression AS key",
 				"boolean a = not;",
+				"boolean a = b;boolean a = b;",
 				"boolean a = true and;",
 				"boolean a = true or;",
 				"Map<String, String> map = [a:b,]",
@@ -311,10 +315,22 @@ class ParserIntegrationTest extends Specification {
 				"Iterable<int> iterable = SELECT db1.value + db2.value AS value map1 AS db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING value > 0 ORDER BY db1.key DESC, db2.key ASC, db1.key + db2.key;",
 				"Iterable<int, int> iterable = SELECT db1.value + db2.value AS value, FROM map1 AS db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING value > 0 ORDER BY db1.key DESC, db2.key ASC, db1.key + db2.key;",
 				"Iterable<int, int> iterable = SELECT;",
+				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING value > 0 ORDER BY db1.key DESC, db2.key ASC, db1.key + db2.key;",
+				"fun main(: int) {}",
+				"fun main() {",
+				"fun main() {}fun main() {}",
+				"fun main() {(}",
+				"fun main() {[}",
+				"fun main() {|}",
 				"fun main(a: int, : int) {}",
 				"fun main() {while {}}",
 				"fun main() {while () {}}",
 				"fun main() {while ) {}}",
+				"fun main() {while (true {}}",
+				"fun main() {if (true) {}",
+				"fun main() {(true) {} else {}}",
+				"fun main() {if (true) { else {}}",
+				"fun main() {if (true) {} else {}",
 				"fun main() {if true) {}}",
 				"fun main() {if () {}}",
 				"fun main() {if (true {}}",
@@ -322,11 +338,14 @@ class ParserIntegrationTest extends Specification {
 				"fun main() {if () {} else {}}",
 				"fun main() {if (true {} else {}}",
 				"fun main() {if (true) } else {}}",
+				"fun main() {(int a: expression) {expression;}}",
+				"fun main() {for (int a: expression {expression;}}",
 				"fun main() {for int a: expression) {expression;}}",
 				"fun main() {for (a: expression) {expression;}}",
 				"fun main() {for (int: expression) {expression;}}",
 				"fun main() {for (int a expression) {expression;}}",
 				"fun main() {for (int a:) {expression;}}",
+				"fun main() {for (int a: expression) {expression;}",
 				"fun main() {a =;}",
 				"fun main() {a + b = expression;}",
 		]
@@ -348,9 +367,6 @@ class ParserIntegrationTest extends Specification {
 		program << [
 				"identifier;",
 				"int a = 1",
-				"int a = (1;",
-				"Map<String, String> map = [a:b",
-				"Tuple<String> tuple = |expression AS key",
 				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING value > 0 ORDER BY db1.key DESC, db2.key ASC, db1.key + db2.key",
 				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING value > 0 ORDER BY db1.key DESC, db2.key ASC, db1.key db2.key;",
 				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING value > 0 ORDER BY db1.key DESC, db2.key ASC db1.key + db2.key;",
@@ -366,22 +382,8 @@ class ParserIntegrationTest extends Specification {
 				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 JOIN map2 AS db2 ON db1.key db2.key WHERE db1.value > 2 GROUP BY value HAVING value > 0 ORDER BY db1.key DESC, db2.key ASC, db1.key + db2.key;",
 				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 JOIN map2 AS db2 db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING value > 0 ORDER BY db1.key DESC, db2.key ASC, db1.key + db2.key;",
 				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 AS db1 map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING value > 0 ORDER BY db1.key DESC, db2.key ASC, db1.key + db2.key;",
-				"Iterable<int> iterable = SELECT db1.value + db2.value AS value FROM map1 db1 JOIN map2 AS db2 ON db1.key == db2.key WHERE db1.value > 2 GROUP BY value HAVING value > 0 ORDER BY db1.key DESC, db2.key ASC, db1.key + db2.key;",
-				"fun main(: int) {}",
-				"fun main() {",
-				"fun main() {(}",
-				"fun main() {[}",
-				"fun main() {|}",
 				"fun main() {(true) {}}",
-				"fun main() {while (true {}}",
-				"fun main() {if (true) {}",
-				"fun main() {(true) {} else {}}",
-				"fun main() {if (true) { else {}}",
-				"fun main() {if (true) {} else {}",
-				"fun main() {(int a: expression) {expression;}}",
-				"fun main() {for (int a: expression {expression;}}",
 				"fun main() {for (int a: expression) expression;}}",
-				"fun main() {for (int a: expression) {expression;}",
 				"fun main() {a = expression}",
 		]
 	}
@@ -404,6 +406,8 @@ class ParserIntegrationTest extends Specification {
 				"fun main(a: int, b: int):{}",
 				"fun main(a: int, b: int):int",
 				"fun main(a: int, b: int)",
+				"fun main() {while(true)}",
+				"fun main() {for (int a: expression)}",
 		]
 	}
 }

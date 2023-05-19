@@ -15,13 +15,14 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.example.ast.Expression;
 import org.example.ast.Program;
 import org.example.ast.Statement;
 import org.example.ast.ValueType;
 import org.example.ast.expression.Argument;
-import org.example.ast.expression.BlockExpression;
+import org.example.ast.expression.BlockStatement;
 import org.example.ast.expression.ExplicitCastExpression;
 import org.example.ast.expression.FunctionCallExpression;
 import org.example.ast.expression.IdentifierExpression;
@@ -61,6 +62,8 @@ import org.example.lexer.Lexer;
 import org.example.lexer.LexerUtility;
 import org.example.parser.error.CannotAssignValueToExpressionException;
 import org.example.parser.error.CriticalParserException;
+import org.example.parser.error.DuplicateDeclaration;
+import org.example.parser.error.DuplicateFunctionDeclaration;
 import org.example.parser.error.ExpectedBlockException;
 import org.example.parser.error.ExpectedTypeDeclarationException;
 import org.example.parser.error.MissingArgumentException;
@@ -69,6 +72,7 @@ import org.example.parser.error.MissingExpressionException;
 import org.example.parser.error.MissingIdentifierException;
 import org.example.parser.error.MissingLogicalExpressionException;
 import org.example.parser.error.MissingStatementException;
+import org.example.parser.error.MissingTokenException;
 import org.example.parser.error.MissingTupleElementException;
 import org.example.parser.error.MissingTupleExpressionException;
 import org.example.parser.error.MissingTypeDeclaration;
@@ -106,8 +110,8 @@ public class ParserImpl implements Parser {
 
 		boolean parse;
 		do {
-			parse = fillIn(this::parseFunctionDefinition, it -> functionDefinitions.put(it.getName(), it))
-					.or(() -> fillIn(this::parseDeclarationStatement, declarations::add))
+			parse = fillIn(this::parseFunctionDefinition, it -> storeFunction(it, functionDefinitions))
+					.or(() -> fillIn(this::parseDeclarationStatement, it -> storeDeclaration(it, declarations)))
 					.orElseGet(() -> skipIf(TokenType.SEMICOLON));
 		} while (parse);
 
@@ -116,6 +120,22 @@ public class ParserImpl implements Parser {
 		}
 
 		return new Program(functionDefinitions, declarations);
+	}
+
+	private void storeFunction(FunctionDefinitionStatement statement, Map<String, FunctionDefinitionStatement> functionDefinitions) {
+		if (functionDefinitions.containsKey(statement.getName())) {
+			throw handleCriticalException(token -> new DuplicateFunctionDeclaration(token, statement.getName()));
+		}
+		functionDefinitions.put(statement.getName(), statement);
+	}
+
+	private void storeDeclaration(DeclarationStatement statement, List<DeclarationStatement> declarations) {
+		var identifier = statement.getArgument().getName();
+		if (declarations.stream().anyMatch(declaration ->
+				StringUtils.equals(identifier, declaration.getArgument().getName()))) {
+			throw handleCriticalException(token -> new DuplicateDeclaration(token, identifier));
+		}
+		declarations.add(statement);
 	}
 
 	/**
@@ -146,7 +166,7 @@ public class ParserImpl implements Parser {
 		var block = parseBlock()
 				.orElseGet(() -> {
 					handleNonCriticalException(ExpectedBlockException::new);
-					return new BlockExpression(List.of(), currentToken.getPosition());
+					return new BlockStatement(List.of(), currentToken.getPosition());
 				});
 
 		return Optional.of(new FunctionDefinitionStatement(name, arguments, returnType, block, position));
@@ -240,9 +260,9 @@ public class ParserImpl implements Parser {
 	}
 
 	/**
-	 * DECLARATION = TYPE_DECLARATION, IDENTIFIER, "=", EXPRESSION, ";";
+	 * BLOCK = "{", {STATEMENT} "}";
 	 */
-	private Optional<BlockExpression> parseBlock() {
+	private Optional<BlockStatement> parseBlock() {
 		var position = currentToken.getPosition();
 		if (!skipIf(TokenType.OPEN_CURLY_PARENTHESES)) {
 			return Optional.empty();
@@ -255,9 +275,10 @@ public class ParserImpl implements Parser {
 			statement = parseStatement();
 		}
 
+		log.info("{}", currentToken);
 		handleSkip(TokenType.CLOSED_CURLY_PARENTHESES);
 
-		return Optional.of(new BlockExpression(statements, position));
+		return Optional.of(new BlockStatement(statements, position));
 	}
 
 	private final List<Supplier<Optional<? extends Statement>>> statementSuppliers = List.of(
@@ -280,7 +301,7 @@ public class ParserImpl implements Parser {
 	 * <p>&emsp;&emsp;&emsp;| BLOCK
 	 * <p>&emsp;&emsp;&emsp;| ";";
 	 */
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({"unchecked", "StatementWithEmptyBody"})
 	private Optional<Statement> parseStatement() {
 		for (var supplier : statementSuppliers) {
 			var statement = supplier.get();
@@ -288,7 +309,7 @@ public class ParserImpl implements Parser {
 				return (Optional<Statement>) statement;
 			}
 		}
-		skipIf(TokenType.SEMICOLON);
+		while (skipIf(TokenType.SEMICOLON)) ;
 		return Optional.empty();
 	}
 
@@ -310,7 +331,7 @@ public class ParserImpl implements Parser {
 				: Optional.empty();
 
 		return Optional.of(
-				new IfStatement(condition, ifTrue, ifFalse.orElseGet(() -> new BlockExpression(List.of(), currentToken.getPosition())), position)
+				new IfStatement(condition, ifTrue, ifFalse.orElseGet(() -> new BlockStatement(List.of(), currentToken.getPosition())), position)
 		);
 	}
 
@@ -327,7 +348,7 @@ public class ParserImpl implements Parser {
 		var statement = parseStatement()
 				.orElseGet(() -> {
 					handleNonCriticalException(MissingStatementException::new);
-					return new BlockExpression(List.of(), currentToken.getPosition());
+					return new BlockStatement(List.of(), currentToken.getPosition());
 				});
 
 		return Optional.of(
@@ -359,7 +380,7 @@ public class ParserImpl implements Parser {
 		var body = parseStatement()
 				.orElseGet(() -> {
 					handleNonCriticalException(MissingStatementException::new);
-					return new BlockExpression(List.of(), currentToken.getPosition());
+					return new BlockStatement(List.of(), currentToken.getPosition());
 				});
 
 		return Optional.of(new ForStatement(new Argument(identifier, type), iterable, body, position));
@@ -411,7 +432,7 @@ public class ParserImpl implements Parser {
 	}
 
 	/**
-	 * EXPRESSION = TUPLE_OR_METHOD_CALL;
+	 * EXPRESSION = LOGICAL_EXPRESSION;
 	 */
 	private Optional<Expression> parseExpression() {
 		return parseLogicalExpression();
@@ -512,7 +533,6 @@ public class ParserImpl implements Parser {
 		}
 		var left = leftOptional.get();
 
-		// TODO: consider how to refactor
 		while (currentToken.getType() != TokenType.END_OF_FILE) {
 			var position = currentToken.getPosition();
 			if (skipIf(TokenType.PLUS)) {
@@ -906,19 +926,9 @@ public class ParserImpl implements Parser {
 			if (expected == TokenType.SEMICOLON) {
 				handleNonCriticalException(TokenType.SEMICOLON);
 			} else {
-				handleNonCriticalException(expected);
-				skipUntil(expected);
-				// Throwing an exception might be a better idea:
-				// handleCriticalException(token -> new MissingTokenException(token, expected))
+				throw handleCriticalException(token -> new MissingTokenException(token, expected));
 			}
 		}
-	}
-
-	private void skipUntil(TokenType tokenType) {
-		while (currentToken.getType() != tokenType && currentToken.getType() != TokenType.END_OF_FILE) {
-			nextToken();
-		}
-		nextToken();
 	}
 
 	@NonNull

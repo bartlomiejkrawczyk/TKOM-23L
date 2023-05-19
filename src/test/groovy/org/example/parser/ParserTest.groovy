@@ -2,7 +2,7 @@ package org.example.parser
 
 import org.example.ast.Program
 import org.example.ast.ValueType
-import org.example.ast.expression.BlockExpression
+import org.example.ast.expression.BlockStatement
 import org.example.ast.statement.FunctionDefinitionStatement
 import org.example.ast.type.TypeDeclaration
 import org.example.error.ErrorHandler
@@ -62,7 +62,7 @@ class ParserTest extends Specification {
 						new FunctionDefinitionStatement(
 								"main",
 								List.of(),
-								new TypeDeclaration(ValueType.VOID), new BlockExpression(List.of(), position),
+								new TypeDeclaration(ValueType.VOID), new BlockStatement(List.of(), position),
 								position
 						)
 				),

@@ -11,7 +11,7 @@ import org.example.token.Position;
 @ToString(exclude = {"statements"})
 @EqualsAndHashCode(exclude = "position")
 @Value
-public class BlockExpression implements Statement {
+public class BlockStatement implements Statement {
 
 	List<Statement> statements;
 
