@@ -14,6 +14,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -83,17 +84,13 @@ import org.example.token.Token;
 import org.example.token.TokenType;
 
 @Slf4j
+@RequiredArgsConstructor
 public class ParserImpl implements Parser {
 
 	private final Lexer lexer;
 	private final ErrorHandler errorHandler;
 
 	private Token currentToken;
-
-	public ParserImpl(Lexer lexer, ErrorHandler errorHandler) {
-		this.lexer = lexer;
-		this.errorHandler = errorHandler;
-	}
 
 	private void nextToken() {
 		currentToken = lexer.nextToken();
