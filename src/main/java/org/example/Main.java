@@ -6,9 +6,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import lombok.extern.slf4j.Slf4j;
+import org.example.ast.Program;
 import org.example.error.ErrorHandler;
 import org.example.error.ErrorHandlerImpl;
 import org.example.error.TooManyExceptionsException;
+import org.example.interpreter.Interpreter;
+import org.example.interpreter.InterpretingVisitor;
+import org.example.interpreter.error.CriticalInterpreterException;
 import org.example.lexer.CommentFilterLexer;
 import org.example.lexer.Lexer;
 import org.example.lexer.LexerImpl;
@@ -32,8 +36,9 @@ public class Main {
 	private static void run(String fileName) {
 		var file = new File(fileName);
 		var errorHandler = new ErrorHandlerImpl();
+		Program program = null;
 		try (var inputStream = new FileInputStream(file)) {
-			handleStream(inputStream, errorHandler);
+			program = handleStream(inputStream, errorHandler);
 		} catch (IOException e) {
 			log.error("IOException: Cannot read input file: {}", e.getMessage());
 			return;
@@ -48,16 +53,33 @@ public class Main {
 		} catch (IOException e) {
 			log.error("IOException: Cannot read input file: {}", e.getMessage());
 		}
+
+		if (program == null) {
+			log.error("Could not start the program!");
+			return;
+		}
+
+		try {
+			runProgram(program, errorHandler);
+		} catch (CriticalInterpreterException exception) {
+			log.error("CriticalInterpreterException", exception);
+		}
+
+		try (var inputStream = new FileInputStream(file)) {
+			errorHandler.showExceptions(new InputStreamReader(inputStream));
+		} catch (IOException e) {
+			log.error("IOException: Cannot read input file: {}", e.getMessage());
+		}
 	}
 
 
 	@SuppressWarnings({"unused", "java:S125"})
-	private static void handleStream(InputStream file, ErrorHandler errorHandler) {
+	private static Program handleStream(InputStream file, ErrorHandler errorHandler) {
 		var reader = new InputStreamReader(file);
 		var lexer = new LexerImpl(reader, errorHandler);
 		var filter = new CommentFilterLexer(lexer);
 		var parser = new ParserImpl(filter, errorHandler);
-		testParser(parser);
+		return parser.parseProgram();
 	}
 
 	@SuppressWarnings("unused")
@@ -77,4 +99,14 @@ public class Main {
 		log.info(visitor.print());
 	}
 
+	@SuppressWarnings("unused")
+	private static void runProgram(Program program, ErrorHandler errorHandler) {
+		var interpreter = new InterpretingVisitor(program, errorHandler);
+		testInterpreter(interpreter);
+	}
+
+	@SuppressWarnings("unused")
+	private static void testInterpreter(Interpreter interpreter) {
+		interpreter.execute();
+	}
 }
