@@ -45,103 +45,103 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 
 	@Override
 	public void execute() {
+
+	}
+
+	public void visit(Program program) {
 		throw new UnsupportedOperationException(NOT_IMPLEMENTED_YET);
 	}
 
-	public void accept(Program program) {
+	public void visit(IfStatement statement) {
 		throw new UnsupportedOperationException(NOT_IMPLEMENTED_YET);
 	}
 
-	public void accept(IfStatement statement) {
+	public void visit(WhileStatement statement) {
 		throw new UnsupportedOperationException(NOT_IMPLEMENTED_YET);
 	}
 
-	public void accept(WhileStatement statement) {
+	public void visit(ForStatement statement) {
 		throw new UnsupportedOperationException(NOT_IMPLEMENTED_YET);
 	}
 
-	public void accept(ForStatement statement) {
+	public void visit(DeclarationStatement statement) {
 		throw new UnsupportedOperationException(NOT_IMPLEMENTED_YET);
 	}
 
-	public void accept(DeclarationStatement statement) {
+	public void visit(AssignmentStatement statement) {
 		throw new UnsupportedOperationException(NOT_IMPLEMENTED_YET);
 	}
 
-	public void accept(AssignmentStatement statement) {
-		throw new UnsupportedOperationException(NOT_IMPLEMENTED_YET);
-	}
-
-	public void accept(BlockStatement statement) {
+	public void visit(BlockStatement statement) {
 		log.info("block");
 	}
 
-	public void accept(BinaryLogicalExpression expression) {
+	public void visit(BinaryLogicalExpression expression) {
 		throw new UnsupportedOperationException(NOT_IMPLEMENTED_YET);
 	}
 
-	public void accept(NegateLogicalExpression expression) {
+	public void visit(NegateLogicalExpression expression) {
 		throw new UnsupportedOperationException(NOT_IMPLEMENTED_YET);
 	}
 
-	public void accept(BooleanValue value) {
+	public void visit(BooleanValue value) {
 		throw new UnsupportedOperationException(NOT_IMPLEMENTED_YET);
 	}
 
-	public void accept(RelationLogicalExpression expression) {
+	public void visit(RelationLogicalExpression expression) {
 		throw new UnsupportedOperationException(NOT_IMPLEMENTED_YET);
 	}
 
-	public void accept(BinaryArithmeticExpression expression) {
+	public void visit(BinaryArithmeticExpression expression) {
 		throw new UnsupportedOperationException(NOT_IMPLEMENTED_YET);
 	}
 
-	public void accept(NegationArithmeticExpression expression) {
+	public void visit(NegationArithmeticExpression expression) {
 		throw new UnsupportedOperationException(NOT_IMPLEMENTED_YET);
 	}
 
-	public void accept(IntegerValue value) {
+	public void visit(IntegerValue value) {
 		throw new UnsupportedOperationException(NOT_IMPLEMENTED_YET);
 	}
 
-	public void accept(StringValue value) {
+	public void visit(StringValue value) {
 		throw new UnsupportedOperationException(NOT_IMPLEMENTED_YET);
 	}
 
-	public void accept(TupleCallExpression expression) {
+	public void visit(TupleCallExpression expression) {
 		throw new UnsupportedOperationException(NOT_IMPLEMENTED_YET);
 	}
 
-	public void accept(MethodCallExpression expression) {
+	public void visit(MethodCallExpression expression) {
 		throw new UnsupportedOperationException(NOT_IMPLEMENTED_YET);
 	}
 
-	public void accept(IdentifierExpression expression) {
+	public void visit(IdentifierExpression expression) {
 		throw new UnsupportedOperationException(NOT_IMPLEMENTED_YET);
 	}
 
-	public void accept(FunctionCallExpression expression) {
+	public void visit(FunctionCallExpression expression) {
 		throw new UnsupportedOperationException(NOT_IMPLEMENTED_YET);
 	}
 
-	public void accept(SelectExpression expression) {
+	public void visit(SelectExpression expression) {
 		throw new UnsupportedOperationException(NOT_IMPLEMENTED_YET);
 	}
 
-	public void accept(TupleExpression expression) {
+	public void visit(TupleExpression expression) {
 		throw new UnsupportedOperationException(NOT_IMPLEMENTED_YET);
 	}
 
-	public void accept(MapExpression expression) {
+	public void visit(MapExpression expression) {
 		throw new UnsupportedOperationException(NOT_IMPLEMENTED_YET);
 	}
 
-	public void accept(ExplicitCastExpression expression) {
+	public void visit(ExplicitCastExpression expression) {
 		throw new UnsupportedOperationException(NOT_IMPLEMENTED_YET);
 	}
 
 	@Override
-	public <T extends Node> void accept(T node) {
+	public <T extends Node> void visit(T node) {
 		throw new UnsupportedOperationException(NOT_IMPLEMENTED_YET);
 	}
 }

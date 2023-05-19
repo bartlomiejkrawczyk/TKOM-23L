@@ -95,7 +95,7 @@ public class Main {
 	private static void testParser(Parser parser) {
 		var program = parser.parseProgram();
 		var visitor = new PrintingVisitor();
-		visitor.accept(program);
+		visitor.visit(program);
 		log.info(visitor.print());
 	}
 

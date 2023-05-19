@@ -4,5 +4,5 @@ import org.example.ast.Node;
 
 public interface Visitor {
 
-	<T extends Node> void accept(T node);
+	<T extends Node> void visit(T node);
 }

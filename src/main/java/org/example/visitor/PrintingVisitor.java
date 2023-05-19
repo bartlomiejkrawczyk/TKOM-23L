@@ -14,7 +14,7 @@ public class PrintingVisitor implements Visitor {
 	String childrenPrefix = StringUtils.EMPTY;
 
 	@Override
-	public <T extends Node> void accept(T node) {
+	public <T extends Node> void visit(T node) {
 		var previousPrefix = prefix;
 		var previousChildrenPrefix = childrenPrefix;
 
@@ -28,11 +28,11 @@ public class PrintingVisitor implements Visitor {
 			if (children.hasNext()) {
 				prefix = previousChildrenPrefix + "|--- ";
 				childrenPrefix = previousChildrenPrefix + "|    ";
-				expression.visit(this);
+				expression.accept(this);
 			} else {
 				prefix = previousChildrenPrefix + "`--- ";
 				childrenPrefix = previousChildrenPrefix + "     ";
-				expression.visit(this);
+				expression.accept(this);
 			}
 		}
 

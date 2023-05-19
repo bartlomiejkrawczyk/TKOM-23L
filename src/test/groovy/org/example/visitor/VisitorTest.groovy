@@ -35,7 +35,7 @@ class VisitorTest extends Specification {
 		var visitor = new PrintingVisitor()
 
 		when:
-		visitor.accept(expression)
+		visitor.visit(expression)
 
 		then:
 		visitor.print() == """FunctionDefinitionStatement(name=main, arguments=[], returnType=TypeDeclaration(valueType=VOID, types=[]), position=Position(line=1, characterNumber=1))
