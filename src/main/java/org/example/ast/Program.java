@@ -6,8 +6,8 @@ import lombok.ToString;
 import lombok.Value;
 import org.example.ast.statement.DeclarationStatement;
 import org.example.ast.statement.FunctionDefinitionStatement;
+import org.example.interpreter.Visitor;
 import org.example.token.Position;
-import org.example.visitor.Visitor;
 
 @ToString(exclude = {"functionDefinitions", "declarations"})
 @Value

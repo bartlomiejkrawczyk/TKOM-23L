@@ -9,8 +9,8 @@ import org.example.ast.Statement;
 import org.example.ast.expression.Argument;
 import org.example.ast.expression.BlockStatement;
 import org.example.ast.type.TypeDeclaration;
+import org.example.interpreter.Visitor;
 import org.example.token.Position;
-import org.example.visitor.Visitor;
 
 @ToString(exclude = {"body"})
 @EqualsAndHashCode(exclude = "position")

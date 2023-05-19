@@ -37,7 +37,6 @@ import org.example.error.ErrorHandler;
 import org.example.interpreter.model.Context;
 import org.example.interpreter.model.Result;
 import org.example.interpreter.model.Variable;
-import org.example.visitor.Visitor;
 import reactor.util.annotation.Nullable;
 
 @Slf4j

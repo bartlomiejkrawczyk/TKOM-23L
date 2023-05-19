@@ -1,4 +1,4 @@
-package org.example.visitor;
+package org.example.interpreter;
 
 import org.example.ast.Program;
 import org.example.ast.expression.BlockStatement;

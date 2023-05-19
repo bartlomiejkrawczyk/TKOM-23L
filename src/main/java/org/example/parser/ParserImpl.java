@@ -270,7 +270,6 @@ public class ParserImpl implements Parser {
 			statement = parseStatement();
 		}
 
-		log.info("{}", currentToken);
 		handleSkip(TokenType.CLOSED_CURLY_PARENTHESES);
 
 		return Optional.of(new BlockStatement(statements, position));

@@ -2,8 +2,8 @@ package org.example.ast.expression;
 
 import lombok.EqualsAndHashCode;
 import lombok.Value;
+import org.example.interpreter.Visitor;
 import org.example.token.Position;
-import org.example.visitor.Visitor;
 
 @EqualsAndHashCode(exclude = "position")
 @Value

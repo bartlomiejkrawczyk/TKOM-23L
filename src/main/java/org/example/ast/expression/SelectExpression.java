@@ -11,8 +11,8 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.example.ast.Expression;
 import org.example.ast.Node;
 import org.example.ast.type.TupleElement;
+import org.example.interpreter.Visitor;
 import org.example.token.Position;
-import org.example.visitor.Visitor;
 
 @ToString(exclude = {"select", "from", "join", "where", "having", "orderBy"})
 @EqualsAndHashCode(exclude = "position")

@@ -1,8 +1,12 @@
 package org.example.ast
 
+import org.example.ast.expression.BlockStatement
 import org.example.ast.expression.IdentifierExpression
+import org.example.ast.expression.arithmetic.AddArithmeticExpression
+import org.example.ast.statement.FunctionDefinitionStatement
 import org.example.ast.type.IntegerValue
 import org.example.ast.type.TupleElement
+import org.example.ast.type.TypeDeclaration
 import org.example.interpreter.Environment
 import org.example.token.Position
 import spock.lang.Specification
@@ -36,5 +40,32 @@ class ExpressionTest extends Specification {
 
 		expect:
 		element.getPosition() == position
+	}
+
+	def 'Should print correctly'() {
+		given:
+		var statement = new FunctionDefinitionStatement(
+				"main",
+				List.of(),
+				new TypeDeclaration(ValueType.VOID),
+				new BlockStatement(
+						List.of(
+								new AddArithmeticExpression(
+										new IntegerValue(1, position),
+										new IntegerValue(2, position),
+										position
+								)
+						),
+						position
+				),
+				position
+		)
+		expect:
+		statement.print() == """FunctionDefinitionStatement(name=main, arguments=[], returnType=TypeDeclaration(valueType=VOID, types=[]), position=Position(line=1, characterNumber=1))
+`--- BlockStatement(position=Position(line=1, characterNumber=1))
+     `--- AddArithmeticExpression(position=Position(line=1, characterNumber=1))
+          |--- IntegerValue(value=1, position=Position(line=1, characterNumber=1))
+          `--- IntegerValue(value=2, position=Position(line=1, characterNumber=1))
+"""
 	}
 }
