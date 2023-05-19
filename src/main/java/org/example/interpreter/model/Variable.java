@@ -1,12 +1,12 @@
 package org.example.interpreter.model;
 
-import lombok.Value;
 
-@Value
-public class Variable {
+@lombok.Value
+public class Variable implements Value {
 
 	String identifier;
 	String string;
 	Integer integer;
+	Boolean bool;
 	Double floatingPoint;
 }

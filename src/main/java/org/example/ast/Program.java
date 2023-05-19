@@ -1,6 +1,5 @@
 package org.example.ast;
 
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 import lombok.ToString;
@@ -8,13 +7,14 @@ import lombok.Value;
 import org.example.ast.statement.DeclarationStatement;
 import org.example.ast.statement.FunctionDefinitionStatement;
 import org.example.token.Position;
+import org.example.visitor.Visitor;
 
 @ToString(exclude = {"functionDefinitions", "declarations"})
 @Value
 public class Program implements Node {
 
 	Map<String, FunctionDefinitionStatement> functionDefinitions;
-	List<DeclarationStatement> declarations;
+	Map<String, DeclarationStatement> declarations;
 
 	@Override
 	public Position getPosition() {
@@ -28,9 +28,14 @@ public class Program implements Node {
 	public Iterable<Node> getChildrenExpressions() {
 		return Stream.concat(
 						functionDefinitions.values().stream(),
-						declarations.stream()
+						declarations.values().stream()
 				)
 				.map(Node.class::cast)
 				.toList();
+	}
+
+	@Override
+	public void accept(Visitor visitor) {
+		visitor.visit(this);
 	}
 }

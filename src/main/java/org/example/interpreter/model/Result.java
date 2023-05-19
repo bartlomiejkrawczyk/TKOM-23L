@@ -1,15 +1,15 @@
 package org.example.interpreter.model;
 
 import lombok.Builder;
-import lombok.Value;
 
 @Builder
-@Value
-public class Result {
+@lombok.Value
+public class Result implements Value {
 
 	Double floatingPoint;
 	Integer integer;
 	String string;
+	Boolean bool;
 
 	@Builder.Default
 	boolean present = true;

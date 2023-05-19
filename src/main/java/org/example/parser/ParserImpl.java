@@ -16,7 +16,6 @@ import java.util.function.Supplier;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.example.ast.Expression;
 import org.example.ast.Program;
@@ -103,7 +102,7 @@ public class ParserImpl implements Parser {
 	public Program parseProgram() {
 		nextToken();
 		var functionDefinitions = new HashMap<String, FunctionDefinitionStatement>();
-		var declarations = new ArrayList<DeclarationStatement>();
+		var declarations = new HashMap<String, DeclarationStatement>();
 
 		boolean parse;
 		do {
@@ -126,13 +125,12 @@ public class ParserImpl implements Parser {
 		functionDefinitions.put(statement.getName(), statement);
 	}
 
-	private void storeDeclaration(DeclarationStatement statement, List<DeclarationStatement> declarations) {
+	private void storeDeclaration(DeclarationStatement statement, Map<String, DeclarationStatement> declarations) {
 		var identifier = statement.getArgument().getName();
-		if (declarations.stream().anyMatch(declaration ->
-				StringUtils.equals(identifier, declaration.getArgument().getName()))) {
+		if (declarations.containsKey(identifier)) {
 			throw handleCriticalException(token -> new DuplicateDeclaration(token, identifier));
 		}
-		declarations.add(statement);
+		declarations.put(identifier, statement);
 	}
 
 	/**

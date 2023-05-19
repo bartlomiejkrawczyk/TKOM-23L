@@ -8,6 +8,7 @@ import org.example.ast.Expression;
 import org.example.ast.Node;
 import org.example.ast.type.TupleElement;
 import org.example.token.Position;
+import org.example.visitor.Visitor;
 
 @ToString(exclude = {"elements"})
 @EqualsAndHashCode(exclude = "position")
@@ -25,5 +26,10 @@ public class TupleExpression implements Expression {
 				.map(entry -> new TupleElement(entry.getKey(), entry.getValue()))
 				.map(Node.class::cast)
 				.toList();
+	}
+
+	@Override
+	public void accept(Visitor visitor) {
+		visitor.visit(this);
 	}
 }

@@ -8,6 +8,7 @@ import org.example.ast.Expression;
 import org.example.ast.Node;
 import org.example.ast.Statement;
 import org.example.token.Position;
+import org.example.visitor.Visitor;
 
 @ToString(exclude = {"condition", "ifTrue", "ifFalse"})
 @EqualsAndHashCode(exclude = "position")
@@ -28,5 +29,10 @@ public class IfStatement implements Statement {
 				ifTrue,
 				ifFalse
 		);
+	}
+
+	@Override
+	public void accept(Visitor visitor) {
+		visitor.visit(this);
 	}
 }

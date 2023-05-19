@@ -8,6 +8,7 @@ import org.example.ast.Expression;
 import org.example.ast.Node;
 import org.example.ast.expression.ArithmeticExpression;
 import org.example.token.Position;
+import org.example.visitor.Visitor;
 
 @AllArgsConstructor
 @EqualsAndHashCode(exclude = "position")
@@ -21,5 +22,10 @@ public class NegationArithmeticExpression implements ArithmeticExpression {
 	@Override
 	public Iterable<Node> getChildrenExpressions() {
 		return List.of(expression);
+	}
+
+	@Override
+	public void accept(Visitor visitor) {
+		visitor.visit(this);
 	}
 }

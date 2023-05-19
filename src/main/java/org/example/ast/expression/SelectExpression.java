@@ -12,6 +12,7 @@ import org.example.ast.Expression;
 import org.example.ast.Node;
 import org.example.ast.type.TupleElement;
 import org.example.token.Position;
+import org.example.visitor.Visitor;
 
 @ToString(exclude = {"select", "from", "join", "where", "having", "orderBy"})
 @EqualsAndHashCode(exclude = "position")
@@ -43,5 +44,10 @@ public class SelectExpression implements Expression {
 				.orElseGet(Stream::empty)
 				.map(Node.class::cast)
 				.toList();
+	}
+
+	@Override
+	public void accept(Visitor visitor) {
+		visitor.visit(this);
 	}
 }

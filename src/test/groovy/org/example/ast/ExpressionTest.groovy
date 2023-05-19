@@ -23,7 +23,7 @@ class ExpressionTest extends Specification {
 
 	def 'Should get program position as first character in file'() {
 		given:
-		var program = new Program(Map.of(), List.of())
+		var program = new Program(Map.of(), Map.of())
 
 		expect:
 		program.getPosition() == new Position(1, 1)

@@ -101,12 +101,12 @@ public class Main {
 
 	@SuppressWarnings("unused")
 	private static void runProgram(Program program, ErrorHandler errorHandler) {
-		var interpreter = new InterpretingVisitor(program, errorHandler);
-		testInterpreter(interpreter);
+		var interpreter = new InterpretingVisitor(errorHandler);
+		testInterpreter(interpreter, program);
 	}
 
 	@SuppressWarnings("unused")
-	private static void testInterpreter(Interpreter interpreter) {
-		interpreter.execute();
+	private static void testInterpreter(Interpreter interpreter, Program program) {
+		interpreter.execute(program);
 	}
 }

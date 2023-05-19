@@ -10,6 +10,7 @@ import org.example.ast.expression.Argument;
 import org.example.ast.expression.BlockStatement;
 import org.example.ast.type.TypeDeclaration;
 import org.example.token.Position;
+import org.example.visitor.Visitor;
 
 @ToString(exclude = {"body"})
 @EqualsAndHashCode(exclude = "position")
@@ -28,5 +29,10 @@ public class FunctionDefinitionStatement implements Statement {
 		return List.of(
 				body
 		);
+	}
+
+	@Override
+	public void accept(Visitor visitor) {
+		visitor.visit(this);
 	}
 }

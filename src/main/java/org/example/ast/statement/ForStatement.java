@@ -9,6 +9,7 @@ import org.example.ast.Node;
 import org.example.ast.Statement;
 import org.example.ast.expression.Argument;
 import org.example.token.Position;
+import org.example.visitor.Visitor;
 
 @ToString(exclude = {"iterable", "body"})
 @EqualsAndHashCode(exclude = "position")
@@ -28,5 +29,10 @@ public class ForStatement implements Statement {
 				iterable,
 				body
 		);
+	}
+
+	@Override
+	public void accept(Visitor visitor) {
+		visitor.visit(this);
 	}
 }

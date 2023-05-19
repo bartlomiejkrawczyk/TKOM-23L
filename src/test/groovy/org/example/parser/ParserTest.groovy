@@ -37,7 +37,7 @@ class ParserTest extends Specification {
 		var parser = toParser(program)
 
 		expect:
-		parser.parseProgram() == new Program(Map.of(), List.of())
+		parser.parseProgram() == new Program(Map.of(), Map.of())
 	}
 
 	def 'Should be able to parse basic function definition'() {
@@ -66,7 +66,7 @@ class ParserTest extends Specification {
 								position
 						)
 				),
-				List.of()
+				Map.of()
 		)
 	}
 }

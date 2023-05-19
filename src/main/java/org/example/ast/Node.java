@@ -12,7 +12,5 @@ public interface Node {
 		return List.of();
 	}
 
-	default void accept(Visitor visitor) {
-		visitor.visit(this);
-	}
+	void accept(Visitor visitor);
 }
