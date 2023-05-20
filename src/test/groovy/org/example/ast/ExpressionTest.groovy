@@ -4,7 +4,7 @@ import org.example.ast.expression.BlockStatement
 import org.example.ast.expression.IdentifierExpression
 import org.example.ast.expression.arithmetic.AddArithmeticExpression
 import org.example.ast.statement.FunctionDefinitionStatement
-import org.example.ast.type.IntegerValue
+import org.example.ast.type.IntegerExpression
 import org.example.ast.type.TupleElement
 import org.example.ast.type.TypeDeclaration
 import org.example.interpreter.Environment
@@ -15,7 +15,7 @@ class ExpressionTest extends Specification {
 
 	def 'Should evaluate correctly'() {
 		given:
-		var expression = new IntegerValue(1, new Position())
+		var expression = new IntegerExpression(1, new Position())
 		var environment = new Environment()
 
 		when:
@@ -44,6 +44,7 @@ class ExpressionTest extends Specification {
 
 	def 'Should print correctly'() {
 		given:
+		var position = new Position(1, 1)
 		var statement = new FunctionDefinitionStatement(
 				"main",
 				List.of(),
@@ -51,8 +52,8 @@ class ExpressionTest extends Specification {
 				new BlockStatement(
 						List.of(
 								new AddArithmeticExpression(
-										new IntegerValue(1, position),
-										new IntegerValue(2, position),
+										new IntegerExpression(1, position),
+										new IntegerExpression(2, position),
 										position
 								)
 						),
@@ -64,8 +65,8 @@ class ExpressionTest extends Specification {
 		statement.print() == """FunctionDefinitionStatement(name=main, arguments=[], returnType=TypeDeclaration(valueType=VOID, types=[]), position=Position(line=1, characterNumber=1))
 `--- BlockStatement(position=Position(line=1, characterNumber=1))
      `--- AddArithmeticExpression(position=Position(line=1, characterNumber=1))
-          |--- IntegerValue(value=1, position=Position(line=1, characterNumber=1))
-          `--- IntegerValue(value=2, position=Position(line=1, characterNumber=1))
+          |--- IntegerExpression(value=1, position=Position(line=1, characterNumber=1))
+          `--- IntegerExpression(value=2, position=Position(line=1, characterNumber=1))
 """
 	}
 }

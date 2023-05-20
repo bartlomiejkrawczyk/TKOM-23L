@@ -2,16 +2,15 @@ package org.example.ast.type;
 
 import lombok.EqualsAndHashCode;
 import org.example.ast.Value;
-import org.example.ast.expression.ArithmeticExpression;
+import org.example.ast.expression.LogicalExpression;
 import org.example.interpreter.Visitor;
 import org.example.token.Position;
 
-
 @EqualsAndHashCode(exclude = "position")
 @lombok.Value
-public class IntegerValue implements Value, ArithmeticExpression {
+public class BooleanExpression implements Value, LogicalExpression {
 
-	Integer value;
+	Boolean value;
 
 	Position position;
 

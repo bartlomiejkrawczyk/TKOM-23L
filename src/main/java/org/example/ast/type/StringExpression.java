@@ -7,7 +7,7 @@ import org.example.token.Position;
 
 @EqualsAndHashCode(exclude = "position")
 @lombok.Value
-public class StringValue implements Value {
+public class StringExpression implements Value {
 
 	String value;
 

@@ -3,10 +3,9 @@ package org.example.interpreter.model;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import lombok.Value;
 import org.example.interpreter.error.DuplicatedVariableException;
 
-@Value
+@lombok.Value
 public class Scope {
 
 	Map<String, Variable> localVariables = new HashMap<>();
@@ -20,5 +19,14 @@ public class Scope {
 			throw new DuplicatedVariableException(variable.getIdentifier());
 		}
 		localVariables.put(variable.getIdentifier(), variable);
+	}
+
+	public boolean updateVariable(String identifier, Value value) {
+		if (!localVariables.containsKey(identifier)) {
+			return false;
+		}
+		var previous = localVariables.get(identifier);
+		localVariables.put(identifier, new Variable(previous.getType(), previous.getIdentifier(), value));
+		return true;
 	}
 }

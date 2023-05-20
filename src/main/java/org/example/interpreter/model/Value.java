@@ -1,12 +1,41 @@
 package org.example.interpreter.model;
 
+import org.example.ast.type.TypeDeclaration;
+import org.example.interpreter.error.UnexpectedTypeException;
+
 public interface Value {
 
-	Integer getInteger();
+	TypeDeclaration getType();
 
-	Boolean getBool();
+	default int getInteger() {
+		throw new UnexpectedTypeException();
+	}
 
-	Double getFloatingPoint();
+	default boolean getBool() {
+		throw new UnexpectedTypeException();
+	}
 
-	String getString();
+	default double getFloatingPoint() {
+		throw new UnexpectedTypeException();
+	}
+
+	default String getString() {
+		throw new UnexpectedTypeException();
+	}
+
+	//	default MapExpression getMap() {
+	//		throw new UnexpectedTypeException();
+	//	}
+	//
+	//	default TupleExpression getTuple() {
+	//		throw new UnexpectedTypeException();
+	//	}
+
+	//	default Iterable getIterable() {
+	//		throw new UnexpectedTypeException();
+	//	}
+
+	//	default Comparator getComparator() {
+	//		throw new UnexpectedTypeException();
+	//	}
 }

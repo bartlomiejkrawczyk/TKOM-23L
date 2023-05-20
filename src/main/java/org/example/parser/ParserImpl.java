@@ -52,10 +52,10 @@ import org.example.ast.statement.FunctionDefinitionStatement;
 import org.example.ast.statement.IfStatement;
 import org.example.ast.statement.ReturnStatement;
 import org.example.ast.statement.WhileStatement;
-import org.example.ast.type.BooleanValue;
-import org.example.ast.type.FloatingPointValue;
-import org.example.ast.type.IntegerValue;
-import org.example.ast.type.StringValue;
+import org.example.ast.type.BooleanExpression;
+import org.example.ast.type.FloatingPointExpression;
+import org.example.ast.type.IntegerExpression;
+import org.example.ast.type.StringExpression;
 import org.example.ast.type.TypeDeclaration;
 import org.example.error.ErrorHandler;
 import org.example.lexer.Lexer;
@@ -491,10 +491,10 @@ public class ParserImpl implements Parser {
 		var negate = skipIf(TokenType.NOT);
 
 		if (skipIf(TokenType.BOOLEAN_TRUE)) {
-			return Optional.of(new BooleanValue(!negate, currentToken.getPosition()));
+			return Optional.of(new BooleanExpression(!negate, currentToken.getPosition()));
 		}
 		if (skipIf(TokenType.BOOLEAN_FALSE)) {
-			return Optional.of(new BooleanValue(negate, currentToken.getPosition()));
+			return Optional.of(new BooleanExpression(negate, currentToken.getPosition()));
 		}
 
 		var expression = parseArithmeticExpression();
@@ -590,9 +590,9 @@ public class ParserImpl implements Parser {
 	}
 
 	private final List<Pair<Predicate<TokenType>, BiFunction<?, Position, Expression>>> simpleTypeParser = List.of(
-			Pair.of(it -> it == TokenType.INTEGER_CONSTANT, (BiFunction<Integer, Position, Expression>) IntegerValue::new),
-			Pair.of(it -> it == TokenType.FLOATING_POINT_CONSTANT, (BiFunction<Double, Position, Expression>) FloatingPointValue::new),
-			Pair.of(LexerUtility.STRINGS::containsValue, (BiFunction<String, Position, Expression>) StringValue::new)
+			Pair.of(it -> it == TokenType.INTEGER_CONSTANT, (BiFunction<Integer, Position, Expression>) IntegerExpression::new),
+			Pair.of(it -> it == TokenType.FLOATING_POINT_CONSTANT, (BiFunction<Double, Position, Expression>) FloatingPointExpression::new),
+			Pair.of(LexerUtility.STRINGS::containsValue, (BiFunction<String, Position, Expression>) StringExpression::new)
 	);
 
 	/**
@@ -732,14 +732,14 @@ public class ParserImpl implements Parser {
 
 			var on = skipIf(TokenType.ON)
 					? retrieveItem(this::parseLogicalExpression, MissingLogicalExpressionException::new)
-					: new BooleanValue(true, currentToken.getPosition());
+					: new BooleanExpression(true, currentToken.getPosition());
 
 			join.add(Tuple.of(joinTable.getKey(), joinTable.getValue(), on));
 		}
 
 		var where = skipIf(TokenType.WHERE)
 				? retrieveItem(this::parseLogicalExpression, MissingLogicalExpressionException::new)
-				: new BooleanValue(true, currentToken.getPosition());
+				: new BooleanExpression(true, currentToken.getPosition());
 
 		var groupByResult = parseGroupBy();
 		var groupBy = groupByResult.getKey();
@@ -754,7 +754,7 @@ public class ParserImpl implements Parser {
 
 	private Pair<List<Expression>, Expression> parseGroupBy() {
 		var groupBy = new ArrayList<Expression>();
-		var having = (Expression) new BooleanValue(true, currentToken.getPosition());
+		var having = (Expression) new BooleanExpression(true, currentToken.getPosition());
 		if (skipIf(TokenType.GROUP) && skipIf(TokenType.BY)) {
 			do {
 				var expression = retrieveItem(this::parseExpression, MissingExpressionException::new);

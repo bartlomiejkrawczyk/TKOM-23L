@@ -22,11 +22,12 @@ import org.example.ast.statement.FunctionDefinitionStatement;
 import org.example.ast.statement.IfStatement;
 import org.example.ast.statement.ReturnStatement;
 import org.example.ast.statement.WhileStatement;
-import org.example.ast.type.BooleanValue;
-import org.example.ast.type.FloatingPointValue;
-import org.example.ast.type.IntegerValue;
-import org.example.ast.type.StringValue;
+import org.example.ast.type.BooleanExpression;
+import org.example.ast.type.FloatingPointExpression;
+import org.example.ast.type.IntegerExpression;
+import org.example.ast.type.StringExpression;
 import org.example.ast.type.TupleElement;
+import org.example.interpreter.model.custom.PrintFunction;
 
 public interface Visitor {
 
@@ -52,7 +53,7 @@ public interface Visitor {
 
 	void visit(NegateLogicalExpression expression);
 
-	void visit(BooleanValue value);
+	void visit(BooleanExpression value);
 
 	void visit(RelationLogicalExpression expression);
 
@@ -60,11 +61,11 @@ public interface Visitor {
 
 	void visit(NegationArithmeticExpression expression);
 
-	void visit(IntegerValue value);
+	void visit(IntegerExpression value);
 
-	void visit(FloatingPointValue value);
+	void visit(FloatingPointExpression value);
 
-	void visit(StringValue value);
+	void visit(StringExpression value);
 
 	void visit(TupleCallExpression expression);
 
@@ -83,4 +84,6 @@ public interface Visitor {
 	void visit(MapExpression expression);
 
 	void visit(ExplicitCastExpression expression);
+
+	void visit(PrintFunction expression);
 }

@@ -8,7 +8,7 @@ import org.example.token.Position;
 
 @EqualsAndHashCode(exclude = "position")
 @lombok.Value
-public class FloatingPointValue implements Value, ArithmeticExpression {
+public class FloatingPointExpression implements Value, ArithmeticExpression {
 
 	Double value;
 
