@@ -11,6 +11,6 @@ fun main() {
 	hello("Hello,\nWorld!");
 
 	int x = 3;
-	double pi = 3.14159265358979;
-	double e = 2.71828182846;
+	double pi = 3.1415926;
+	double e = 2.7182818;
 }

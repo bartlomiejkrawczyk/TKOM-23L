@@ -30,6 +30,7 @@ public class ErrorHandlerImpl implements ErrorHandler {
 	public void showExceptions(Reader reader) throws IOException {
 		var positionalReader = new PositionalReaderImpl(reader);
 		while (processLine(positionalReader)) ;
+		exceptions.clear();
 	}
 
 	private boolean processLine(PositionalReader reader) throws IOException {
