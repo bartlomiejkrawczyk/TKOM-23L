@@ -10,4 +10,8 @@ public interface BinaryLogicalExpression extends LogicalExpression, BinaryExpres
 	default void accept(Visitor visitor) {
 		visitor.visit(this);
 	}
+
+	boolean needsFurtherProcessing(boolean first);
+
+	boolean evaluate(boolean first, boolean second);
 }

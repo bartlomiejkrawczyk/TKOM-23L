@@ -1,10 +1,12 @@
 package org.example.interpreter;
 
+import java.io.PrintStream;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.ast.Program;
@@ -39,14 +41,20 @@ import org.example.ast.type.TupleElement;
 import org.example.ast.type.TypeDeclaration;
 import org.example.error.ErrorHandler;
 import org.example.interpreter.error.ArgumentListSizeDoesNotMatch;
+import org.example.interpreter.error.CouldNotCompareNonNumericValues;
+import org.example.interpreter.error.CouldNotPerformArithmeticOperationOnNonNumericType;
 import org.example.interpreter.error.ExpressionDidNotEvaluateException;
 import org.example.interpreter.error.NoSuchFunctionException;
+import org.example.interpreter.error.NoSuchVariableException;
 import org.example.interpreter.error.ReturnCalled;
+import org.example.interpreter.error.ReturnValueNotExpectedException;
 import org.example.interpreter.error.TypesDoNotMatchException;
 import org.example.interpreter.model.Context;
 import org.example.interpreter.model.Result;
+import org.example.interpreter.model.Value;
 import org.example.interpreter.model.Variable;
 import org.example.interpreter.model.custom.PrintFunction;
+import org.example.interpreter.model.value.BooleanValue;
 import org.example.interpreter.model.value.FloatingPointValue;
 import org.example.interpreter.model.value.IntegerValue;
 import org.example.interpreter.model.value.StringValue;
@@ -57,10 +65,16 @@ import org.example.token.Position;
 public class InterpretingVisitor implements Visitor, Interpreter {
 
 	private static final Context GLOBAL_CONTEXT = new Context(new TypeDeclaration(ValueType.VOID), "~~main~~");
+	private static final TypeDeclaration VOID_TYPE = new TypeDeclaration(ValueType.VOID);
+	private static final TypeDeclaration BOOLEAN_TYPE = new TypeDeclaration(ValueType.BOOLEAN);
+	private static final TypeDeclaration INTEGER_TYPE = new TypeDeclaration(ValueType.INTEGER);
+	private static final TypeDeclaration FLOATING_POINT_TYPE = new TypeDeclaration(ValueType.FLOATING_POINT);
+	private static final TypeDeclaration STRING_TYPE = new TypeDeclaration(ValueType.STRING);
 	private static final String PRINT_ARGUMENT = "~~message~~";
 	private static final String MAIN_FUNCTION_NAME = "main";
 	private static final String NOT_IMPLEMENTED_YET = "Not implemented yet!";
 	private final ErrorHandler errorHandler;
+	private final PrintStream out;
 	private final Deque<Context> contexts = new ArrayDeque<>(List.of(GLOBAL_CONTEXT));
 	private final Map<String, FunctionDefinitionStatement> functionDefinitions = new HashMap<>(Map.of(
 			"print",
@@ -73,7 +87,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 			)
 	));
 
-	private Result result = Result.builder().present(false).build();
+	private Result result = Result.empty();
 
 	@Override
 	public void execute(Program program) {
@@ -104,28 +118,16 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 		var argument = statement.getArgument();
 
 		statement.getExpression().accept(this);
+		var value = retrieveResult(argument.getType());
 
-		if (!result.isPresent()) {
-			throw new ExpressionDidNotEvaluateException();
-		}
-
-		var variable = new Variable(argument.getType(), argument.getName(), result.getValue());
+		var variable = new Variable(argument.getType(), argument.getName(), value);
 		context.addVariable(variable);
 	}
 
 	@Override
 	public void visit(IfStatement statement) {
 		statement.getCondition().accept(this);
-
-		if (!result.isPresent()) {
-			throw new ExpressionDidNotEvaluateException();
-		}
-
-		var value = result.getValue();
-
-		if (value.getType().getValueType() != ValueType.BOOLEAN) {
-			throw new TypesDoNotMatchException(value.getType(), new TypeDeclaration(ValueType.BOOLEAN));
-		}
+		var value = retrieveResult(BOOLEAN_TYPE);
 
 		if (value.getBool()) {
 			statement.getIfTrue().accept(this);
@@ -138,41 +140,38 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 	public void visit(WhileStatement statement) {
 		var condition = statement.getCondition();
 		condition.accept(this);
+		var value = retrieveResult(BOOLEAN_TYPE);
 
-		if (!result.isPresent()) {
-			throw new ExpressionDidNotEvaluateException();
-		}
-
-		var value = result.getValue();
-
-		if (value.getType().getValueType() != ValueType.BOOLEAN) {
-			throw new TypesDoNotMatchException(value.getType(), new TypeDeclaration(ValueType.BOOLEAN));
-		}
-
-		while (result.getValue().getBool()) {
+		while (value.getBool()) {
 			statement.getBody().accept(this);
 
-			// Do not need to check types again - condition did not change
 			condition.accept(this);
+			value = retrieveResult(BOOLEAN_TYPE);
 		}
 	}
 
 	@Override
 	public void visit(ForStatement statement) {
+		// TODO: implement me!
 		throw new UnsupportedOperationException(NOT_IMPLEMENTED_YET);
 	}
 
 	@Override
 	public void visit(AssignmentStatement statement) {
 		var context = contexts.getLast();
+		var previousValue = context.findVariable(statement.getName())
+				.or(() -> GLOBAL_CONTEXT.findVariable(statement.getName()))
+				.orElseThrow(NoSuchVariableException::new);
 
 		statement.getValue().accept(this);
+		var value = retrieveResult(previousValue.getType());
 
-		if (!result.isPresent()) {
-			throw new ExpressionDidNotEvaluateException();
+		for (var current : List.of(context, GLOBAL_CONTEXT)) {
+			var updated = current.updateVariable(statement.getName(), value);
+			if (updated) {
+				return;
+			}
 		}
-
-		context.updateVariable(statement.getName(), result.getValue());
 	}
 
 	@Override
@@ -195,47 +194,93 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 
 	@Override
 	public void visit(BinaryLogicalExpression expression) {
-		throw new UnsupportedOperationException(NOT_IMPLEMENTED_YET);
+		expression.getLeft().accept(this);
+		var left = retrieveResult(BOOLEAN_TYPE);
+
+		if (expression.needsFurtherProcessing(left.getBool())) {
+			expression.getRight().accept(this);
+			var right = retrieveResult(BOOLEAN_TYPE);
+			result = Result.ok(new BooleanValue(expression.evaluate(left.getBool(), right.getBool())));
+		} else {
+			result = Result.ok(new BooleanValue(left.getBool()));
+		}
 	}
 
 	@Override
 	public void visit(NegateLogicalExpression expression) {
-		throw new UnsupportedOperationException(NOT_IMPLEMENTED_YET);
+		expression.getExpression().accept(this);
+		var value = retrieveResult(BOOLEAN_TYPE);
+		result = Result.ok(new BooleanValue(!value.getBool()));
 	}
 
 	@Override
 	public void visit(BooleanExpression value) {
-		throw new UnsupportedOperationException(NOT_IMPLEMENTED_YET);
+		result = Result.ok(new BooleanValue(value.getValue()));
 	}
 
 	@Override
 	public void visit(RelationLogicalExpression expression) {
-		throw new UnsupportedOperationException(NOT_IMPLEMENTED_YET);
+		expression.getLeft().accept(this);
+		var left = retrieveResult();
+
+		boolean value;
+		if (left.getType() == INTEGER_TYPE) {
+			var right = retrieveResult(left.getType());
+			value = expression.evaluate(left.getInteger(), right.getInteger());
+		} else if (left.getType() == FLOATING_POINT_TYPE) {
+			var right = retrieveResult(left.getType());
+			value = expression.evaluate(left.getFloatingPoint(), right.getFloatingPoint());
+		} else {
+			throw new CouldNotCompareNonNumericValues();
+		}
+		result = Result.ok(new BooleanValue(value));
 	}
 
 	@Override
 	public void visit(BinaryArithmeticExpression expression) {
-		throw new UnsupportedOperationException(NOT_IMPLEMENTED_YET);
+		expression.getLeft().accept(this);
+		var left = retrieveResult();
+
+		if (left.getType() == INTEGER_TYPE) {
+			var right = retrieveResult(left.getType());
+			var value = expression.evaluate(left.getInteger(), right.getInteger());
+			result = Result.ok(new IntegerValue(value));
+		} else if (left.getType() == FLOATING_POINT_TYPE) {
+			var right = retrieveResult(left.getType());
+			var value = expression.evaluate(left.getFloatingPoint(), right.getFloatingPoint());
+			result = Result.ok(new FloatingPointValue(value));
+		} else {
+			throw new CouldNotPerformArithmeticOperationOnNonNumericType();
+		}
 	}
 
 	@Override
 	public void visit(NegationArithmeticExpression expression) {
-		throw new UnsupportedOperationException(NOT_IMPLEMENTED_YET);
+		expression.getExpression().accept(this);
+		var value = retrieveResult();
+
+		if (value.getType() == INTEGER_TYPE) {
+			result = Result.ok(new IntegerValue(-value.getInteger()));
+		} else if (value.getType() == FLOATING_POINT_TYPE) {
+			result = Result.ok(new FloatingPointValue(-value.getFloatingPoint()));
+		} else {
+			throw new CouldNotPerformArithmeticOperationOnNonNumericType();
+		}
 	}
 
 	@Override
 	public void visit(IntegerExpression expression) {
-		result = Result.builder().value(new IntegerValue(expression.getValue())).build();
+		result = Result.ok(new IntegerValue(expression.getValue()));
 	}
 
 	@Override
 	public void visit(FloatingPointExpression expression) {
-		result = Result.builder().value(new FloatingPointValue(expression.getValue())).build();
+		result = Result.ok(new FloatingPointValue(expression.getValue()));
 	}
 
 	@Override
 	public void visit(StringExpression expression) {
-		result = Result.builder().value(new StringValue(expression.getValue())).build();
+		result = Result.ok(new StringValue(expression.getValue()));
 	}
 
 	@Override
@@ -266,7 +311,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 			throw new ArgumentListSizeDoesNotMatch(expression);
 		}
 
-		// TODO: map arguments as local variables
+		// TODO: map arguments to local variables
 
 		var context = new Context(declaration.getReturnType(), declaration.getName());
 
@@ -274,9 +319,15 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 
 		try {
 			declaration.getBody().accept(this);
-			result.setPresent(false);
+			if (Objects.equals(declaration.getReturnType(), VOID_TYPE)) {
+				result = Result.empty();
+			} else {
+				throw new ReturnValueNotExpectedException();
+			}
 		} catch (ReturnCalled exception) {
-			// TODO: validate return value
+			if (!Objects.equals(result.getValue().getType(), declaration.getReturnType())) {
+				throw new TypesDoNotMatchException(result.getValue().getType(), declaration.getReturnType());
+			}
 		}
 
 		contexts.removeLast();
@@ -315,7 +366,25 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 		var message = context.findVariable(PRINT_ARGUMENT);
 
 		if (message.isPresent()) {
-			System.out.println(message);
+			out.println(message);
 		}
+	}
+
+	private Value retrieveResult(TypeDeclaration type) {
+		var value = retrieveResult();
+
+		if (!Objects.equals(value.getType(), type)) {
+			throw new TypesDoNotMatchException(value.getType(), type);
+		}
+
+		return value;
+	}
+
+	private Value retrieveResult() {
+		if (!result.isPresent()) {
+			throw new ExpressionDidNotEvaluateException();
+		}
+
+		return result.getValue();
 	}
 }

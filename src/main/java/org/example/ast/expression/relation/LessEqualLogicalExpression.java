@@ -15,4 +15,14 @@ public class LessEqualLogicalExpression implements RelationLogicalExpression {
 	Expression right;
 
 	Position position;
+
+	@Override
+	public boolean evaluate(int first, int second) {
+		return first <= second;
+	}
+
+	@Override
+	public boolean evaluate(double first, double second) {
+		return first <= second;
+	}
 }

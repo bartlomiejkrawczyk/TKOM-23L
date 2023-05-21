@@ -15,4 +15,14 @@ public class AndLogicalExpression implements BinaryLogicalExpression {
 	Expression right;
 
 	Position position;
+
+	@Override
+	public boolean needsFurtherProcessing(boolean first) {
+		return first;
+	}
+
+	@Override
+	public boolean evaluate(boolean first, boolean second) {
+		return first && second;
+	}
 }

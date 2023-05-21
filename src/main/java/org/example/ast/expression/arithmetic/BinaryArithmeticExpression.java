@@ -10,4 +10,8 @@ public interface BinaryArithmeticExpression extends ArithmeticExpression, Binary
 	default void accept(Visitor visitor) {
 		visitor.visit(this);
 	}
+
+	int evaluate(int first, int second);
+
+	double evaluate(double first, double second);
 }

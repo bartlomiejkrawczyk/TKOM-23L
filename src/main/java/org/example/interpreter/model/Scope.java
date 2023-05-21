@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import org.example.interpreter.error.DuplicatedVariableException;
+import org.example.interpreter.error.TypesDoNotMatchException;
 
 @lombok.Value
 public class Scope {
@@ -26,6 +27,11 @@ public class Scope {
 			return false;
 		}
 		var previous = localVariables.get(identifier);
+
+		if (previous.getType() != value.getType()) {
+			throw new TypesDoNotMatchException(value.getType(), previous.getType());
+		}
+
 		localVariables.put(identifier, new Variable(previous.getType(), previous.getIdentifier(), value));
 		return true;
 	}

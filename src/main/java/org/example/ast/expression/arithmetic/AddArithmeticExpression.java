@@ -15,4 +15,14 @@ public class AddArithmeticExpression implements BinaryArithmeticExpression {
 	Expression right;
 
 	Position position;
+
+	@Override
+	public int evaluate(int first, int second) {
+		return first + second;
+	}
+
+	@Override
+	public double evaluate(double first, double second) {
+		return first + second;
+	}
 }

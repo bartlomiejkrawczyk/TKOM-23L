@@ -12,7 +12,7 @@ class InterpretingVisitorTest extends Specification {
 
 	def 'Should be able to determine type'() {
 		given:
-		var visitor = new InterpretingVisitor(errorHandler)
+		var visitor = new InterpretingVisitor(errorHandler, System.out)
 
 		expect:
 		new BlockStatement(List.of(), new Position()).accept(visitor)

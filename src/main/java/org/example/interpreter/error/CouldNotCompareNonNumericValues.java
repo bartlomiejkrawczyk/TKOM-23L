@@ -9,7 +9,8 @@ import org.example.token.Position;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-public class ReturnCalled extends CriticalInterpreterException {
+public class CouldNotCompareNonNumericValues extends CriticalInterpreterException {
+
 
 	@Override
 	public Position getPosition() {

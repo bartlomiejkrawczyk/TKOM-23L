@@ -98,7 +98,7 @@ public class Main {
 
 	@SuppressWarnings("unused")
 	private static void runProgram(Program program, ErrorHandler errorHandler) {
-		var interpreter = new InterpretingVisitor(errorHandler);
+		var interpreter = new InterpretingVisitor(errorHandler, System.out);
 		testInterpreter(interpreter, program);
 	}
 

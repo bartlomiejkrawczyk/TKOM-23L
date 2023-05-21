@@ -9,7 +9,7 @@ import org.example.token.Position;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-public class ReturnCalled extends CriticalInterpreterException {
+public class ReturnValueNotExpectedException extends CriticalInterpreterException {
 
 	@Override
 	public Position getPosition() {

@@ -10,4 +10,8 @@ public interface RelationLogicalExpression extends LogicalExpression, BinaryExpr
 	default void accept(Visitor visitor) {
 		visitor.visit(this);
 	}
+
+	boolean evaluate(int first, int second);
+
+	boolean evaluate(double first, double second);
 }
