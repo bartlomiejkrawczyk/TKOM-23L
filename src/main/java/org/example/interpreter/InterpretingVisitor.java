@@ -81,7 +81,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 	private static final TypeDeclaration STRING_TYPE = new TypeDeclaration(ValueType.STRING);
 	private static final String PRINT_ARGUMENT = "~~message~~";
 	private static final String MAIN_FUNCTION_NAME = "main";
-	private static final String UNREACHABLE_STATEMENT = "Unreachable statement!";
+	private static final String UNREACHABLE_NODE = "Unreachable node!";
 	private final ErrorHandler errorHandler;
 	private final PrintStream out;
 	private final Deque<Context> contexts = new ArrayDeque<>(List.of(GLOBAL_CONTEXT));
@@ -124,7 +124,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 
 	@Override
 	public void visit(FunctionDefinitionStatement statement) {
-		throw new UnsupportedOperationException(UNREACHABLE_STATEMENT);
+		throw new UnsupportedOperationException(UNREACHABLE_NODE);
 	}
 
 	@Override
@@ -330,7 +330,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 	@Override
 	public void visit(MethodCallExpression expression) {
 		// TODO: implement me!
-		throw new UnsupportedOperationException(UNREACHABLE_STATEMENT);
+		throw new UnsupportedOperationException(UNREACHABLE_NODE);
 	}
 
 	@Override
@@ -385,7 +385,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 	@Override
 	public void visit(SelectExpression expression) {
 		// TODO: implement me!
-		throw new UnsupportedOperationException(UNREACHABLE_STATEMENT);
+		throw new UnsupportedOperationException(UNREACHABLE_NODE);
 	}
 
 	@Override
@@ -406,7 +406,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 
 	@Override
 	public void visit(TupleElement expression) {
-		throw new UnsupportedOperationException(UNREACHABLE_STATEMENT);
+		throw new UnsupportedOperationException(UNREACHABLE_NODE);
 	}
 
 	@Override
