@@ -51,6 +51,7 @@ import org.example.interpreter.error.ExpressionDidNotEvaluateException;
 import org.example.interpreter.error.NoSuchFunctionException;
 import org.example.interpreter.error.NoSuchTupleElement;
 import org.example.interpreter.error.NoSuchVariableException;
+import org.example.interpreter.error.ObjectDoesNotSupportMethodCallsException;
 import org.example.interpreter.error.ReturnCalled;
 import org.example.interpreter.error.ReturnValueNotExpectedException;
 import org.example.interpreter.error.TypesDoNotMatchException;
@@ -329,8 +330,30 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 
 	@Override
 	public void visit(MethodCallExpression expression) {
-		// TODO: implement me!
-		throw new UnsupportedOperationException(UNREACHABLE_NODE);
+		expression.getObject().accept(this);
+		var object = retrieveResult();
+
+		if (object instanceof MapValue map) {
+			var call = expression.getFunction();
+			var arguments = new ArrayList<Value>();
+
+			for (var argument : call.getArguments()) {
+				argument.accept(this);
+				arguments.add(retrieveResult());
+			}
+
+			var value = map.findMethod(call.getFunction())
+					.orElseThrow(() -> new NoSuchFunctionException(call.getFunction()))
+					.apply(arguments);
+
+			if (value.getType().getValueType() != ValueType.VOID) {
+				result = Result.ok(value);
+			} else {
+				result = Result.empty();
+			}
+		} else {
+			throw new ObjectDoesNotSupportMethodCallsException();
+		}
 	}
 
 	@Override
