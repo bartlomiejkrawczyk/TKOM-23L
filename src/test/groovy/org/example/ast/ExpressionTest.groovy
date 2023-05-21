@@ -7,23 +7,10 @@ import org.example.ast.statement.FunctionDefinitionStatement
 import org.example.ast.type.IntegerExpression
 import org.example.ast.type.TupleElement
 import org.example.ast.type.TypeDeclaration
-import org.example.interpreter.Environment
 import org.example.token.Position
 import spock.lang.Specification
 
 class ExpressionTest extends Specification {
-
-	def 'Should evaluate correctly'() {
-		given:
-		var expression = new IntegerExpression(1, new Position())
-		var environment = new Environment()
-
-		when:
-		expression.evaluate(environment)
-
-		then:
-		noExceptionThrown()
-	}
 
 	def 'Should get program position as first character in file'() {
 		given:

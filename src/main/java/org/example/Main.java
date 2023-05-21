@@ -12,7 +12,6 @@ import org.example.error.ErrorHandlerImpl;
 import org.example.error.TooManyExceptionsException;
 import org.example.interpreter.Interpreter;
 import org.example.interpreter.InterpretingVisitor;
-import org.example.interpreter.error.CriticalInterpreterException;
 import org.example.lexer.CommentFilterLexer;
 import org.example.lexer.Lexer;
 import org.example.lexer.LexerImpl;
@@ -58,11 +57,7 @@ public class Main {
 			return;
 		}
 
-		try {
-			runProgram(program, errorHandler);
-		} catch (CriticalInterpreterException exception) {
-			log.error("CriticalInterpreterException", exception);
-		}
+		runProgram(program, errorHandler);
 
 		try (var inputStream = new FileInputStream(file)) {
 			errorHandler.showExceptions(new InputStreamReader(inputStream));

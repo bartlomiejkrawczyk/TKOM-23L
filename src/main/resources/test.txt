@@ -8,9 +8,6 @@ fun hello(world: String) {
  * Program that prints "Hello, World!"
  */
 fun main() {
-	hello("Hello,\nWorld!");
-
-	int x = 3;
-	double pi = 3.1415926;
-	double e = 2.7182818;
+	hello("Hello, World!");
+	hello("NORTH\nEAST\nSOUTH\nWEST");
 }

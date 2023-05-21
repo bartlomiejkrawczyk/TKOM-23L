@@ -1,0 +1,10 @@
+fun main() {
+	int x = 3;
+	double pi = 3.1415926;
+	double e = 2.7182818;
+
+	print(@String x);
+	print(@String @int pi);
+	print(@String (@double x) + pi * e);
+	print(@String x + (@int pi) / (@int e));
+}

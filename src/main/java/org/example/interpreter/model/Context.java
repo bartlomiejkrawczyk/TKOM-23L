@@ -4,6 +4,7 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
 import java.util.Optional;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.example.ast.type.TypeDeclaration;
 
@@ -11,6 +12,7 @@ import org.example.ast.type.TypeDeclaration;
 public class Context {
 
 	private final TypeDeclaration returnType;
+	@Getter
 	private final String function;
 	private final Deque<Scope> scopes = new ArrayDeque<>(List.of(new Scope()));
 

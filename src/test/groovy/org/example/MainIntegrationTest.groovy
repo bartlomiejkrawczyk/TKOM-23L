@@ -14,7 +14,7 @@ class MainIntegrationTest extends Specification {
 		noExceptionThrown()
 
 		where:
-		file << ["query.txt", "test.txt"]
+		file << ["query.txt", "test.txt", "math.txt"]
 	}
 
 	def 'Should parse not working program without exceptions'() {

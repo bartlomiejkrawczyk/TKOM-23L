@@ -11,6 +11,7 @@ import java.util.Set;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.example.interpreter.error.InterpreterException;
 import org.example.lexer.CharactersUtility;
 import org.example.lexer.LexerConfiguration;
 import org.example.lexer.PositionalReader;
@@ -77,6 +78,11 @@ public class ErrorHandlerImpl implements ErrorHandler {
 
 	@Override
 	public void handleParserException(ParserException exception) {
+		handleException(exception);
+	}
+
+	@Override
+	public void handleInterpreterException(InterpreterException exception) {
 		handleException(exception);
 	}
 
