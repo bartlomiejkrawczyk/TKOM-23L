@@ -2,8 +2,10 @@ package org.example.interpreter;
 
 import java.io.PrintStream;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -47,6 +49,7 @@ import org.example.interpreter.error.CouldNotPerformArithmeticOperationOnNonNume
 import org.example.interpreter.error.CriticalInterpreterException;
 import org.example.interpreter.error.ExpressionDidNotEvaluateException;
 import org.example.interpreter.error.NoSuchFunctionException;
+import org.example.interpreter.error.NoSuchTupleElement;
 import org.example.interpreter.error.NoSuchVariableException;
 import org.example.interpreter.error.ReturnCalled;
 import org.example.interpreter.error.ReturnValueNotExpectedException;
@@ -60,7 +63,10 @@ import org.example.interpreter.model.custom.PrintFunction;
 import org.example.interpreter.model.value.BooleanValue;
 import org.example.interpreter.model.value.FloatingPointValue;
 import org.example.interpreter.model.value.IntegerValue;
+import org.example.interpreter.model.value.IterableValue;
+import org.example.interpreter.model.value.MapValue;
 import org.example.interpreter.model.value.StringValue;
+import org.example.interpreter.model.value.TupleValue;
 import org.example.token.Position;
 
 @Slf4j
@@ -75,7 +81,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 	private static final TypeDeclaration STRING_TYPE = new TypeDeclaration(ValueType.STRING);
 	private static final String PRINT_ARGUMENT = "~~message~~";
 	private static final String MAIN_FUNCTION_NAME = "main";
-	private static final String NOT_IMPLEMENTED_YET = "Not implemented yet!";
+	private static final String UNREACHABLE_STATEMENT = "Unreachable statement!";
 	private final ErrorHandler errorHandler;
 	private final PrintStream out;
 	private final Deque<Context> contexts = new ArrayDeque<>(List.of(GLOBAL_CONTEXT));
@@ -101,7 +107,6 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 				log.error(context.getFunction());
 			}
 			errorHandler.handleInterpreterException(exception);
-			log.error("TODO: delete me!", exception);
 		}
 	}
 
@@ -119,8 +124,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 
 	@Override
 	public void visit(FunctionDefinitionStatement statement) {
-		// TODO: might not evaluate this ???
-		throw new UnsupportedOperationException(NOT_IMPLEMENTED_YET);
+		throw new UnsupportedOperationException(UNREACHABLE_STATEMENT);
 	}
 
 	@Override
@@ -163,8 +167,22 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 
 	@Override
 	public void visit(ForStatement statement) {
-		// TODO: implement me!
-		throw new UnsupportedOperationException(NOT_IMPLEMENTED_YET);
+		var context = contexts.getLast();
+
+		var argument = statement.getArgument();
+		var type = argument.getType();
+
+		statement.getIterable().accept(this);
+		var value = retrieveResult(new TypeDeclaration(ValueType.ITERABLE, List.of(type)));
+
+		if (value instanceof IterableValue iterable) {
+			while (iterable.hasNext()) {
+				context.incrementScope();
+				context.addVariable(new Variable(type, argument.getName(), iterable.next()));
+				statement.getBody().accept(this);
+				context.decrementScope();
+			}
+		}
 	}
 
 	@Override
@@ -298,14 +316,21 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 
 	@Override
 	public void visit(TupleCallExpression expression) {
-		// TODO: implement me!
-		throw new UnsupportedOperationException(NOT_IMPLEMENTED_YET);
+		expression.getObject().accept(this);
+		var object = retrieveResult();
+
+		if (object instanceof TupleValue tuple) {
+			var value = tuple.get(expression.getIdentifier()).orElseThrow(NoSuchTupleElement::new);
+			result = Result.ok(value);
+		} else {
+			throw new TypesDoNotMatchException(object.getType(), new TypeDeclaration(ValueType.TUPLE));
+		}
 	}
 
 	@Override
 	public void visit(MethodCallExpression expression) {
 		// TODO: implement me!
-		throw new UnsupportedOperationException(NOT_IMPLEMENTED_YET);
+		throw new UnsupportedOperationException(UNREACHABLE_STATEMENT);
 	}
 
 	@Override
@@ -360,24 +385,61 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 	@Override
 	public void visit(SelectExpression expression) {
 		// TODO: implement me!
-		throw new UnsupportedOperationException(NOT_IMPLEMENTED_YET);
+		throw new UnsupportedOperationException(UNREACHABLE_STATEMENT);
 	}
 
 	@Override
 	public void visit(TupleExpression expression) {
-		// TODO: implement me!
-		throw new UnsupportedOperationException(NOT_IMPLEMENTED_YET);
+		var elements = new HashMap<String, Value>();
+		var types = new ArrayList<TypeDeclaration>();
+		for (var entry : expression.getElements().entrySet()) {
+			entry.getValue().accept(this);
+			var value = retrieveResult();
+			var type = value.getType();
+			types.add(type);
+			elements.put(entry.getKey(), value);
+		}
+		result = Result.ok(
+				new TupleValue(new TypeDeclaration(ValueType.TUPLE, types), elements)
+		);
 	}
 
 	@Override
 	public void visit(TupleElement expression) {
-		// TODO: might not use this
+		throw new UnsupportedOperationException(UNREACHABLE_STATEMENT);
 	}
 
 	@Override
 	public void visit(MapExpression expression) {
-		// TODO: implement me!
-		throw new UnsupportedOperationException(NOT_IMPLEMENTED_YET);
+		var entries = new HashMap<Value, Value>();
+
+		if (expression.getElements().isEmpty()) {
+			result = Result.ok(new MapValue(new TypeDeclaration(ValueType.MAP), entries));
+			return;
+		}
+
+		var entrySet = new LinkedList<>(expression.getElements().entrySet());
+		var first = entrySet.removeFirst();
+
+		first.getKey().accept(this);
+		var key = retrieveResult();
+		var keyType = key.getType();
+
+		first.getValue().accept(this);
+		var value = retrieveResult();
+		var valueType = value.getType();
+
+		entries.put(key, value);
+
+		for (var entry : expression.getElements().entrySet()) {
+			entry.getKey().accept(this);
+			key = retrieveResult(keyType);
+			entry.getValue().accept(this);
+			value = retrieveResult(valueType);
+			entries.put(key, value);
+		}
+
+		result = Result.ok(new MapValue(new TypeDeclaration(ValueType.MAP, List.of(keyType, valueType)), entries));
 	}
 
 	private static final Map<TypeDeclaration, Map<TypeDeclaration, Function<Value, Value>>> explicitCastConverters = Map.of(
@@ -401,7 +463,6 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 					FLOATING_POINT_TYPE, it -> new StringValue(String.valueOf(it.getFloatingPoint())),
 					BOOLEAN_TYPE, it -> new StringValue(String.valueOf(it.getBool())),
 					STRING_TYPE, Function.identity()
-					// TODO: possibly implement other types too
 			)
 	);
 
@@ -444,6 +505,15 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 
 	private Value retrieveResult(TypeDeclaration type) {
 		var value = retrieveResult();
+
+		var currentType = value.getType();
+		var valueType = currentType.getValueType();
+		if (valueType.isComplex()
+				&& currentType.getTypes().isEmpty()
+				&& (valueType == ValueType.MAP
+				&& value instanceof MapValue mapValue)) {
+			value = mapValue.toBuilder().type(type).build();
+		}
 
 		if (!Objects.equals(value.getType(), type)) {
 			throw new TypesDoNotMatchException(value.getType(), type);

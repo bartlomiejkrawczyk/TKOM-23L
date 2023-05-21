@@ -5,6 +5,7 @@ import io.vavr.Tuple;
 import io.vavr.Tuple3;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -794,7 +795,7 @@ public class ParserImpl implements Parser {
 			return Optional.empty();
 		}
 
-		var map = new HashMap<Expression, Expression>();
+		var map = new LinkedHashMap<Expression, Expression>();
 		var firstKey = parseExpression();
 		if (firstKey.isPresent()) {
 			handleSkip(TokenType.COLON);
@@ -837,7 +838,7 @@ public class ParserImpl implements Parser {
 			return Optional.empty();
 		}
 
-		var elements = new HashMap<String, Expression>();
+		var elements = new LinkedHashMap<String, Expression>();
 		var element = firstElement.get();
 		elements.put(element.getKey(), element.getValue());
 
