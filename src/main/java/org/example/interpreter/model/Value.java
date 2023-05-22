@@ -6,8 +6,9 @@ import java.util.Optional;
 import java.util.function.Function;
 import org.example.ast.type.TypeDeclaration;
 import org.example.interpreter.error.UnexpectedTypeException;
+import org.example.interpreter.error.UnsupportedCastException;
 
-public interface Value {
+public interface Value extends Comparable<Value> {
 
 	TypeDeclaration getType();
 
@@ -41,5 +42,10 @@ public interface Value {
 
 	default Value next() {
 		throw new UnexpectedTypeException();
+	}
+
+	@Override
+	default int compareTo(Value o) {
+		throw new UnsupportedCastException();
 	}
 }

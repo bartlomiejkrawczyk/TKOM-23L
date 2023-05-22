@@ -136,7 +136,8 @@ class Map<K, V> {
 	fun put(key: K, value: V);
 	fun contains(key: K): boolean;
 	fun remove(key: K);
-	fun iterable(comparator: Comparator<K, V>): Iterable<K, V>;
+	fun iterable(): Iterable<K, V>;
+	fun sortedIterable(comparator: Comparator<K, V>): Iterable<K, V>;
 }
 
 fun operator[]: Map<key, value>;

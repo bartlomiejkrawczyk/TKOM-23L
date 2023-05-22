@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -15,6 +16,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 import org.example.ast.Expression;
 import org.example.ast.Program;
 import org.example.ast.ValueType;
@@ -183,13 +185,13 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 		statement.getIterable().accept(this);
 		var value = retrieveResult(new TypeDeclaration(ValueType.ITERABLE, List.of(type)));
 
-		if (value instanceof IterableValue iterable) {
-			while (iterable.hasNext()) {
-				context.incrementScope();
-				context.addVariable(new Variable(type, argument.getName(), iterable.next()));
-				statement.getBody().accept(this);
-				context.decrementScope();
-			}
+		while (value.hasNext()) {
+			context.incrementScope();
+
+			context.addVariable(new Variable(type, argument.getName(), value.next()));
+			statement.getBody().accept(this);
+
+			context.decrementScope();
 		}
 	}
 
@@ -447,9 +449,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 				throw new ReturnValueNotExpectedException();
 			}
 		} catch (ReturnCalled exception) {
-			if (!Objects.equals(result.getValue().getType(), declaration.getReturnType())) {
-				throw new TypesDoNotMatchException(result.getValue().getType(), declaration.getReturnType());
-			}
+			validateType(result.getValue().getType(), declaration.getReturnType());
 		}
 
 		contexts.removeLast();
@@ -460,20 +460,11 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 	public void visit(SelectExpression expression) {
 		var context = contexts.getLast();
 		expression.getFrom().getValue().accept(this);
-		var unknownType = retrieveResult();
-
-		Value database;
-		if (unknownType instanceof IterableValue iterableValue) {
-			database = iterableValue;
-		} else if (unknownType instanceof MapValue mapValue) {
-			database = mapValue.iterable();
-		} else {
-			throw new NoSuchFunctionException("iterable");
-		}
+		var database = retrieveIterable();
 
 		var alias = expression.getFrom().getKey();
 
-		var results = new ArrayList<List<Variable>>();
+		List<List<Variable>> entriesVariables = new ArrayList<>();
 		while (database.hasNext()) {
 			context.incrementScope();
 			var entry = database.next();
@@ -483,23 +474,42 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 			handleJoins(expression, new LinkedList<>(expression.getJoin()))
 					.stream()
 					.peek(it -> it.add(currentVariable))
-					.forEach(results::add);
+					.forEach(entriesVariables::add);
 
 			context.decrementScope();
 		}
 
-		for (var variables : results) {
+		entriesVariables = handleGroupBy(expression, entriesVariables);
+		entriesVariables = handleHaving(expression, entriesVariables);
+
+		var entries = new ArrayList<Pair<Value, List<Value>>>();
+		for (var variables : entriesVariables) {
 			context.incrementScope();
 			variables.forEach(context::addVariable);
 
-			System.out.println(variables);
-
-			// TODO: parse group by
+			var entry = handleSelectWithOrderBy(expression);
+			entries.add(entry);
 
 			context.decrementScope();
 		}
 
-		result = Result.ok(new IterableValue(new TypeDeclaration(ValueType.ITERABLE), List.of()));
+		var finalResult = entries.stream()
+				.sorted((first, second) -> {
+					var firstList = first.getValue();
+					var secondList = second.getValue();
+
+					for (var i = 0; i < firstList.size(); i++) {
+						var comparison = firstList.get(i).compareTo(secondList.get(i));
+						if (comparison != 0) {
+							return comparison;
+						}
+					}
+					return 0;
+				})
+				.map(Pair::getKey)
+				.toList();
+
+		result = Result.ok(new IterableValue(new TypeDeclaration(ValueType.ITERABLE), finalResult));
 	}
 
 	@SuppressWarnings("java:S3864")
@@ -516,7 +526,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 		var context = contexts.getLast();
 		var alias = join._1;
 		join._2.accept(this);
-		var entries = retrieveResult(ValueType.ITERABLE);
+		var entries = retrieveIterable();
 
 		while (entries.hasNext()) {
 			context.incrementScope();
@@ -543,6 +553,69 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 	private boolean handleWhere(SelectExpression select) {
 		select.getWhere().accept(this);
 		return retrieveResult(BOOLEAN_TYPE).isBool();
+	}
+
+	private List<List<Variable>> handleGroupBy(SelectExpression select, List<List<Variable>> entriesVariables) {
+		var groupBy = select.getGroupBy();
+		if (groupBy.isEmpty()) {
+			return entriesVariables;
+		}
+		var context = contexts.getLast();
+		var entries = new ArrayList<List<Variable>>();
+		var distinct = new HashSet<List<Value>>();
+		for (var variables : entriesVariables) {
+			context.incrementScope();
+			variables.forEach(context::addVariable);
+
+			var groupByValues = new ArrayList<Value>();
+			for (var expression : groupBy) {
+				expression.accept(this);
+				groupByValues.add(retrieveResult());
+			}
+
+			if (!distinct.contains(groupByValues)) {
+				distinct.add(groupByValues);
+				entries.add(variables);
+			}
+
+			context.decrementScope();
+		}
+		return entries;
+	}
+
+	private List<List<Variable>> handleHaving(SelectExpression select, List<List<Variable>> entriesVariables) {
+		return entriesVariables.stream()
+				.filter(it -> {
+					var context = contexts.getLast();
+					context.incrementScope();
+					it.forEach(context::addVariable);
+					select.getHaving().accept(this);
+					var condition = retrieveResult(BOOLEAN_TYPE);
+					context.decrementScope();
+					return condition.isBool();
+				})
+				.toList();
+	}
+
+	private Pair<Value, List<Value>> handleSelectWithOrderBy(SelectExpression select) {
+		select.getSelect().accept(this);
+		return Pair.of(
+				retrieveResult(ValueType.TUPLE),
+				handleOrderBy(select)
+		);
+	}
+
+	private List<Value> handleOrderBy(SelectExpression select) {
+		var orderBy = new ArrayList<Value>();
+		for (var pair : select.getOrderBy()) {
+			var ascending = pair.getValue();
+			var expression = Boolean.TRUE.equals(ascending)
+					? pair.getKey()
+					: new NegationArithmeticExpression(pair.getKey(), select.getPosition());
+			expression.accept(this);
+			orderBy.add(retrieveResult());
+		}
+		return orderBy;
 	}
 
 	@Override
@@ -652,9 +725,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 		var message = context.findVariable(PRINT_ARGUMENT)
 				.orElseThrow(NoSuchVariableException::new);
 
-		if (!Objects.equals(message.getType(), STRING_TYPE)) {
-			throw new TypesDoNotMatchException(message.getType(), STRING_TYPE);
-		}
+		validateType(message.getType(), STRING_TYPE);
 
 		var value = message.getValue();
 		out.println(value.getString());
@@ -672,9 +743,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 			value = mapValue.toBuilder().type(type).build();
 		}
 
-		if (!Objects.equals(value.getType(), type)) {
-			throw new TypesDoNotMatchException(value.getType(), type);
-		}
+		validateType(value.getType(), type);
 
 		return value;
 	}
@@ -695,5 +764,22 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 		}
 
 		return result.getValue();
+	}
+
+	private Value retrieveIterable() {
+		var retrieved = retrieveResult();
+		if (retrieved instanceof IterableValue iterableValue) {
+			return iterableValue;
+		} else if (retrieved instanceof MapValue mapValue) {
+			return mapValue.iterable();
+		} else {
+			throw new NoSuchFunctionException("iterable");
+		}
+	}
+
+	private void validateType(TypeDeclaration provided, TypeDeclaration expected) {
+		if (!Objects.equals(provided, expected)) {
+			throw new TypesDoNotMatchException(provided, expected);
+		}
 	}
 }
