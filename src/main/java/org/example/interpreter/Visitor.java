@@ -14,6 +14,7 @@ import org.example.ast.expression.arithmetic.BinaryArithmeticExpression;
 import org.example.ast.expression.arithmetic.NegationArithmeticExpression;
 import org.example.ast.expression.logical.BinaryLogicalExpression;
 import org.example.ast.expression.logical.NegateLogicalExpression;
+import org.example.ast.expression.relation.EqualityRelationLogicalExpression;
 import org.example.ast.expression.relation.RelationLogicalExpression;
 import org.example.ast.statement.AssignmentStatement;
 import org.example.ast.statement.DeclarationStatement;
@@ -56,6 +57,8 @@ public interface Visitor {
 	void visit(BooleanExpression value);
 
 	void visit(RelationLogicalExpression expression);
+
+	void visit(EqualityRelationLogicalExpression expression);
 
 	void visit(BinaryArithmeticExpression expression);
 

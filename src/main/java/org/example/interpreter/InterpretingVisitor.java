@@ -1,17 +1,21 @@
 package org.example.interpreter;
 
+import io.vavr.Tuple3;
 import java.io.PrintStream;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.ast.Expression;
 import org.example.ast.Program;
 import org.example.ast.ValueType;
 import org.example.ast.expression.Argument;
@@ -28,6 +32,7 @@ import org.example.ast.expression.arithmetic.BinaryArithmeticExpression;
 import org.example.ast.expression.arithmetic.NegationArithmeticExpression;
 import org.example.ast.expression.logical.BinaryLogicalExpression;
 import org.example.ast.expression.logical.NegateLogicalExpression;
+import org.example.ast.expression.relation.EqualityRelationLogicalExpression;
 import org.example.ast.expression.relation.RelationLogicalExpression;
 import org.example.ast.statement.AssignmentStatement;
 import org.example.ast.statement.DeclarationStatement;
@@ -62,6 +67,7 @@ import org.example.interpreter.model.Value;
 import org.example.interpreter.model.Variable;
 import org.example.interpreter.model.custom.PrintFunction;
 import org.example.interpreter.model.value.BooleanValue;
+import org.example.interpreter.model.value.ComparatorValue;
 import org.example.interpreter.model.value.FloatingPointValue;
 import org.example.interpreter.model.value.IntegerValue;
 import org.example.interpreter.model.value.IterableValue;
@@ -107,6 +113,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 			for (var context : contexts) {
 				log.error(context.getFunction());
 			}
+			log.error("TODO: remove me!", exception);
 			errorHandler.handleInterpreterException(exception);
 		}
 	}
@@ -145,7 +152,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 		statement.getCondition().accept(this);
 		var value = retrieveResult(BOOLEAN_TYPE);
 
-		if (value.getBool()) {
+		if (value.isBool()) {
 			statement.getIfTrue().accept(this);
 		} else {
 			statement.getIfFalse().accept(this);
@@ -158,7 +165,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 		condition.accept(this);
 		var value = retrieveResult(BOOLEAN_TYPE);
 
-		while (value.getBool()) {
+		while (value.isBool()) {
 			statement.getBody().accept(this);
 
 			condition.accept(this);
@@ -227,12 +234,12 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 		expression.getLeft().accept(this);
 		var left = retrieveResult(BOOLEAN_TYPE);
 
-		if (expression.needsFurtherProcessing(left.getBool())) {
+		if (expression.needsFurtherProcessing(left.isBool())) {
 			expression.getRight().accept(this);
 			var right = retrieveResult(BOOLEAN_TYPE);
-			result = Result.ok(new BooleanValue(expression.evaluate(left.getBool(), right.getBool())));
+			result = Result.ok(new BooleanValue(expression.evaluate(left.isBool(), right.isBool())));
 		} else {
-			result = Result.ok(new BooleanValue(left.getBool()));
+			result = Result.ok(new BooleanValue(left.isBool()));
 		}
 	}
 
@@ -240,7 +247,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 	public void visit(NegateLogicalExpression expression) {
 		expression.getExpression().accept(this);
 		var value = retrieveResult(BOOLEAN_TYPE);
-		result = Result.ok(new BooleanValue(!value.getBool()));
+		result = Result.ok(new BooleanValue(!value.isBool()));
 	}
 
 	@Override
@@ -255,13 +262,39 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 
 		boolean value;
 		if (Objects.equals(left.getType(), INTEGER_TYPE)) {
+			expression.getRight().accept(this);
 			var right = retrieveResult(left.getType());
 			value = expression.evaluate(left.getInteger(), right.getInteger());
 		} else if (Objects.equals(left.getType(), FLOATING_POINT_TYPE)) {
+			expression.getRight().accept(this);
 			var right = retrieveResult(left.getType());
 			value = expression.evaluate(left.getFloatingPoint(), right.getFloatingPoint());
 		} else {
-			throw new CouldNotCompareNonNumericValues();
+			throw new CouldNotCompareNonNumericValues(expression.getPosition());
+		}
+		result = Result.ok(new BooleanValue(value));
+	}
+
+	@Override
+	public void visit(EqualityRelationLogicalExpression expression) {
+		expression.getLeft().accept(this);
+		var left = retrieveResult();
+
+		boolean value;
+		if (Objects.equals(left.getType(), INTEGER_TYPE)) {
+			expression.getRight().accept(this);
+			var right = retrieveResult(left.getType());
+			value = expression.evaluate(left.getInteger(), right.getInteger());
+		} else if (Objects.equals(left.getType(), FLOATING_POINT_TYPE)) {
+			expression.getRight().accept(this);
+			var right = retrieveResult(left.getType());
+			value = expression.evaluate(left.getFloatingPoint(), right.getFloatingPoint());
+		} else if (Objects.equals(left.getType(), STRING_TYPE)) {
+			expression.getRight().accept(this);
+			var right = retrieveResult(left.getType());
+			value = expression.evaluate(left.getString(), right.getString());
+		} else {
+			throw new CouldNotCompareNonNumericValues(expression.getPosition());
 		}
 		result = Result.ok(new BooleanValue(value));
 	}
@@ -346,11 +379,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 					.orElseThrow(() -> new NoSuchFunctionException(call.getFunction()))
 					.apply(arguments);
 
-			if (value.getType().getValueType() != ValueType.VOID) {
-				result = Result.ok(value);
-			} else {
-				result = Result.empty();
-			}
+			result = value.map(Result::ok).orElseGet(Result::empty);
 		} else {
 			throw new ObjectDoesNotSupportMethodCallsException();
 		}
@@ -361,8 +390,29 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 		var context = contexts.getLast();
 		var variable = context.findVariable(expression.getName())
 				.or(() -> GLOBAL_CONTEXT.findVariable(expression.getName()))
+				.or(() -> Optional.ofNullable(functionDefinitions.get(expression.getName()))
+						.map(it -> new ComparatorValue(it, convertFunctionToComparator(it)))
+						.map(it -> new Variable(new TypeDeclaration(ValueType.COMPARATOR), expression.getName(), it))
+				)
 				.orElseThrow(NoSuchVariableException::new);
 		result = Result.ok(variable.getValue());
+	}
+
+	private Comparator<Value> convertFunctionToComparator(FunctionDefinitionStatement statement) {
+		var context = contexts.getLast();
+		return (o1, o2) -> {
+			context.incrementScope();
+			context.addVariable(new Variable(o1.getType(), "~~o1~~", o1));
+			context.addVariable(new Variable(o1.getType(), "~~o2~~", o2));
+			var call = new FunctionCallExpression(
+					statement.getName(),
+					List.of(new IdentifierExpression("~~o1~~", null), new IdentifierExpression("~~o2~~", null)),
+					null
+			);
+			call.accept(this);
+			context.decrementScope();
+			return retrieveResult(INTEGER_TYPE).getInteger();
+		};
 	}
 
 	@Override
@@ -406,9 +456,93 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 	}
 
 	@Override
+	@SuppressWarnings("java:S3864")
 	public void visit(SelectExpression expression) {
-		// TODO: implement me!
-		throw new UnsupportedOperationException(UNREACHABLE_NODE);
+		var context = contexts.getLast();
+		expression.getFrom().getValue().accept(this);
+		var unknownType = retrieveResult();
+
+		Value database;
+		if (unknownType instanceof IterableValue iterableValue) {
+			database = iterableValue;
+		} else if (unknownType instanceof MapValue mapValue) {
+			database = mapValue.iterable();
+		} else {
+			throw new NoSuchFunctionException("iterable");
+		}
+
+		var alias = expression.getFrom().getKey();
+
+		var results = new ArrayList<List<Variable>>();
+		while (database.hasNext()) {
+			context.incrementScope();
+			var entry = database.next();
+			var currentVariable = new Variable(entry.getType(), alias, entry);
+			context.addVariable(currentVariable);
+
+			handleJoins(expression, new LinkedList<>(expression.getJoin()))
+					.stream()
+					.peek(it -> it.add(currentVariable))
+					.forEach(results::add);
+
+			context.decrementScope();
+		}
+
+		for (var variables : results) {
+			context.incrementScope();
+			variables.forEach(context::addVariable);
+
+			System.out.println(variables);
+
+			// TODO: parse group by
+
+			context.decrementScope();
+		}
+
+		result = Result.ok(new IterableValue(new TypeDeclaration(ValueType.ITERABLE), List.of()));
+	}
+
+	@SuppressWarnings("java:S3864")
+	private List<List<Variable>> handleJoins(SelectExpression select, LinkedList<Tuple3<String, Expression, Expression>> joinExpressions) {
+		var results = new ArrayList<List<Variable>>();
+		if (joinExpressions.isEmpty()) {
+			if (handleWhere(select)) {
+				results.add(new ArrayList<>());
+			}
+			return results;
+		}
+
+		var join = joinExpressions.pollFirst();
+		var context = contexts.getLast();
+		var alias = join._1;
+		join._2.accept(this);
+		var entries = retrieveResult(ValueType.ITERABLE);
+
+		while (entries.hasNext()) {
+			context.incrementScope();
+
+			var entry = entries.next();
+			var currentVariable = new Variable(entry.getType(), alias, entry);
+			context.addVariable(currentVariable);
+
+			join._3.accept(this);
+			var on = retrieveResult(BOOLEAN_TYPE);
+			if (on.isBool()) {
+				handleJoins(select, joinExpressions)
+						.stream()
+						.peek(it -> it.add(currentVariable))
+						.forEach(results::add);
+			}
+
+			context.decrementScope();
+		}
+
+		return results;
+	}
+
+	private boolean handleWhere(SelectExpression select) {
+		select.getWhere().accept(this);
+		return retrieveResult(BOOLEAN_TYPE).isBool();
 	}
 
 	@Override
@@ -469,12 +603,12 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 			INTEGER_TYPE, Map.of(
 					INTEGER_TYPE, Function.identity(),
 					FLOATING_POINT_TYPE, it -> new IntegerValue((int) it.getFloatingPoint()),
-					BOOLEAN_TYPE, it -> new IntegerValue(it.getBool() ? 1 : 0)
+					BOOLEAN_TYPE, it -> new IntegerValue(it.isBool() ? 1 : 0)
 			),
 			FLOATING_POINT_TYPE, Map.of(
 					INTEGER_TYPE, it -> new FloatingPointValue(it.getInteger()),
 					FLOATING_POINT_TYPE, Function.identity(),
-					BOOLEAN_TYPE, it -> new FloatingPointValue(it.getBool() ? 1.0D : 0.0D)
+					BOOLEAN_TYPE, it -> new FloatingPointValue(it.isBool() ? 1.0D : 0.0D)
 			),
 			BOOLEAN_TYPE, Map.of(
 					INTEGER_TYPE, it -> new BooleanValue(it.getInteger() != 0),
@@ -484,7 +618,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 			STRING_TYPE, Map.of(
 					INTEGER_TYPE, it -> new StringValue(String.valueOf(it.getInteger())),
 					FLOATING_POINT_TYPE, it -> new StringValue(String.valueOf(it.getFloatingPoint())),
-					BOOLEAN_TYPE, it -> new StringValue(String.valueOf(it.getBool())),
+					BOOLEAN_TYPE, it -> new StringValue(String.valueOf(it.isBool())),
 					STRING_TYPE, Function.identity()
 			)
 	);
@@ -540,6 +674,16 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 
 		if (!Objects.equals(value.getType(), type)) {
 			throw new TypesDoNotMatchException(value.getType(), type);
+		}
+
+		return value;
+	}
+
+	private Value retrieveResult(ValueType type) {
+		var value = retrieveResult();
+
+		if (value.getType().getValueType() != type) {
+			throw new TypesDoNotMatchException(value.getType(), new TypeDeclaration(type));
 		}
 
 		return value;

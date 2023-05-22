@@ -1,5 +1,9 @@
 package org.example.interpreter.model;
 
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Function;
 import org.example.ast.type.TypeDeclaration;
 import org.example.interpreter.error.UnexpectedTypeException;
 
@@ -11,7 +15,7 @@ public interface Value {
 		throw new UnexpectedTypeException();
 	}
 
-	default boolean getBool() {
+	default boolean isBool() {
 		throw new UnexpectedTypeException();
 	}
 
@@ -23,19 +27,19 @@ public interface Value {
 		throw new UnexpectedTypeException();
 	}
 
-	//	default MapExpression getMap() {
-	//		throw new UnexpectedTypeException();
-	//	}
-	//
-	//	default TupleExpression getTuple() {
-	//		throw new UnexpectedTypeException();
-	//	}
+	default Comparator<Value> getComparator() {
+		throw new UnexpectedTypeException();
+	}
 
-	//	default Iterable getIterable() {
-	//		throw new UnexpectedTypeException();
-	//	}
+	default Optional<Function<List<Value>, Optional<Value>>> findMethod(String method) {
+		throw new UnexpectedTypeException();
+	}
 
-	//	default Comparator getComparator() {
-	//		throw new UnexpectedTypeException();
-	//	}
+	default boolean hasNext() {
+		throw new UnexpectedTypeException();
+	}
+
+	default Value next() {
+		throw new UnexpectedTypeException();
+	}
 }
