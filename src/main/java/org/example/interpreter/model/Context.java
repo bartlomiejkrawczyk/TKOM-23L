@@ -6,14 +6,17 @@ import java.util.List;
 import java.util.Optional;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.example.ast.type.TypeDeclaration;
+import org.example.token.Position;
 
 @RequiredArgsConstructor
 public class Context {
 
-	private final TypeDeclaration returnType;
 	@Getter
 	private final String function;
+
+	@Getter
+	private final Position position;
+
 	private final Deque<Scope> scopes = new ArrayDeque<>(List.of(new Scope()));
 
 	public void incrementScope() {

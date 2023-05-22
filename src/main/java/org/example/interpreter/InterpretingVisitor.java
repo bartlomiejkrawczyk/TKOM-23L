@@ -18,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.example.ast.Expression;
+import org.example.ast.Node;
 import org.example.ast.Program;
 import org.example.ast.ValueType;
 import org.example.ast.expression.Argument;
@@ -82,7 +83,8 @@ import org.example.token.Position;
 @RequiredArgsConstructor
 public class InterpretingVisitor implements Visitor, Interpreter {
 
-	private static final Context GLOBAL_CONTEXT = new Context(new TypeDeclaration(ValueType.VOID), "~~main~~");
+	private static final Position DEFAULT_POSITION = new Position(1, 1);
+	private static final Context GLOBAL_CONTEXT = new Context("~~main~~", DEFAULT_POSITION);
 	private static final TypeDeclaration VOID_TYPE = new TypeDeclaration(ValueType.VOID);
 	private static final TypeDeclaration BOOLEAN_TYPE = new TypeDeclaration(ValueType.BOOLEAN);
 	private static final TypeDeclaration INTEGER_TYPE = new TypeDeclaration(ValueType.INTEGER);
@@ -105,17 +107,20 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 			)
 	));
 
+	private Position currentPosition = DEFAULT_POSITION;
 	private Result result = Result.empty();
 
 	@Override
 	public void execute(Program program) {
 		try {
-			program.accept(this);
+			callAccept(program);
 		} catch (CriticalInterpreterException exception) {
-			for (var context : contexts) {
-				log.error(context.getFunction());
-			}
-			log.error("TODO: remove me!", exception);
+			exception.setPosition(currentPosition);
+			var stack = contexts.stream()
+					.map(it -> Pair.of(it.getFunction(), it.getPosition()))
+					.map(it -> String.format("%s: %s", it.getKey(), it.getValue()))
+					.toList();
+			exception.setContextStack(stack);
 			errorHandler.handleInterpreterException(exception);
 		}
 	}
@@ -125,11 +130,11 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 		functionDefinitions.putAll(program.getFunctionDefinitions());
 
 		for (var declaration : program.getDeclarations().values()) {
-			declaration.accept(this);
+			callAccept(declaration);
 		}
 
 		var main = new FunctionCallExpression(MAIN_FUNCTION_NAME, List.of(), program.getPosition());
-		main.accept(this);
+		callAccept(main);
 	}
 
 	@Override
@@ -142,7 +147,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 		var context = contexts.getLast();
 		var argument = statement.getArgument();
 
-		statement.getExpression().accept(this);
+		callAccept(statement.getExpression());
 		var value = retrieveResult(argument.getType());
 
 		var variable = new Variable(argument.getType(), argument.getName(), value);
@@ -151,26 +156,26 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 
 	@Override
 	public void visit(IfStatement statement) {
-		statement.getCondition().accept(this);
+		callAccept(statement.getCondition());
 		var value = retrieveResult(BOOLEAN_TYPE);
 
 		if (value.isBool()) {
-			statement.getIfTrue().accept(this);
+			callAccept(statement.getIfTrue());
 		} else {
-			statement.getIfFalse().accept(this);
+			callAccept(statement.getIfFalse());
 		}
 	}
 
 	@Override
 	public void visit(WhileStatement statement) {
 		var condition = statement.getCondition();
-		condition.accept(this);
+		callAccept(condition);
 		var value = retrieveResult(BOOLEAN_TYPE);
 
 		while (value.isBool()) {
-			statement.getBody().accept(this);
+			callAccept(statement.getBody());
 
-			condition.accept(this);
+			callAccept(condition);
 			value = retrieveResult(BOOLEAN_TYPE);
 		}
 	}
@@ -182,14 +187,15 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 		var argument = statement.getArgument();
 		var type = argument.getType();
 
-		statement.getIterable().accept(this);
+
+		callAccept(statement.getIterable());
 		var value = retrieveResult(new TypeDeclaration(ValueType.ITERABLE, List.of(type)));
 
 		while (value.hasNext()) {
 			context.incrementScope();
 
 			context.addVariable(new Variable(type, argument.getName(), value.next()));
-			statement.getBody().accept(this);
+			callAccept(statement.getBody());
 
 			context.decrementScope();
 		}
@@ -202,7 +208,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 				.or(() -> GLOBAL_CONTEXT.findVariable(statement.getName()))
 				.orElseThrow(NoSuchVariableException::new);
 
-		statement.getValue().accept(this);
+		callAccept(statement.getValue());
 		var value = retrieveResult(previousValue.getType());
 
 		for (var current : List.of(context, GLOBAL_CONTEXT)) {
@@ -215,7 +221,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 
 	@Override
 	public void visit(ReturnStatement statement) {
-		statement.getExpression().accept(this);
+		callAccept(statement.getExpression());
 		throw new ReturnCalled();
 	}
 
@@ -225,7 +231,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 		context.incrementScope();
 
 		for (var statement : block.getStatements()) {
-			statement.accept(this);
+			callAccept(statement);
 		}
 
 		context.decrementScope();
@@ -233,11 +239,11 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 
 	@Override
 	public void visit(BinaryLogicalExpression expression) {
-		expression.getLeft().accept(this);
+		callAccept(expression.getLeft());
 		var left = retrieveResult(BOOLEAN_TYPE);
 
 		if (expression.needsFurtherProcessing(left.isBool())) {
-			expression.getRight().accept(this);
+			callAccept(expression.getRight());
 			var right = retrieveResult(BOOLEAN_TYPE);
 			result = Result.ok(new BooleanValue(expression.evaluate(left.isBool(), right.isBool())));
 		} else {
@@ -247,7 +253,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 
 	@Override
 	public void visit(NegateLogicalExpression expression) {
-		expression.getExpression().accept(this);
+		callAccept(expression.getExpression());
 		var value = retrieveResult(BOOLEAN_TYPE);
 		result = Result.ok(new BooleanValue(!value.isBool()));
 	}
@@ -259,16 +265,16 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 
 	@Override
 	public void visit(RelationLogicalExpression expression) {
-		expression.getLeft().accept(this);
+		callAccept(expression.getLeft());
 		var left = retrieveResult();
 
 		boolean value;
 		if (Objects.equals(left.getType(), INTEGER_TYPE)) {
-			expression.getRight().accept(this);
+			callAccept(expression.getRight());
 			var right = retrieveResult(left.getType());
 			value = expression.evaluate(left.getInteger(), right.getInteger());
 		} else if (Objects.equals(left.getType(), FLOATING_POINT_TYPE)) {
-			expression.getRight().accept(this);
+			callAccept(expression.getRight());
 			var right = retrieveResult(left.getType());
 			value = expression.evaluate(left.getFloatingPoint(), right.getFloatingPoint());
 		} else {
@@ -279,20 +285,20 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 
 	@Override
 	public void visit(EqualityRelationLogicalExpression expression) {
-		expression.getLeft().accept(this);
+		callAccept(expression.getLeft());
 		var left = retrieveResult();
 
 		boolean value;
 		if (Objects.equals(left.getType(), INTEGER_TYPE)) {
-			expression.getRight().accept(this);
+			callAccept(expression.getRight());
 			var right = retrieveResult(left.getType());
 			value = expression.evaluate(left.getInteger(), right.getInteger());
 		} else if (Objects.equals(left.getType(), FLOATING_POINT_TYPE)) {
-			expression.getRight().accept(this);
+			callAccept(expression.getRight());
 			var right = retrieveResult(left.getType());
 			value = expression.evaluate(left.getFloatingPoint(), right.getFloatingPoint());
 		} else if (Objects.equals(left.getType(), STRING_TYPE)) {
-			expression.getRight().accept(this);
+			callAccept(expression.getRight());
 			var right = retrieveResult(left.getType());
 			value = expression.evaluate(left.getString(), right.getString());
 		} else {
@@ -303,16 +309,16 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 
 	@Override
 	public void visit(BinaryArithmeticExpression expression) {
-		expression.getLeft().accept(this);
+		callAccept(expression.getLeft());
 		var left = retrieveResult();
 
 		if (Objects.equals(left.getType(), INTEGER_TYPE)) {
-			expression.getRight().accept(this);
+			callAccept(expression.getRight());
 			var right = retrieveResult(left.getType());
 			var value = expression.evaluate(left.getInteger(), right.getInteger());
 			result = Result.ok(new IntegerValue(value));
 		} else if (Objects.equals(left.getType(), FLOATING_POINT_TYPE)) {
-			expression.getRight().accept(this);
+			callAccept(expression.getRight());
 			var right = retrieveResult(left.getType());
 			var value = expression.evaluate(left.getFloatingPoint(), right.getFloatingPoint());
 			result = Result.ok(new FloatingPointValue(value));
@@ -323,7 +329,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 
 	@Override
 	public void visit(NegationArithmeticExpression expression) {
-		expression.getExpression().accept(this);
+		callAccept(expression.getExpression());
 		var value = retrieveResult();
 
 		if (Objects.equals(value.getType(), INTEGER_TYPE)) {
@@ -352,7 +358,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 
 	@Override
 	public void visit(TupleCallExpression expression) {
-		expression.getObject().accept(this);
+		callAccept(expression.getObject());
 		var object = retrieveResult();
 
 		if (object instanceof TupleValue tuple) {
@@ -365,7 +371,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 
 	@Override
 	public void visit(MethodCallExpression expression) {
-		expression.getObject().accept(this);
+		callAccept(expression.getObject());
 		var object = retrieveResult();
 
 		if (object instanceof MapValue map) {
@@ -373,7 +379,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 			var arguments = new ArrayList<Value>();
 
 			for (var argument : call.getArguments()) {
-				argument.accept(this);
+				callAccept(argument);
 				arguments.add(retrieveResult());
 			}
 
@@ -411,7 +417,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 					List.of(new IdentifierExpression("~~o1~~", null), new IdentifierExpression("~~o2~~", null)),
 					null
 			);
-			call.accept(this);
+			callAccept(call);
 			context.decrementScope();
 			return retrieveResult(INTEGER_TYPE).getInteger();
 		};
@@ -430,10 +436,10 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 			throw new ArgumentListSizeDoesNotMatch(expression);
 		}
 
-		var context = new Context(declaration.getReturnType(), declaration.getName());
+		var context = new Context(declaration.getName(), currentPosition);
 
 		for (int i = 0; i < arguments.size(); i++) {
-			arguments.get(i).accept(this);
+			callAccept(arguments.get(i));
 			var argument = declaration.getArguments().get(i);
 			var variable = retrieveResult(argument.getType());
 			context.addVariable(new Variable(argument.getType(), argument.getName(), variable));
@@ -442,7 +448,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 		contexts.add(context);
 
 		try {
-			declaration.getBody().accept(this);
+			callAccept(declaration.getBody());
 			if (Objects.equals(declaration.getReturnType(), VOID_TYPE)) {
 				result = Result.empty();
 			} else {
@@ -459,7 +465,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 	@SuppressWarnings("java:S3864")
 	public void visit(SelectExpression expression) {
 		var context = contexts.getLast();
-		expression.getFrom().getValue().accept(this);
+		callAccept(expression.getFrom().getValue());
 		var database = retrieveIterable();
 
 		var alias = expression.getFrom().getKey();
@@ -509,7 +515,13 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 				.map(Pair::getKey)
 				.toList();
 
-		result = Result.ok(new IterableValue(new TypeDeclaration(ValueType.ITERABLE), finalResult));
+		var types = finalResult.stream()
+				.findAny()
+				.map(Value::getType)
+				.map(TypeDeclaration::getTypes)
+				.orElseGet(List::of);
+
+		result = Result.ok(new IterableValue(new TypeDeclaration(ValueType.ITERABLE, types), finalResult));
 	}
 
 	@SuppressWarnings("java:S3864")
@@ -525,7 +537,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 		var join = joinExpressions.pollFirst();
 		var context = contexts.getLast();
 		var alias = join._1;
-		join._2.accept(this);
+		callAccept(join._2);
 		var entries = retrieveIterable();
 
 		while (entries.hasNext()) {
@@ -535,7 +547,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 			var currentVariable = new Variable(entry.getType(), alias, entry);
 			context.addVariable(currentVariable);
 
-			join._3.accept(this);
+			callAccept(join._3);
 			var on = retrieveResult(BOOLEAN_TYPE);
 			if (on.isBool()) {
 				handleJoins(select, joinExpressions)
@@ -551,7 +563,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 	}
 
 	private boolean handleWhere(SelectExpression select) {
-		select.getWhere().accept(this);
+		callAccept(select.getWhere());
 		return retrieveResult(BOOLEAN_TYPE).isBool();
 	}
 
@@ -569,7 +581,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 
 			var groupByValues = new ArrayList<Value>();
 			for (var expression : groupBy) {
-				expression.accept(this);
+				callAccept(expression);
 				groupByValues.add(retrieveResult());
 			}
 
@@ -589,7 +601,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 					var context = contexts.getLast();
 					context.incrementScope();
 					it.forEach(context::addVariable);
-					select.getHaving().accept(this);
+					callAccept(select.getHaving());
 					var condition = retrieveResult(BOOLEAN_TYPE);
 					context.decrementScope();
 					return condition.isBool();
@@ -598,7 +610,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 	}
 
 	private Pair<Value, List<Value>> handleSelectWithOrderBy(SelectExpression select) {
-		select.getSelect().accept(this);
+		callAccept(select.getSelect());
 		return Pair.of(
 				retrieveResult(ValueType.TUPLE),
 				handleOrderBy(select)
@@ -612,7 +624,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 			var expression = Boolean.TRUE.equals(ascending)
 					? pair.getKey()
 					: new NegationArithmeticExpression(pair.getKey(), select.getPosition());
-			expression.accept(this);
+			callAccept(expression);
 			orderBy.add(retrieveResult());
 		}
 		return orderBy;
@@ -623,7 +635,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 		var elements = new HashMap<String, Value>();
 		var types = new ArrayList<TypeDeclaration>();
 		for (var entry : expression.getElements().entrySet()) {
-			entry.getValue().accept(this);
+			callAccept(entry.getValue());
 			var value = retrieveResult();
 			var type = value.getType();
 			types.add(type);
@@ -651,21 +663,23 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 		var entrySet = new LinkedList<>(expression.getElements().entrySet());
 		var first = entrySet.removeFirst();
 
-		first.getKey().accept(this);
+		callAccept(first.getKey());
 		var key = retrieveResult();
 		var keyType = key.getType();
 
-		first.getValue().accept(this);
+		callAccept(first.getValue());
 		var value = retrieveResult();
 		var valueType = value.getType();
 
 		entries.put(key, value);
 
 		for (var entry : expression.getElements().entrySet()) {
-			entry.getKey().accept(this);
+			callAccept(entry.getKey());
 			key = retrieveResult(keyType);
-			entry.getValue().accept(this);
+
+			callAccept(entry.getValue());
 			value = retrieveResult(valueType);
+
 			entries.put(key, value);
 		}
 
@@ -706,7 +720,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 
 		var supportedTypes = converters.keySet();
 
-		expression.getExpression().accept(this);
+		callAccept(expression.getExpression());
 		var toCast = retrieveResult();
 
 		if (!supportedTypes.contains(toCast.getType())) {
@@ -737,10 +751,12 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 		var currentType = value.getType();
 		var valueType = currentType.getValueType();
 		if (valueType.isComplex()
-				&& currentType.getTypes().isEmpty()
-				&& (valueType == ValueType.MAP
-				&& value instanceof MapValue mapValue)) {
-			value = mapValue.toBuilder().type(type).build();
+				&& currentType.getTypes().isEmpty()) {
+			if (valueType == ValueType.MAP && value instanceof MapValue mapValue) {
+				value = mapValue.toBuilder().type(type).build();
+			} else if (valueType == ValueType.ITERABLE && value instanceof IterableValue iterableValue) {
+				iterableValue.setType(type);
+			}
 		}
 
 		validateType(value.getType(), type);
@@ -781,5 +797,10 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 		if (!Objects.equals(provided, expected)) {
 			throw new TypesDoNotMatchException(provided, expected);
 		}
+	}
+
+	private <T extends Node> void callAccept(T expression) {
+		currentPosition = expression.getPosition();
+		expression.accept(this);
 	}
 }
