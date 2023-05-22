@@ -68,16 +68,17 @@ public class MapValue implements Value {
 	}
 
 	public IterableValue iterable() {
+		var tupleType = new TypeDeclaration(ValueType.TUPLE, List.of(getKeyType(), getValueType()));
 		var result = map.entrySet()
 				.stream()
 				.map(it -> new TupleValue(
-						new TypeDeclaration(ValueType.TUPLE, List.of(getKeyType(), getValueType())),
+						tupleType,
 						Map.of("key", it.getKey(), "value", it.getValue()))
 				)
 				.map(Value.class::cast)
 				.toList();
 		return new IterableValue(
-				new TypeDeclaration(ValueType.ITERABLE, List.of(getKeyType(), getValueType())),
+				new TypeDeclaration(ValueType.ITERABLE, List.of(tupleType)),
 				result
 		);
 	}
@@ -85,13 +86,20 @@ public class MapValue implements Value {
 	private Optional<Value> sortedIterable(List<Value> arguments) {
 		validateArguments(
 				arguments,
-				List.of(new TypeDeclaration(ValueType.COMPARATOR, List.of(getKeyType(), getValueType())))
+				List.of(new TypeDeclaration(ValueType.COMPARATOR,
+								List.of(
+										new TypeDeclaration(ValueType.TUPLE, List.of(getKeyType(), getValueType())
+										)
+								)
+						)
+				)
 		);
 		var comparator = arguments.get(0);
+		var tupleType = new TypeDeclaration(ValueType.TUPLE, List.of(getKeyType(), getValueType()));
 		var result = map.entrySet()
 				.stream()
 				.map(it -> new TupleValue(
-						new TypeDeclaration(ValueType.TUPLE, List.of(getKeyType(), getValueType())),
+						tupleType,
 						Map.of("key", it.getKey(), "value", it.getValue()))
 				)
 				.map(Value.class::cast)
@@ -99,7 +107,7 @@ public class MapValue implements Value {
 				.toList();
 		return Optional.of(
 				new IterableValue(
-						new TypeDeclaration(ValueType.ITERABLE, List.of(getKeyType(), getValueType())),
+						new TypeDeclaration(ValueType.ITERABLE, List.of(tupleType)),
 						result
 				)
 		);

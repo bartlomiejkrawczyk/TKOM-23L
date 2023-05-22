@@ -2,6 +2,7 @@ package org.example.interpreter.model;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import org.example.interpreter.error.DuplicatedVariableException;
 import org.example.interpreter.error.TypesDoNotMatchException;
@@ -28,7 +29,7 @@ public class Scope {
 		}
 		var previous = localVariables.get(identifier);
 
-		if (previous.getType() != value.getType()) {
+		if (!Objects.equals(previous.getType(), value.getType())) {
 			throw new TypesDoNotMatchException(value.getType(), previous.getType());
 		}
 

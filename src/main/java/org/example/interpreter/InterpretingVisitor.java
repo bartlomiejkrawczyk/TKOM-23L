@@ -400,15 +400,15 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 				.or(() -> GLOBAL_CONTEXT.findVariable(expression.getName()))
 				.or(() -> Optional.ofNullable(functionDefinitions.get(expression.getName()))
 						.map(it -> new ComparatorValue(it, convertFunctionToComparator(it)))
-						.map(it -> new Variable(new TypeDeclaration(ValueType.COMPARATOR), expression.getName(), it))
+						.map(it -> new Variable(it.getType(), expression.getName(), it))
 				)
 				.orElseThrow(NoSuchVariableException::new);
 		result = Result.ok(variable.getValue());
 	}
 
 	private Comparator<Value> convertFunctionToComparator(FunctionDefinitionStatement statement) {
-		var context = contexts.getLast();
 		return (o1, o2) -> {
+			var context = contexts.getLast();
 			context.incrementScope();
 			context.addVariable(new Variable(o1.getType(), "~~o1~~", o1));
 			context.addVariable(new Variable(o1.getType(), "~~o2~~", o2));
@@ -521,7 +521,12 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 				.map(TypeDeclaration::getTypes)
 				.orElseGet(List::of);
 
-		result = Result.ok(new IterableValue(new TypeDeclaration(ValueType.ITERABLE, types), finalResult));
+		result = Result.ok(
+				new IterableValue(
+						new TypeDeclaration(ValueType.ITERABLE, List.of(new TypeDeclaration(ValueType.TUPLE, types))),
+						finalResult
+				)
+		);
 	}
 
 	@SuppressWarnings("java:S3864")
