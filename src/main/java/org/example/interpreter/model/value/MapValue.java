@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import org.example.ast.ValueType;
@@ -23,6 +24,7 @@ public class MapValue implements Value {
 
 	Map<String, Function<List<Value>, Optional<Value>>> mapMethods = Map.of(
 			"operator[]", this::get,
+			"retrieveValue", this::retrieveValue,
 			"put", this::put,
 			"contains", this::contains,
 			"remove", this::remove,
@@ -30,6 +32,7 @@ public class MapValue implements Value {
 			"sortedIterable", this::sortedIterable
 	);
 
+	@Override
 	public Optional<Function<List<Value>, Optional<Value>>> findMethod(String method) {
 		return Optional.ofNullable(mapMethods.get(method));
 	}
@@ -38,6 +41,12 @@ public class MapValue implements Value {
 		validateArguments(arguments, List.of(getKeyType()));
 		var key = arguments.get(0);
 		return Optional.ofNullable(map.get(key));
+	}
+
+	private Optional<Value> retrieveValue(List<Value> arguments) {
+		validateArguments(arguments, List.of(getKeyType()));
+		var key = arguments.get(0);
+		return Optional.ofNullable(map.get(key).copy());
 	}
 
 	private Optional<Value> put(List<Value> arguments) {
@@ -130,5 +139,14 @@ public class MapValue implements Value {
 				throw new TypesDoNotMatchException(arguments.get(i).getType(), expected.get(i));
 			}
 		}
+	}
+
+	@Override
+	public Value copy() {
+		var result = map.entrySet()
+				.stream()
+				.map(it -> Map.entry(it.getKey().copy(), it.getValue().copy()))
+				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+		return new MapValue(type, result);
 	}
 }

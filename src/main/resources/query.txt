@@ -133,4 +133,8 @@ fun main() {
 	for (Tuple<String, int> entry: database.sortedIterable(comparator)) {
 		print(entry.key);
 	}
+
+	for (Tuple<String, int> entry: database.iterable()) {
+		print(entry.key);
+	}
 }

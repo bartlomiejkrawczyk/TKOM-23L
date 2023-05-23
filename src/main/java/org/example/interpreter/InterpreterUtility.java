@@ -30,8 +30,8 @@ public class InterpreterUtility {
 					"print",
 					List.of(new Argument(PRINT_ARGUMENT, new TypeDeclaration(ValueType.STRING))),
 					new TypeDeclaration(ValueType.VOID),
-					new BlockStatement(List.of(new PrintFunction()), Position.builder().build()),
-					Position.builder().build()
+					new BlockStatement(List.of(new PrintFunction()), DEFAULT_POSITION),
+					DEFAULT_POSITION
 			)
 	);
 }

@@ -5,8 +5,4 @@ import org.example.error.PositionalException;
 
 @NoArgsConstructor
 public abstract class InterpreterException extends PositionalException {
-
-	protected InterpreterException(String message) {
-		super(message);
-	}
 }

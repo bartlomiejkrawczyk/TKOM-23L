@@ -14,4 +14,9 @@ public class FloatingPointValue implements Value {
 	public int compareTo(Value other) {
 		return Double.compare(floatingPoint, other.getFloatingPoint());
 	}
+
+	@Override
+	public Value copy() {
+		return new FloatingPointValue(floatingPoint);
+	}
 }

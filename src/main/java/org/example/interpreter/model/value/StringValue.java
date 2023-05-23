@@ -9,4 +9,9 @@ public class StringValue implements Value {
 
 	TypeDeclaration type = new TypeDeclaration(ValueType.STRING);
 	String string;
+
+	@Override
+	public Value copy() {
+		return new StringValue(string);
+	}
 }

@@ -29,4 +29,9 @@ public class ComparatorValue implements Value {
 		this.type = new TypeDeclaration(ValueType.COMPARATOR, List.of(arguments.get(0).getType()));
 		this.comparator = comparator;
 	}
+
+	@Override
+	public Value copy() {
+		return this; // comparator is not mutable
+	}
 }

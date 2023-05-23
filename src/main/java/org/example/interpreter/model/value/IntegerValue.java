@@ -14,4 +14,9 @@ public class IntegerValue implements Value, Comparable<Value> {
 	public int compareTo(Value other) {
 		return Integer.compare(integer, other.getInteger());
 	}
+
+	@Override
+	public Value copy() {
+		return new IntegerValue(integer);
+	}
 }

@@ -48,4 +48,6 @@ public interface Value extends Comparable<Value> {
 	default int compareTo(Value o) {
 		throw new UnsupportedCastException();
 	}
+
+	Value copy();
 }

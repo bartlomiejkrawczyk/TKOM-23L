@@ -43,5 +43,6 @@ class InterpretingVisitorIntegrationTest extends Specification {
 		"visibility.txt" || "2\n1\n3\n2\n1\n4\n1\n5\n2\n"
 		"if.txt"         || "if\nelse if\nelse\n"
 		"while.txt"      || "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n8\n6\n4\n2\n"
+		"map.txt"      || "false\ntrue\nid_1\nid_2\nid_3\nid_4\nid_4\nid_3\nid_2\n"
 	}
 }

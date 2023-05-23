@@ -9,4 +9,9 @@ public class BooleanValue implements Value {
 
 	TypeDeclaration type = new TypeDeclaration(ValueType.BOOLEAN);
 	boolean bool;
+
+	@Override
+	public Value copy() {
+		return new BooleanValue(bool);
+	}
 }

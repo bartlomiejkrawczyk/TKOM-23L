@@ -1,5 +1,6 @@
 package org.example.interpreter.model.value;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import lombok.AccessLevel;
 import lombok.Data;
@@ -12,7 +13,7 @@ import org.example.interpreter.model.Value;
 public class IterableValue implements Value, Iterator<Value> {
 
 	TypeDeclaration type;
-	final Iterator<Value> iterator;
+	Iterator<Value> iterator;
 
 	public IterableValue(TypeDeclaration type, Iterable<Value> iterable) {
 		this.type = type;
@@ -27,5 +28,15 @@ public class IterableValue implements Value, Iterator<Value> {
 	@Override
 	public Value next() {
 		return iterator.next();
+	}
+
+	@Override
+	public Value copy() {
+		var results = new ArrayList<Value>();
+		while (iterator.hasNext()) {
+			results.add(iterator.next());
+		}
+		iterator = results.iterator();
+		return new IterableValue(type, results);
 	}
 }
