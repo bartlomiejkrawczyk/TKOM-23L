@@ -1,0 +1,29 @@
+#!/mnt/c/Users/Public/Documents/TKOM/interpreter
+
+fun main() {
+	boolean a = 1 < 2;
+	boolean b = true;
+	boolean c = a and (not b);
+	boolean d = (a or b) and c or a;
+	boolean e = not d;
+	boolean f = true or false;
+	boolean g = false or true;
+	boolean h = false and true;
+	boolean i = true and true;
+	boolean j = true and false;
+	boolean k = false or false;
+
+	print(@String true);
+	print(@String false);
+	print(@String a);
+	print(@String b);
+	print(@String c);
+	print(@String d);
+	print(@String e);
+	print(@String f);
+	print(@String g);
+	print(@String h);
+	print(@String i);
+	print(@String j);
+	print(@String k);
+}

@@ -505,7 +505,7 @@ public class ParserImpl implements Parser {
 
 		var type = currentToken.getType();
 		if (!relationExpressions.containsKey(type)) {
-			return expression;
+			return negate ? expression.map(it -> new NegateLogicalExpression(it, position)) : expression;
 		}
 		var constructor = relationExpressions.get(type);
 		var relationPosition = currentToken.getPosition();

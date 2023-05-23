@@ -95,6 +95,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 	private static final String UNREACHABLE_NODE = "Unreachable node!";
 	private final ErrorHandler errorHandler;
 	private final PrintStream out;
+	// TODO: handle stack overflow xD
 	private final Deque<Context> contexts = new ArrayDeque<>(List.of(GLOBAL_CONTEXT));
 	private final Map<String, FunctionDefinitionStatement> functionDefinitions = new HashMap<>(Map.of(
 			"print",

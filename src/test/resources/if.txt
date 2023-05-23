@@ -1,0 +1,35 @@
+#!/mnt/c/Users/Public/Documents/TKOM/interpreter
+
+fun throw() {
+	print(1); # function call without explicit cast to String
+}
+
+fun getTrue(): boolean {
+	return true;
+}
+
+fun main() {
+	if getTrue() {
+		print("if");
+	} else {
+		throw();
+	}
+
+	if 1 > 2 {
+		throw();
+	}
+
+	if false {
+		throw();
+	} else if false {
+		throw();
+	} else if true {
+		print("else if");
+	}
+
+	if (false) {
+		throw();
+	} else {
+		print("else");
+	}
+}

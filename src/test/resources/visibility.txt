@@ -1,0 +1,31 @@
+#!/mnt/c/Users/Public/Documents/TKOM/interpreter
+
+int a = 1;
+
+fun test1() {
+	print(@String a);
+	int a = 3;
+	print(@String a);
+}
+
+fun test2() {
+	print(@String a);
+	{
+		int a = 4;
+		print(@String a);
+	}
+	print(@String a);
+	{
+		int a = 5;
+		print(@String a);
+	}
+}
+
+fun main() {
+	int a = 2;
+	print(@String a);
+	test1();
+	print(@String a);
+	test2();
+	print(@String a);
+}

@@ -1,0 +1,15 @@
+#!/mnt/c/Users/Public/Documents/TKOM/interpreter
+
+fun main() {
+	int a = 0;
+
+	while a < 10 {
+		print(@String a);
+		a = a + 1;
+	}
+
+	while (a > 0) {
+		print(@String a);
+		a = a - 2;
+	}
+}

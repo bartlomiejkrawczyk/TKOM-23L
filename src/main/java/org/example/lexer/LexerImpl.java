@@ -109,7 +109,8 @@ public class LexerImpl implements Lexer {
 		while (stringNotEnclosed) {
 			var content = readUntil(tokenType.getEnclosingKeyword(), builder.length());
 			builder.append(content);
-			if (builder.charAt(builder.length() - 1) == CharactersUtility.ESCAPE_CHARACTER
+			if (builder.length() > 0
+					&& builder.charAt(builder.length() - 1) == CharactersUtility.ESCAPE_CHARACTER
 					&& builder.length() < LexerConfiguration.MAX_STRING_LENGTH) {
 				builder.append(tokenType.getEnclosingKeyword());
 			} else {

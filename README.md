@@ -93,7 +93,6 @@ Dla typów prostych są zdefiniowane operacje matematyczne oraz operacje logiczn
 
 ```
 class String {
-	fun concat(other: String): String;
 }
 
 fun print(messsage: String);
@@ -106,7 +105,7 @@ class Comparator<V> {
 	fun compare(this:V, other:V): int;
 }
 
-Comparator<int> compareValues = fun(this: int, other: int): int{
+fun compareValues(this: int, other: int): int{
 	return 1;
 }
 ```
@@ -206,7 +205,7 @@ Wspieram rzutowanie wartości liczbowych:
 ```
 int a = 1;
 double b = 2.5;
-double value = (double) a + b;
+double value = @double a + b;
 ```
 
 **Widoczność zmiennych:**
@@ -678,8 +677,8 @@ GROUP("group", false),
 HAVING("having", false),
 ORDER("order", false),
 BY("by", false),
-ASCENDING("ascending", false),
-DESCENDING("descending", false),
+ASCENDING("asc", false),
+DESCENDING("desc", false),
 
 AS("as", false),
 
@@ -695,10 +694,11 @@ SEMICOLON(";"),
 COLON(":"),
 COMMA(","),
 DOT("."),
+EXPLICIT_CAST("@"),
 
-AND("and"),
-NOT("not"),
-OR("or"),
+AND("and", false),
+NOT("not", false),
+OR("or", false),
 
 EQUALITY("=="),
 INEQUALITY("!="),
@@ -729,6 +729,7 @@ BOOLEAN_FALSE("false"),
 INT("int"),
 DOUBLE("double"),
 BOOLEAN("boolean"),
+VOID("void"),
 
 STRING("String"),
 

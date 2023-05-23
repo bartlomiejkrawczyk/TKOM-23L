@@ -1,0 +1,27 @@
+#!/mnt/c/Users/Public/Documents/TKOM/interpreter
+
+fun main() {
+	int ia = 10;
+	double da = 2.5;
+	double db = -123.25;
+	int ib = @int 4.0 * da;
+	int ic = ia + ia * ib - 2;
+	double dc = da - db * (da + da) - 1.0;
+	int id = @int 4.1 * da;
+
+	print(@String ia);
+	print(@String ib);
+	print(@String ic);
+	print(@String id);
+	print(@String da);
+	print(@String db);
+	print(@String dc);
+	print(@String ia + ib);
+	print(@String da + db);
+	print(@String ia - ib);
+	print(@String da - db);
+	print(@String ia * ib);
+	print(@String da * db);
+	print(@String ia / ib);
+	print(@String da / db);
+}
