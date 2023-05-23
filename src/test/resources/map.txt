@@ -55,4 +55,16 @@ fun main() {
 	for (Tuple<String, Map<String, int>> tuple : database.sortedIterable(reverse)) {
 		print(tuple.key);
 	}
+
+	Comparator<Tuple<String, Map<String, int>>> comparator = compare;
+
+	["abc" : |
+		1 AS first,
+		2.0 AS second,
+		"3" AS third,
+		true AS fourth,
+		comparator AS fifth,
+		SELECT 1 AS a FROM database AS database AS sixth,
+		[] AS seventh
+	|].retrieveValue("abc");
 }

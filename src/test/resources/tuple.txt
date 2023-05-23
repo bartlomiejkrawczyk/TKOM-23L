@@ -1,0 +1,13 @@
+#!/mnt/c/Users/Public/Documents/TKOM/interpreter
+
+fun main() {
+	Tuple<String, int, boolean> tuple = |
+		"abc" AS first,
+		1 AS second,
+		true AS third
+	|;
+
+	print(tuple.first);
+	print(@String tuple.second);
+	print(@String tuple.third);
+}
