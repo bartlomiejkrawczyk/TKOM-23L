@@ -1,2 +1,4 @@
+#!/mnt/c/Users/Public/Documents/TKOM/interpreter
+
 String 🙁 = "Ala ma kota";
 String notClosed = "Ala ma kota;

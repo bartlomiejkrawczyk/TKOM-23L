@@ -1,3 +1,4 @@
+#!/mnt/c/Users/Public/Documents/TKOM/interpreter
 
 fun hello(world: String) {
 	# Print value of variable world to standard output

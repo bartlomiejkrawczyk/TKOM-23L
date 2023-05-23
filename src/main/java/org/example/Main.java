@@ -43,7 +43,7 @@ public class Main {
 		} catch (TooManyExceptionsException e) {
 			log.error("TooManyExceptions: {}", e.getMessage());
 		} catch (CriticalParserException exception) {
-			log.error("CriticalParserException", exception);
+			log.error("CriticalParserException: {}", exception.getMessage());
 		}
 
 		try (var inputStream = new FileInputStream(file)) {
