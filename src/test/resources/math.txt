@@ -24,4 +24,6 @@ fun main() {
 	print(@String da * db);
 	print(@String ia / ib);
 	print(@String da / db);
+	print(@String - ia);
+	print(@String - da);
 }

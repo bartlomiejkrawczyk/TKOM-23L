@@ -1,0 +1,40 @@
+#!/mnt/c/Users/Public/Documents/TKOM/interpreter
+
+fun main() {
+	print(@String 1 < 2);
+	print(@String 1 <= 2);
+	print(@String 1 == 2);
+	print(@String 1 != 2);
+	print(@String 1 >= 2);
+	print(@String 1 > 2);
+
+	print(@String 1.0 < 2.0);
+	print(@String 1.0 <= 2.0);
+	print(@String 1.0 == 2.0);
+	print(@String 1.0 != 2.0);
+	print(@String 1.0 >= 2.0);
+	print(@String 1.0 > 2.0);
+
+	print(@String 3 < 2);
+	print(@String 3 <= 2);
+	print(@String 3 == 2);
+	print(@String 3 != 2);
+	print(@String 3 >= 2);
+	print(@String 3 > 2);
+
+	print(@String 3.0 < 2.0);
+	print(@String 3.0 <= 2.0);
+	print(@String 3.0 == 2.0);
+	print(@String 3.0 != 2.0);
+	print(@String 3.0 >= 2.0);
+	print(@String 3.0 > 2.0);
+
+	print(@String 3 == 3);
+	print(@String 3.0 == 3.0);
+	print(@String "ala" == "ala");
+	print(@String "ala" == "alex");
+	print(@String 3 != 3);
+	print(@String 3.0 != 3.0);
+	print(@String "ala" != "ala");
+	print(@String "ala" != "alex");
+}

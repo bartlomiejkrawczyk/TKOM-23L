@@ -1,5 +1,16 @@
 package org.example.interpreter;
 
+import static org.example.interpreter.InterpreterUtility.BOOLEAN_TYPE;
+import static org.example.interpreter.InterpreterUtility.BUILTIN_FUNCTIONS;
+import static org.example.interpreter.InterpreterUtility.DEFAULT_POSITION;
+import static org.example.interpreter.InterpreterUtility.FLOATING_POINT_TYPE;
+import static org.example.interpreter.InterpreterUtility.GLOBAL_CONTEXT;
+import static org.example.interpreter.InterpreterUtility.INTEGER_TYPE;
+import static org.example.interpreter.InterpreterUtility.MAIN_FUNCTION_NAME;
+import static org.example.interpreter.InterpreterUtility.PRINT_ARGUMENT;
+import static org.example.interpreter.InterpreterUtility.STRING_TYPE;
+import static org.example.interpreter.InterpreterUtility.VOID_TYPE;
+
 import io.vavr.Tuple3;
 import java.io.PrintStream;
 import java.util.ArrayDeque;
@@ -21,7 +32,6 @@ import org.example.ast.Expression;
 import org.example.ast.Node;
 import org.example.ast.Program;
 import org.example.ast.ValueType;
-import org.example.ast.expression.Argument;
 import org.example.ast.expression.BlockStatement;
 import org.example.ast.expression.ExplicitCastExpression;
 import org.example.ast.expression.FunctionCallExpression;
@@ -64,6 +74,7 @@ import org.example.interpreter.error.ReturnCalled;
 import org.example.interpreter.error.ReturnValueNotExpectedException;
 import org.example.interpreter.error.TypesDoNotMatchException;
 import org.example.interpreter.error.UnsupportedCastException;
+import org.example.interpreter.error.UnsupportedOperationException;
 import org.example.interpreter.model.Context;
 import org.example.interpreter.model.Result;
 import org.example.interpreter.model.Value;
@@ -83,30 +94,11 @@ import org.example.token.Position;
 @RequiredArgsConstructor
 public class InterpretingVisitor implements Visitor, Interpreter {
 
-	private static final Position DEFAULT_POSITION = new Position(1, 1);
-	private static final Context GLOBAL_CONTEXT = new Context("~~main~~", DEFAULT_POSITION);
-	private static final TypeDeclaration VOID_TYPE = new TypeDeclaration(ValueType.VOID);
-	private static final TypeDeclaration BOOLEAN_TYPE = new TypeDeclaration(ValueType.BOOLEAN);
-	private static final TypeDeclaration INTEGER_TYPE = new TypeDeclaration(ValueType.INTEGER);
-	private static final TypeDeclaration FLOATING_POINT_TYPE = new TypeDeclaration(ValueType.FLOATING_POINT);
-	private static final TypeDeclaration STRING_TYPE = new TypeDeclaration(ValueType.STRING);
-	private static final String PRINT_ARGUMENT = "~~message~~";
-	private static final String MAIN_FUNCTION_NAME = "main";
-	private static final String UNREACHABLE_NODE = "Unreachable node!";
 	private final ErrorHandler errorHandler;
 	private final PrintStream out;
 	// TODO: handle stack overflow xD
 	private final Deque<Context> contexts = new ArrayDeque<>(List.of(GLOBAL_CONTEXT));
-	private final Map<String, FunctionDefinitionStatement> functionDefinitions = new HashMap<>(Map.of(
-			"print",
-			new FunctionDefinitionStatement(
-					"print",
-					List.of(new Argument(PRINT_ARGUMENT, new TypeDeclaration(ValueType.STRING))),
-					new TypeDeclaration(ValueType.VOID),
-					new BlockStatement(List.of(new PrintFunction()), Position.builder().build()),
-					Position.builder().build()
-			)
-	));
+	private final Map<String, FunctionDefinitionStatement> functionDefinitions = new HashMap<>(BUILTIN_FUNCTIONS);
 
 	private Position currentPosition = DEFAULT_POSITION;
 	private Result result = Result.empty();
@@ -140,7 +132,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 
 	@Override
 	public void visit(FunctionDefinitionStatement statement) {
-		throw new UnsupportedOperationException(UNREACHABLE_NODE);
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
@@ -654,7 +646,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 
 	@Override
 	public void visit(TupleElement expression) {
-		throw new UnsupportedOperationException(UNREACHABLE_NODE);
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
