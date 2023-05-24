@@ -24,6 +24,8 @@ import org.example.token.TokenType;
 @Slf4j
 public class Main {
 
+	private static final String IO_EXCEPTION_MESSAGE = "IOException: Cannot read input file: {}";
+
 	public static void main(String[] args) {
 		if (args.length > 0) {
 			var file = args[0];
@@ -38,18 +40,18 @@ public class Main {
 		try (var inputStream = new FileInputStream(file)) {
 			program = handleStream(inputStream, errorHandler);
 		} catch (IOException e) {
-			log.error("IOException: Cannot read input file: {}", e.getMessage());
+			log.error(IO_EXCEPTION_MESSAGE, e.getMessage());
 			return;
 		} catch (TooManyExceptionsException e) {
 			log.error("TooManyExceptions: {}", e.getMessage());
 		} catch (CriticalParserException exception) {
-			log.error("CriticalParserException: {}", exception.getMessage());
+			log.error("Parsing stopped");
 		}
 
 		try (var inputStream = new FileInputStream(file)) {
 			errorHandler.showExceptions(new InputStreamReader(inputStream));
 		} catch (IOException e) {
-			log.error("IOException: Cannot read input file: {}", e.getMessage());
+			log.error(IO_EXCEPTION_MESSAGE, e.getMessage());
 		}
 
 		if (program == null) {
@@ -62,7 +64,7 @@ public class Main {
 		try (var inputStream = new FileInputStream(file)) {
 			errorHandler.showExceptions(new InputStreamReader(inputStream));
 		} catch (IOException e) {
-			log.error("IOException: Cannot read input file: {}", e.getMessage());
+			log.error(IO_EXCEPTION_MESSAGE, e.getMessage());
 		}
 	}
 

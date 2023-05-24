@@ -570,6 +570,62 @@ Język udostępnia kilka konfigurowalnych parametórw:
                             Default: 100
 ```
 
+## Komunikaty
+
+Błędy występujące w kodzie są zbierane i ostatecznie wyświetlane użytkownikowi.
+
+Każda linia zawierająca błędy jest najpierw printowana z numerem lini,
+a następnie w kolejnych liniach wyświetlane są błędy znalezione przez program.
+
+**Błędny kod:**
+
+```groovy
+String 🙁 = "Ala ma kota";
+```
+
+**Rezultat:**
+
+```bash
+[INFO]    1: String đź™? = "Ala ma kota";
+[ERROR] Unexpected character ™ at position line 1, character 10
+[ERROR] Unexpected character ? at position line 1, character 11
+```
+
+Podobnie w przypadku błędów interpretacji, program jest zatrzymywany,
+a następnie printowane są kolejne błędy dotyczące danej lini kodu.
+Dodatkowo interpreter wykonuje zrzut stosu wywołań funkcji oraz miejsca wywołania w kodzie.
+
+Przykładowy kod:
+
+```kotlin
+#!/mnt/c/Users/Public/Documents/TKOM/interpreter
+
+fun recursive() {
+	print("recursion");
+	recursive();
+}
+
+fun main() {
+	recursive();
+}
+```
+
+Rezultat wywołania programu:
+
+```shell
+$ ./src/test/resources/error-recursion-limit.txt --function 5 
+recursion
+recursion
+[INFO]    4:    print("recursion");
+[ERROR] MaxFunctionStackSizeReachedException(super=CriticalInterpreterException(position=Position(line=4, characterNumber=8), contextStack=[~~main~~: Position(line=1, characterNumber=1), main: Position(line=1, characterNumber=1), recursive: Position(line=9, characterNumber=2), recursive: Position(line=5, characterNumber=2), recursive: Position(line=5, characterNumber=2), print: Position(line=4, characterNumber=2)])) - org.example.interpreter.error.MaxFunctionStackSizeReachedException:
+~~main~~: Position(line=1, characterNumber=1)
+main: Position(line=1, characterNumber=1)
+recursive: Position(line=9, characterNumber=2)
+recursive: Position(line=5, characterNumber=2)
+recursive: Position(line=5, characterNumber=2)
+print: Position(line=4, characterNumber=2)
+```
+
 # Realizacja
 
 ## Analizator leksykalny
