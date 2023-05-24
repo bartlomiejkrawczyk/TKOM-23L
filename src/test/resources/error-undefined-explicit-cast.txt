@@ -1,0 +1,5 @@
+#!/mnt/c/Users/Public/Documents/TKOM/interpreter
+
+fun main() {
+	Map<String, int, int> map = @Map<String, int, int> 1;
+}

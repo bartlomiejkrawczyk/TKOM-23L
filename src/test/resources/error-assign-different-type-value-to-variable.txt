@@ -1,0 +1,6 @@
+#!/mnt/c/Users/Public/Documents/TKOM/interpreter
+
+fun main() {
+	boolean a = true;
+	a = 1;
+}

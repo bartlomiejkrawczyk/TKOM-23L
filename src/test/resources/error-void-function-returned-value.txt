@@ -1,0 +1,9 @@
+#!/mnt/c/Users/Public/Documents/TKOM/interpreter
+
+fun test() {
+	return 1;
+}
+
+fun main() {
+	int a = test();
+}

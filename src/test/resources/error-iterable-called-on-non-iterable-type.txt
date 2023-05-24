@@ -1,0 +1,7 @@
+#!/mnt/c/Users/Public/Documents/TKOM/interpreter
+
+fun main() {
+	SELECT
+		1 AS first
+	FROM 1 AS db;
+}

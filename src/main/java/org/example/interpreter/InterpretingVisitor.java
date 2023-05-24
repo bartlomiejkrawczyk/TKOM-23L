@@ -73,7 +73,7 @@ import org.example.interpreter.error.NoSuchTupleElement;
 import org.example.interpreter.error.NoSuchVariableException;
 import org.example.interpreter.error.ObjectDoesNotSupportMethodCallsException;
 import org.example.interpreter.error.ReturnCalled;
-import org.example.interpreter.error.ReturnValueNotExpectedException;
+import org.example.interpreter.error.ReturnValueExpectedException;
 import org.example.interpreter.error.TypesDoNotMatchException;
 import org.example.interpreter.error.UnsupportedCastException;
 import org.example.interpreter.error.UnsupportedOperationException;
@@ -449,7 +449,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 			if (Objects.equals(declaration.getReturnType(), VOID_TYPE)) {
 				result = Result.empty();
 			} else {
-				throw new ReturnValueNotExpectedException();
+				throw new ReturnValueExpectedException();
 			}
 		} catch (ReturnCalled exception) {
 			validateType(result.getValue().getType(), declaration.getReturnType());
@@ -512,22 +512,26 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 				.map(Pair::getKey)
 				.toList();
 
-		var types = finalResult.stream()
+		var type = finalResult.stream()
 				.findAny()
 				.map(Value::getType)
 				.map(TypeDeclaration::getTypes)
+				.map(types -> List.of(new TypeDeclaration(ValueType.TUPLE, types)))
 				.orElseGet(List::of);
 
 		result = Result.ok(
 				new IterableValue(
-						new TypeDeclaration(ValueType.ITERABLE, List.of(new TypeDeclaration(ValueType.TUPLE, types))),
+						new TypeDeclaration(ValueType.ITERABLE, type),
 						finalResult
 				)
 		);
 	}
 
 	@SuppressWarnings("java:S3864")
-	private List<List<Variable>> handleJoins(SelectExpression select, LinkedList<Tuple3<String, Expression, Expression>> joinExpressions) {
+	private List<List<Variable>> handleJoins(
+			SelectExpression select,
+			LinkedList<Tuple3<String, Expression, Expression>> joinExpressions
+	) {
 		var results = new ArrayList<List<Variable>>();
 		if (joinExpressions.isEmpty()) {
 			if (handleWhere(select)) {

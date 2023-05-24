@@ -1,0 +1,23 @@
+#!/mnt/c/Users/Public/Documents/TKOM/interpreter
+
+fun main() {
+	Map<String, int> map = [];
+
+	map.put("ala", 1);
+
+	print(@String map["ala"]);
+
+	map.remove("ala");
+
+	Iterable<Tuple<String, int>> iterable =
+		(SELECT
+			db.key AS key,
+			db.value AS value
+		FROM map AS db);
+
+	for (Tuple<String, int> tuple : iterable) {
+		print("iterable should be empty - this should not be called");
+	}
+
+	print("end");
+}

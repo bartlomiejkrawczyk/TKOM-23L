@@ -1,0 +1,18 @@
+#!/mnt/c/Users/Public/Documents/TKOM/interpreter
+
+fun main() {
+	print(@String @boolean 1);
+	print(@String @boolean 1.0);
+	print(@String @boolean true);
+	print(@String @boolean false);
+
+	print(@String @int 1);
+	print(@String @int 1.0);
+	print(@String @int true);
+	print(@String @int false);
+
+	print(@String @double 1);
+	print(@String @double 1.0);
+	print(@String @double true);
+	print(@String @double false);
+}

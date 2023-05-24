@@ -1,0 +1,9 @@
+#!/mnt/c/Users/Public/Documents/TKOM/interpreter
+
+fun test(): int {
+	print("should return 1");
+}
+
+fun main() {
+	int a = test();
+}
