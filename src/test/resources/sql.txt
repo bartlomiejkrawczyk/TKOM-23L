@@ -1,0 +1,119 @@
+#!/mnt/c/Users/Public/Documents/TKOM/interpreter
+
+fun iterable1(table1: Map<String, int>, table2: Map<String, int>): Iterable<Tuple<String, int, int>> {
+	return SELECT
+				db1.key AS key,
+				db1.value AS first,
+				db2.value AS second
+			FROM table1 AS db1
+			JOIN table2 AS db2
+			ORDER BY db2.value DESC, db1.value ASC;
+}
+
+fun iterable2(table1: Map<String, int>, table2: Map<String, int>): Iterable<Tuple<String, int, int>> {
+	return SELECT
+				db1.key AS key,
+				db1.value AS first,
+				db2.value AS second
+			FROM table1 AS db1
+			JOIN table2 AS db2 ON db1.key == db2.key
+			ORDER BY db2.value, db1.value;
+}
+
+fun iterable3(table1: Map<String, int>, table2: Map<String, int>): Iterable<Tuple<String, int, int>> {
+	return SELECT
+				db1.key AS key,
+				db1.value AS first,
+				db2.value AS second
+			FROM table1 AS db1
+			JOIN table2 AS db2 ON db1.key == db2.key
+			WHERE db1.value > db2.value
+			ORDER BY db2.value, db1.value;
+}
+
+fun iterable4(table1: Map<String, int>, table2: Map<String, int>): Iterable<Tuple<int, int>> {
+	return SELECT
+				db1.value AS first,
+				db2.value AS second
+			FROM table1 AS db1
+			JOIN table2 AS db2 ON db1.key == db2.key
+			GROUP BY db1.value, db2.value
+			ORDER BY db2.value, db1.value;
+}
+
+fun iterable5(table1: Map<String, int>, table2: Map<String, int>): Iterable<Tuple<int, int>> {
+	return SELECT
+				db1.value AS first,
+				db2.value AS second
+			FROM table1 AS db1
+			JOIN table2 AS db2 ON db1.key == db2.key
+			GROUP BY db1.value, db2.value
+			HAVING db1.value + db2.value > db1.value * db2.value
+			ORDER BY db2.value, db1.value;
+}
+
+fun main() {
+	Map<String, int> table1 = [
+		"key_0" : 1,
+		"key_1" : 1,
+		"key_2" : 2,
+		"key_3" : 3,
+		"key_4" : 4,
+		"key_5" : 5,
+		"key_6" : 6,
+		"key_7" : 7,
+		"key_8" : 8,
+		"key_9" : 9
+	];
+
+	Map<String, int> table2 = [
+		"key_0" : 9,
+		"key_1" : 9,
+		"key_2" : 8,
+		"key_3" : 7,
+		"key_4" : 6,
+		"key_5" : 5,
+		"key_6" : 4,
+		"key_7" : 3,
+		"key_8" : 2,
+		"key_9" : 1
+	];
+
+	print("JOIN + ORDER BY");
+	for (Tuple<String, int, int> entry : iterable1(table1, table2)) {
+		print(entry.key);
+		print(@String entry.first);
+		print(@String entry.second);
+		print("");
+	}
+
+	print("JOIN ON + ORDER BY");
+	for (Tuple<String, int, int> entry : iterable2(table1, table2)) {
+		print(entry.key);
+		print(@String entry.first);
+		print(@String entry.second);
+		print("");
+	}
+
+	print("JOIN ON + WHERE + ORDER BY");
+	for (Tuple<String, int, int> entry : iterable3(table1, table2)) {
+		print(entry.key);
+		print(@String entry.first);
+		print(@String entry.second);
+		print("");
+	}
+
+	print("JOIN ON + GROUP BY + ORDER BY");
+	for (Tuple<int, int> entry : iterable4(table1, table2)) {
+		print(@String entry.first);
+		print(@String entry.second);
+		print("");
+	}
+
+	print("JOIN ON + GROUP BY + HAVING + ORDER BY");
+	for (Tuple<int, int> entry : iterable5(table1, table2)) {
+		print(@String entry.first);
+		print(@String entry.second);
+		print("");
+	}
+}
