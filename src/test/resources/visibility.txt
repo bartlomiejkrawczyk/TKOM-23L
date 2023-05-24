@@ -1,6 +1,6 @@
 #!/mnt/c/Users/Public/Documents/TKOM/interpreter
 
-int a = 1;
+int a = 0;
 
 fun test1() {
 	print(@String a);
@@ -22,6 +22,7 @@ fun test2() {
 }
 
 fun main() {
+	a = 1;
 	int a = 2;
 	print(@String a);
 	test1();

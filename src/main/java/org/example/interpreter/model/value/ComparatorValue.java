@@ -6,6 +6,7 @@ import java.util.Objects;
 import org.example.ast.ValueType;
 import org.example.ast.statement.FunctionDefinitionStatement;
 import org.example.ast.type.TypeDeclaration;
+import org.example.interpreter.InterpreterUtility;
 import org.example.interpreter.error.ArgumentListDoesNotMatch;
 import org.example.interpreter.error.TypesDoNotMatchException;
 import org.example.interpreter.model.Value;
@@ -24,6 +25,10 @@ public class ComparatorValue implements Value {
 
 		if (!Objects.equals(arguments.get(0).getType(), arguments.get(1).getType())) {
 			throw new TypesDoNotMatchException(arguments.get(1).getType(), arguments.get(0).getType());
+		}
+
+		if (!Objects.equals(statement.getReturnType(), InterpreterUtility.INTEGER_TYPE)) {
+			throw new TypesDoNotMatchException(statement.getReturnType(), InterpreterUtility.INTEGER_TYPE);
 		}
 
 		this.type = new TypeDeclaration(ValueType.COMPARATOR, List.of(arguments.get(0).getType()));

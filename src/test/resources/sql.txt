@@ -81,7 +81,6 @@ fun main() {
 
 	print("JOIN + ORDER BY");
 	for (Tuple<String, int, int> entry : iterable1(table1, table2)) {
-		print(entry.key);
 		print(@String entry.first);
 		print(@String entry.second);
 		print("");
@@ -89,7 +88,6 @@ fun main() {
 
 	print("JOIN ON + ORDER BY");
 	for (Tuple<String, int, int> entry : iterable2(table1, table2)) {
-		print(entry.key);
 		print(@String entry.first);
 		print(@String entry.second);
 		print("");
@@ -97,7 +95,6 @@ fun main() {
 
 	print("JOIN ON + WHERE + ORDER BY");
 	for (Tuple<String, int, int> entry : iterable3(table1, table2)) {
-		print(entry.key);
 		print(@String entry.first);
 		print(@String entry.second);
 		print("");
