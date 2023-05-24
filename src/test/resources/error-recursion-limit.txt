@@ -1,0 +1,10 @@
+#!/mnt/c/Users/Public/Documents/TKOM/interpreter
+
+fun recursive() {
+	print("recursion");
+	recursive();
+}
+
+fun main() {
+	recursive();
+}

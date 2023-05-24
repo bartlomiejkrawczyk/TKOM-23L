@@ -1,0 +1,6 @@
+#!/mnt/c/Users/Public/Documents/TKOM/interpreter
+
+fun main() {
+	int a = 10;
+	int a = 3;
+}

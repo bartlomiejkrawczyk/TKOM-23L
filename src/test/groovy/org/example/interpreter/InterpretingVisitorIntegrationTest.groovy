@@ -2,6 +2,7 @@ package org.example.interpreter
 
 import java.nio.charset.StandardCharsets
 import org.example.error.ErrorHandler
+import org.example.interpreter.error.InterpreterException
 import org.example.lexer.CommentFilterLexer
 import org.example.lexer.LexerImpl
 import org.example.parser.ParserImpl
@@ -11,6 +12,10 @@ class InterpretingVisitorIntegrationTest extends Specification {
 
 	String interpret(String file) {
 		var errorHandler = Mock(ErrorHandler)
+		return interpret(file, errorHandler)
+	}
+
+	String interpret(String file, ErrorHandler errorHandler) {
 		var reader = new InputStreamReader(getClass().getResourceAsStream("/$file"))
 		var lexer = new LexerImpl(reader, errorHandler)
 		var commentFiler = new CommentFilterLexer(lexer)
@@ -21,7 +26,7 @@ class InterpretingVisitorIntegrationTest extends Specification {
 		final String utf8 = StandardCharsets.UTF_8.name()
 		try (var out = new PrintStream(output, true, utf8)) {
 			var visitor = new InterpretingVisitor(errorHandler, out)
-			program.accept(visitor)
+			visitor.execute(program)
 		}
 		return output.toString(utf8)
 	}
@@ -47,5 +52,26 @@ class InterpretingVisitorIntegrationTest extends Specification {
 		"tuple.txt"      || "abc\n1\ntrue\n"
 		"sql.txt"        || "JOIN + ORDER BY\n1\n9\n\n1\n9\n\n1\n9\n\n1\n9\n\n2\n9\n\n2\n9\n\n3\n9\n\n3\n9\n\n4\n9\n\n4\n9\n\n5\n9\n\n5\n9\n\n6\n9\n\n6\n9\n\n7\n9\n\n7\n9\n\n8\n9\n\n8\n9\n\n9\n9\n\n9\n9\n\n1\n8\n\n1\n8\n\n2\n8\n\n3\n8\n\n4\n8\n\n5\n8\n\n6\n8\n\n7\n8\n\n8\n8\n\n9\n8\n\n1\n7\n\n1\n7\n\n2\n7\n\n3\n7\n\n4\n7\n\n5\n7\n\n6\n7\n\n7\n7\n\n8\n7\n\n9\n7\n\n1\n6\n\n1\n6\n\n2\n6\n\n3\n6\n\n4\n6\n\n5\n6\n\n6\n6\n\n7\n6\n\n8\n6\n\n9\n6\n\n1\n5\n\n1\n5\n\n2\n5\n\n3\n5\n\n4\n5\n\n5\n5\n\n6\n5\n\n7\n5\n\n8\n5\n\n9\n5\n\n1\n4\n\n1\n4\n\n2\n4\n\n3\n4\n\n4\n4\n\n5\n4\n\n6\n4\n\n7\n4\n\n8\n4\n\n9\n4\n\n1\n3\n\n1\n3\n\n2\n3\n\n3\n3\n\n4\n3\n\n5\n3\n\n6\n3\n\n7\n3\n\n8\n3\n\n9\n3\n\n1\n2\n\n1\n2\n\n2\n2\n\n3\n2\n\n4\n2\n\n5\n2\n\n6\n2\n\n7\n2\n\n8\n2\n\n9\n2\n\n1\n1\n\n1\n1\n\n2\n1\n\n3\n1\n\n4\n1\n\n5\n1\n\n6\n1\n\n7\n1\n\n8\n1\n\n9\n1\n\nJOIN ON + ORDER BY\n9\n1\n\n8\n2\n\n7\n3\n\n6\n4\n\n5\n5\n\n4\n6\n\n3\n7\n\n2\n8\n\n1\n9\n\n1\n9\n\nJOIN ON + WHERE + ORDER BY\n9\n1\n\n8\n2\n\n7\n3\n\n6\n4\n\nJOIN ON + GROUP BY + ORDER BY\n9\n1\n\n8\n2\n\n7\n3\n\n6\n4\n\n5\n5\n\n4\n6\n\n3\n7\n\n2\n8\n\n1\n9\n\nJOIN ON + GROUP BY + HAVING + ORDER BY\n9\n1\n\n1\n9\n\n"
 		"nestedSql.txt"  || "1.0\n9.0\n\n1.0\n9.0\n\n2.0\n8.0\n\n3.0\n7.0\n\n4.0\n6.0\n\n5.0\n5.0\n\n6.0\n4.0\n\n7.0\n3.0\n\n8.0\n2.0\n\n9.0\n1.0\n\n"
+	}
+
+	def 'When an invalid program is run, should show exceptions without interpreter throwing one'() {
+		given:
+		var errorHandler = Mock(ErrorHandler)
+
+		when:
+		interpret(program, errorHandler)
+
+		then:
+		noExceptionThrown()
+		(1.._) * errorHandler.handleInterpreterException(_ as InterpreterException)
+
+		where:
+		program << [
+				"error-duplicate-variable.txt",
+				"error-no-such-variable.txt",
+				"error-recursion-limit.txt",
+				"error-compare-not-comparable.txt",
+				"error-equality-for-non-equal.txt",
+		]
 	}
 }
