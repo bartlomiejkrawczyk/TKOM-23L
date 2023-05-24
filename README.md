@@ -767,8 +767,7 @@ Testy integracyjne polegają na tym
 
 # Biblioteki
 
-- **Vavr core** - to biblioteka dla Javy, która pomaga zmniejszyć ilość kodu oraz zwiększyć niezawodność.
-- **Project Reactor** - biblioteka umożliwiająca nie blokującą, wydajną obsługę programu.
+- **Vavr core** - to biblioteka dla Javy, która pomaga zmniejszyć ilość kodu oraz zwiększyć niezawodność.\
 - **Apache Commons Lang** - to biblioteka, która udostępnia pre-definiowane operacje na Stringach.
 - **Simple Logging Facade for Java** - biblioteka, która umożliwia logowanie komunikatów w jednakowy sposób nie zależny od implementacji.
 - **Project Lombok** - procesor anotacji, który generuje podstawową implementację na podstawie zdefiniowanych anotacji w kodzie.
