@@ -93,7 +93,7 @@ public class Main {
 		log.info(program.print());
 	}
 
-	@SuppressWarnings("unused")
+	@SuppressWarnings({"unused", "java:S106"})
 	private static void runProgram(Program program, ErrorHandler errorHandler) {
 		var interpreter = new InterpretingVisitor(errorHandler, System.out);
 		testInterpreter(interpreter, program);

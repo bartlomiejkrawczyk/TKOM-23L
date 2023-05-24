@@ -13,6 +13,7 @@ import org.example.token.Position;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 @ToString
+@SuppressWarnings("java:S1165")
 public abstract class CriticalInterpreterException extends InterpreterException {
 
 	private Position position;
