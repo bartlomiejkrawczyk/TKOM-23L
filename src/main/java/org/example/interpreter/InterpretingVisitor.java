@@ -1,5 +1,6 @@
 package org.example.interpreter;
 
+import static org.example.interpreter.InterpreterConfiguration.MAX_STACK_SIZE;
 import static org.example.interpreter.InterpreterUtility.BOOLEAN_TYPE;
 import static org.example.interpreter.InterpreterUtility.BUILTIN_FUNCTIONS;
 import static org.example.interpreter.InterpreterUtility.DEFAULT_POSITION;
@@ -66,6 +67,7 @@ import org.example.interpreter.error.CouldNotCompareNonNumericValues;
 import org.example.interpreter.error.CouldNotPerformArithmeticOperationOnNonNumericType;
 import org.example.interpreter.error.CriticalInterpreterException;
 import org.example.interpreter.error.ExpressionDidNotEvaluateException;
+import org.example.interpreter.error.MaxFunctionStackSizeReachedException;
 import org.example.interpreter.error.NoSuchFunctionException;
 import org.example.interpreter.error.NoSuchTupleElement;
 import org.example.interpreter.error.NoSuchVariableException;
@@ -96,10 +98,9 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 
 	private final ErrorHandler errorHandler;
 	private final PrintStream out;
-	// TODO: handle stack overflow xD
+
 	private final Deque<Context> contexts = new ArrayDeque<>(List.of(GLOBAL_CONTEXT));
 	private final Map<String, FunctionDefinitionStatement> functionDefinitions = new HashMap<>(BUILTIN_FUNCTIONS);
-
 	private Position currentPosition = DEFAULT_POSITION;
 	private Result result = Result.empty();
 
@@ -439,6 +440,9 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 		}
 
 		contexts.add(context);
+		if (contexts.size() > MAX_STACK_SIZE) {
+			throw new MaxFunctionStackSizeReachedException();
+		}
 
 		try {
 			callAccept(declaration.getBody());
