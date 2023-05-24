@@ -37,6 +37,7 @@ public class IterableValue implements Value, Iterator<Value> {
 			results.add(iterator.next());
 		}
 		iterator = results.iterator();
-		return new IterableValue(type, results);
+		var copy = results.stream().map(Value::copy).toList();
+		return new IterableValue(type, copy);
 	}
 }
