@@ -2,7 +2,7 @@ package org.example.interpreter.model;
 
 import lombok.Builder;
 
-@Builder
+@Builder(toBuilder = true)
 @lombok.Value
 public class Result {
 
@@ -10,6 +10,9 @@ public class Result {
 
 	@Builder.Default
 	boolean present = true;
+
+	@Builder.Default
+	boolean returned = false;
 
 	public static Result ok(Value value) {
 		return Result.builder()

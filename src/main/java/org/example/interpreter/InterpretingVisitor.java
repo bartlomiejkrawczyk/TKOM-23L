@@ -72,7 +72,6 @@ import org.example.interpreter.error.NoSuchFunctionException;
 import org.example.interpreter.error.NoSuchTupleElement;
 import org.example.interpreter.error.NoSuchVariableException;
 import org.example.interpreter.error.ObjectDoesNotSupportMethodCallsException;
-import org.example.interpreter.error.ReturnCalled;
 import org.example.interpreter.error.ReturnValueExpectedException;
 import org.example.interpreter.error.TypesDoNotMatchException;
 import org.example.interpreter.error.UnsupportedCastException;
@@ -169,6 +168,9 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 
 		while (value.isBool()) {
 			callAccept(statement.getBody());
+			if (result.isReturned()) {
+				break;
+			}
 
 			callAccept(condition);
 			value = retrieveResult(BOOLEAN_TYPE);
@@ -193,6 +195,9 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 			callAccept(statement.getBody());
 
 			context.decrementScope();
+			if (result.isReturned()) {
+				break;
+			}
 		}
 	}
 
@@ -217,7 +222,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 	@Override
 	public void visit(ReturnStatement statement) {
 		callAccept(statement.getExpression());
-		throw new ReturnCalled();
+		result = result.toBuilder().returned(true).build();
 	}
 
 	@Override
@@ -227,6 +232,9 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 
 		for (var statement : block.getStatements()) {
 			callAccept(statement);
+			if (result.isReturned()) {
+				break;
+			}
 		}
 
 		context.decrementScope();
@@ -445,14 +453,12 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 			throw new MaxFunctionStackSizeReachedException();
 		}
 
-		try {
-			callAccept(declaration.getBody());
-			if (Objects.equals(declaration.getReturnType(), VOID_TYPE)) {
-				result = Result.empty();
-			} else {
-				throw new ReturnValueExpectedException();
-			}
-		} catch (ReturnCalled exception) {
+		callAccept(declaration.getBody());
+		if (Objects.equals(declaration.getReturnType(), VOID_TYPE)) {
+			result = Result.empty();
+		} else if (!result.isReturned()) {
+			throw new ReturnValueExpectedException();
+		} else {
 			validateType(result.getValue().getType(), declaration.getReturnType());
 		}
 
