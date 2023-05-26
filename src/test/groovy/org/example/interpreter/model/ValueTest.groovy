@@ -194,6 +194,25 @@ class ValueTest extends Specification {
 		]
 	}
 
+	def 'Should throw an exception when trying to get tuple element of non-tuple type'() {
+		when:
+		value.getTupleElement("a")
+
+		then:
+		thrown(UnexpectedTypeException)
+
+		where:
+		value << [
+				new IntegerValue(1),
+				new FloatingPointValue(1.0),
+				new BooleanValue(true),
+				new StringValue("hello"),
+				new ComparatorValue(mockFunction, Comparator.comparingInt(Value::getInteger)),
+				new MapValue(mockMapType, Map.of()),
+				new IterableValue(mockIterableType, List.of())
+		]
+	}
+
 	def 'Should throw an exception when trying to call compareTo on non-comparable type'() {
 		when:
 		value.compareTo(value)

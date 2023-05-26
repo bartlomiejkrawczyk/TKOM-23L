@@ -12,13 +12,9 @@ import org.example.error.ErrorHandlerImpl;
 import org.example.error.TooManyExceptionsException;
 import org.example.interpreter.InterpretingVisitor;
 import org.example.lexer.CommentFilterLexer;
-import org.example.lexer.Lexer;
 import org.example.lexer.LexerImpl;
-import org.example.parser.Parser;
 import org.example.parser.ParserImpl;
 import org.example.parser.error.CriticalParserException;
-import org.example.token.Token;
-import org.example.token.TokenType;
 
 @Slf4j
 public class Main {
@@ -77,22 +73,7 @@ public class Main {
 		return parser.parseProgram();
 	}
 
-	@SuppressWarnings("unused")
-	private static void testLexer(Lexer lexer) {
-		Token token;
-		do {
-			token = lexer.nextToken();
-			log.info("Token = {}", token);
-		} while (token.getType() != TokenType.END_OF_FILE);
-	}
-
-	@SuppressWarnings("unused")
-	private static void testParser(Parser parser) {
-		var program = parser.parseProgram();
-		log.info(program.print());
-	}
-
-	@SuppressWarnings({"unused", "java:S106"})
+	@SuppressWarnings("java:S106")
 	private static void runProgram(Program program, ErrorHandler errorHandler) {
 		var interpreter = new InterpretingVisitor(errorHandler, System.out, program);
 		interpreter.execute();

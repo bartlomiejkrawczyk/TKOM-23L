@@ -12,6 +12,7 @@ import static org.example.interpreter.InterpreterUtility.PRINT_ARGUMENT;
 import static org.example.interpreter.InterpreterUtility.STRING_TYPE;
 import static org.example.interpreter.InterpreterUtility.VOID_TYPE;
 
+import io.vavr.Function3;
 import io.vavr.Tuple3;
 import java.io.PrintStream;
 import java.util.ArrayDeque;
@@ -71,7 +72,6 @@ import org.example.interpreter.error.MaxFunctionStackSizeReachedException;
 import org.example.interpreter.error.NoSuchFunctionException;
 import org.example.interpreter.error.NoSuchTupleElement;
 import org.example.interpreter.error.NoSuchVariableException;
-import org.example.interpreter.error.ObjectDoesNotSupportMethodCallsException;
 import org.example.interpreter.error.ReturnValueExpectedException;
 import org.example.interpreter.error.TypesDoNotMatchException;
 import org.example.interpreter.error.UnsupportedCastException;
@@ -266,65 +266,69 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 		result = Result.ok(new BooleanValue(value.getValue()));
 	}
 
+	private static final Map<TypeDeclaration, Function3<RelationLogicalExpression, Value, Value, Boolean>>
+			RELATION_MAPPER = Map.of(
+			INTEGER_TYPE, ((expression, left, right) -> expression.evaluate(left.getInteger(), right.getInteger())),
+			FLOATING_POINT_TYPE, ((expression, left, right) -> expression.evaluate(left.getFloatingPoint(), right.getFloatingPoint()))
+	);
+
 	@Override
 	public void visit(RelationLogicalExpression expression) {
 		callAccept(expression.getLeft());
 		var left = retrieveResult();
 
-		boolean value;
-		if (Objects.equals(left.getType(), INTEGER_TYPE)) {
+		if (RELATION_MAPPER.containsKey(left.getType())) {
 			callAccept(expression.getRight());
 			var right = retrieveResult(left.getType());
-			value = expression.evaluate(left.getInteger(), right.getInteger());
-		} else if (Objects.equals(left.getType(), FLOATING_POINT_TYPE)) {
-			callAccept(expression.getRight());
-			var right = retrieveResult(left.getType());
-			value = expression.evaluate(left.getFloatingPoint(), right.getFloatingPoint());
+			var value = RELATION_MAPPER.get(left.getType()).apply(expression, left, right);
+			result = Result.ok(new BooleanValue(value));
 		} else {
 			throw new CouldNotCompareNonNumericValues(expression.getPosition());
 		}
-		result = Result.ok(new BooleanValue(value));
 	}
+
+	private static final Map<TypeDeclaration, Function3<EqualityRelationLogicalExpression, Value, Value, Boolean>>
+			EQUALITY_RELATION_MAPPER = Map.of(
+			INTEGER_TYPE, ((expression, left, right) -> expression.evaluate(left.getInteger(), right.getInteger())),
+			FLOATING_POINT_TYPE, ((expression, left, right) -> expression.evaluate(left.getFloatingPoint(), right.getFloatingPoint())),
+			STRING_TYPE, ((expression, left, right) -> expression.evaluate(left.getString(), right.getString()))
+	);
 
 	@Override
 	public void visit(EqualityRelationLogicalExpression expression) {
 		callAccept(expression.getLeft());
 		var left = retrieveResult();
 
-		boolean value;
-		if (Objects.equals(left.getType(), INTEGER_TYPE)) {
+		if (EQUALITY_RELATION_MAPPER.containsKey(left.getType())) {
 			callAccept(expression.getRight());
 			var right = retrieveResult(left.getType());
-			value = expression.evaluate(left.getInteger(), right.getInteger());
-		} else if (Objects.equals(left.getType(), FLOATING_POINT_TYPE)) {
-			callAccept(expression.getRight());
-			var right = retrieveResult(left.getType());
-			value = expression.evaluate(left.getFloatingPoint(), right.getFloatingPoint());
-		} else if (Objects.equals(left.getType(), STRING_TYPE)) {
-			callAccept(expression.getRight());
-			var right = retrieveResult(left.getType());
-			value = expression.evaluate(left.getString(), right.getString());
+			var value = EQUALITY_RELATION_MAPPER.get(left.getType()).apply(expression, left, right);
+			result = Result.ok(new BooleanValue(value));
 		} else {
 			throw new CouldNotCompareNonNumericValues(expression.getPosition());
 		}
-		result = Result.ok(new BooleanValue(value));
 	}
+
+	private static final Map<TypeDeclaration, Function3<BinaryArithmeticExpression, Value, Value, Value>>
+			ARITHMETIC_OPERATION_MAPPER = Map.of(
+			INTEGER_TYPE,
+			((expression, left, right) ->
+					new IntegerValue(expression.evaluate(left.getInteger(), right.getInteger()))),
+			FLOATING_POINT_TYPE,
+			((expression, left, right) ->
+					new FloatingPointValue(expression.evaluate(left.getFloatingPoint(), right.getFloatingPoint())))
+	);
 
 	@Override
 	public void visit(BinaryArithmeticExpression expression) {
 		callAccept(expression.getLeft());
 		var left = retrieveResult();
 
-		if (Objects.equals(left.getType(), INTEGER_TYPE)) {
+		if (ARITHMETIC_OPERATION_MAPPER.containsKey(left.getType())) {
 			callAccept(expression.getRight());
 			var right = retrieveResult(left.getType());
-			var value = expression.evaluate(left.getInteger(), right.getInteger());
-			result = Result.ok(new IntegerValue(value));
-		} else if (Objects.equals(left.getType(), FLOATING_POINT_TYPE)) {
-			callAccept(expression.getRight());
-			var right = retrieveResult(left.getType());
-			var value = expression.evaluate(left.getFloatingPoint(), right.getFloatingPoint());
-			result = Result.ok(new FloatingPointValue(value));
+			var value = ARITHMETIC_OPERATION_MAPPER.get(left.getType()).apply(expression, left, right);
+			result = Result.ok(value);
 		} else {
 			throw new CouldNotPerformArithmeticOperationOnNonNumericType();
 		}
@@ -362,38 +366,29 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 	@Override
 	public void visit(TupleCallExpression expression) {
 		callAccept(expression.getObject());
-		var object = retrieveResult();
-
-		if (object instanceof TupleValue tuple) {
-			var value = tuple.get(expression.getIdentifier()).orElseThrow(NoSuchTupleElement::new);
-			result = Result.ok(value);
-		} else {
-			throw new TypesDoNotMatchException(object.getType(), new TypeDeclaration(ValueType.TUPLE));
-		}
+		var tuple = retrieveResult(ValueType.TUPLE);
+		var value = tuple.getTupleElement(expression.getIdentifier()).orElseThrow(NoSuchTupleElement::new);
+		result = Result.ok(value);
 	}
 
 	@Override
 	public void visit(MethodCallExpression expression) {
 		callAccept(expression.getObject());
-		var object = retrieveResult();
+		var map = retrieveResult(ValueType.MAP);
 
-		if (object instanceof MapValue map) {
-			var call = expression.getFunction();
-			var arguments = new ArrayList<Value>();
+		var call = expression.getFunction();
+		var arguments = new ArrayList<Value>();
 
-			for (var argument : call.getArguments()) {
-				callAccept(argument);
-				arguments.add(retrieveResult());
-			}
-
-			var value = map.findMethod(call.getFunction())
-					.orElseThrow(() -> new NoSuchFunctionException(call.getFunction()))
-					.apply(arguments);
-
-			result = value.map(Result::ok).orElseGet(Result::empty);
-		} else {
-			throw new ObjectDoesNotSupportMethodCallsException();
+		for (var argument : call.getArguments()) {
+			callAccept(argument);
+			arguments.add(retrieveResult());
 		}
+
+		var value = map.findMethod(call.getFunction())
+				.orElseThrow(() -> new NoSuchFunctionException(call.getFunction()))
+				.apply(arguments);
+
+		result = value.map(Result::ok).orElseGet(Result::empty);
 	}
 
 	@Override
@@ -417,8 +412,11 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 			context.addVariable(new Variable(o1.getType(), "~~o2~~", o2));
 			var call = new FunctionCallExpression(
 					statement.getName(),
-					List.of(new IdentifierExpression("~~o1~~", null), new IdentifierExpression("~~o2~~", null)),
-					null
+					List.of(
+							new IdentifierExpression("~~o1~~", DEFAULT_POSITION),
+							new IdentifierExpression("~~o2~~", DEFAULT_POSITION)
+					),
+					DEFAULT_POSITION
 			);
 			callAccept(call);
 			context.decrementScope();

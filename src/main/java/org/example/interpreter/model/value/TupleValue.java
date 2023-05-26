@@ -12,7 +12,8 @@ public class TupleValue implements Value {
 	TypeDeclaration type;
 	Map<String, Value> tuple;
 
-	public Optional<Value> get(String identifier) {
+	@Override
+	public Optional<Value> getTupleElement(String identifier) {
 		return Optional.ofNullable(tuple.get(identifier));
 	}
 

@@ -44,6 +44,10 @@ public interface Value extends Comparable<Value> {
 		throw new UnexpectedTypeException();
 	}
 
+	default Optional<Value> getTupleElement(String identifier) {
+		throw new UnexpectedTypeException();
+	}
+
 	@Override
 	default int compareTo(Value o) {
 		throw new UnsupportedCastException();
