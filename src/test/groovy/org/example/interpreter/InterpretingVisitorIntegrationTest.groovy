@@ -54,6 +54,7 @@ class InterpretingVisitorIntegrationTest extends Specification {
 		"nestedSql.txt"                       || "1.0\n9.0\n\n1.0\n9.0\n\n2.0\n8.0\n\n3.0\n7.0\n\n4.0\n6.0\n\n5.0\n5.0\n\n6.0\n4.0\n\n7.0\n3.0\n\n8.0\n2.0\n\n9.0\n1.0\n\n"
 		"explicit-cast.txt"                   || "true\ntrue\ntrue\nfalse\n1\n1\n1\n0\n1.0\n1.0\n1.0\n0.0\n"
 		"empty-collection-type-deduction.txt" || "1\nend\n"
+		"return.txt" || "end\n"
 	}
 
 	def 'When an invalid program is run, should show exceptions without interpreter throwing one'() {

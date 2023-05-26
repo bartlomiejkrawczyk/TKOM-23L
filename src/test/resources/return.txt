@@ -1,0 +1,58 @@
+#!/mnt/c/Users/Public/Documents/TKOM/interpreter
+
+fun ifTest1(): boolean {
+	if true return true;
+	return false;
+}
+
+fun ifTest2(): boolean {
+	if false {
+		return false;
+	} else return true;
+}
+
+fun ifTest3(): boolean {
+	if true {
+		return true;
+	}
+	return false;
+}
+
+fun whileTest(): boolean {
+	while (true) {
+		return true;
+	}
+	return false;
+}
+
+fun forTest(): boolean {
+	Map<String, int> map = ["ala" : 1, "ma" : 2, "kota" : 3];
+
+	for (Tuple<String, int> tuple : map.iterable()) {
+		return true;
+	}
+
+	return false;
+}
+
+fun blockTest(): boolean {
+	{
+		return true;
+	}
+	return false;
+}
+
+fun validate(value: boolean) {
+	if (not value) {
+		print(123); # should throw an exception when called without casting
+	}
+}
+
+fun main() {
+	validate(ifTest1());
+	validate(ifTest2());
+	validate(ifTest3());
+	validate(whileTest());
+	validate(forTest());
+	print("end");
+}
