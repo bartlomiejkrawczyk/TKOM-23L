@@ -454,10 +454,10 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 		callAccept(declaration.getBody());
 		if (Objects.equals(declaration.getReturnType(), VOID_TYPE)) {
 			result = Result.empty();
-		} else if (!result.isReturned()) {
-			throw new ReturnValueExpectedException();
-		} else {
+		} else if (result.isReturned()) {
 			validateType(result.getValue().getType(), declaration.getReturnType());
+		} else {
+			throw new ReturnValueExpectedException();
 		}
 
 		contexts.removeLast();
@@ -684,7 +684,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 
 		entries.put(key, value);
 
-		for (var entry : expression.getElements().entrySet()) {
+		for (var entry : entrySet) {
 			callAccept(entry.getKey());
 			key = retrieveResult(keyType);
 
@@ -748,12 +748,10 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 		var context = contexts.getLast();
 
 		var message = context.findVariable(PRINT_ARGUMENT)
+				.map(Variable::getValue)
 				.orElseThrow(NoSuchVariableException::new);
 
-		validateType(message.getType(), STRING_TYPE);
-
-		var value = message.getValue();
-		out.println(value.getString());
+		out.println(message.getString());
 	}
 
 	private Value retrieveResult(TypeDeclaration type) {
