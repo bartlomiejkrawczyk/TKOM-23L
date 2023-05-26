@@ -98,6 +98,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 
 	private final ErrorHandler errorHandler;
 	private final PrintStream out;
+	private final Program program;
 
 	private final Deque<Context> contexts = new ArrayDeque<>(List.of(GLOBAL_CONTEXT));
 	private final Map<String, FunctionDefinitionStatement> functionDefinitions = new HashMap<>(BUILTIN_FUNCTIONS);
@@ -105,7 +106,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 	private Result result = Result.empty();
 
 	@Override
-	public void execute(Program program) {
+	public void execute() {
 		try {
 			callAccept(program);
 		} catch (CriticalInterpreterException exception) {

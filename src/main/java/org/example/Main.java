@@ -10,7 +10,6 @@ import org.example.ast.Program;
 import org.example.error.ErrorHandler;
 import org.example.error.ErrorHandlerImpl;
 import org.example.error.TooManyExceptionsException;
-import org.example.interpreter.Interpreter;
 import org.example.interpreter.InterpretingVisitor;
 import org.example.lexer.CommentFilterLexer;
 import org.example.lexer.Lexer;
@@ -95,12 +94,7 @@ public class Main {
 
 	@SuppressWarnings({"unused", "java:S106"})
 	private static void runProgram(Program program, ErrorHandler errorHandler) {
-		var interpreter = new InterpretingVisitor(errorHandler, System.out);
-		testInterpreter(interpreter, program);
-	}
-
-	@SuppressWarnings("unused")
-	private static void testInterpreter(Interpreter interpreter, Program program) {
-		interpreter.execute(program);
+		var interpreter = new InterpretingVisitor(errorHandler, System.out, program);
+		interpreter.execute();
 	}
 }

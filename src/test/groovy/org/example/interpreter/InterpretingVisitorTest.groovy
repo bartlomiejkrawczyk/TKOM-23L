@@ -1,5 +1,6 @@
 package org.example.interpreter
 
+import org.example.ast.Program
 import org.example.ast.ValueType
 import org.example.ast.expression.BlockStatement
 import org.example.ast.expression.IdentifierExpression
@@ -18,10 +19,11 @@ import spock.lang.Specification
 class InterpretingVisitorTest extends Specification {
 
 	var errorHandler = Mock(ErrorHandler)
+	var program = new Program(Map.of(), Map.of())
 
 	def 'Should be able to determine type'() {
 		given:
-		var visitor = new InterpretingVisitor(errorHandler, System.out)
+		var visitor = new InterpretingVisitor(errorHandler, System.out, program)
 
 		expect:
 		new BlockStatement(List.of(), new Position()).accept(visitor)
@@ -29,7 +31,7 @@ class InterpretingVisitorTest extends Specification {
 
 	def 'Should throw an exception when unreachable statement is called'() {
 		given:
-		var visitor = new InterpretingVisitor(errorHandler, System.out)
+		var visitor = new InterpretingVisitor(errorHandler, System.out, program)
 
 		when:
 		statement.accept(visitor)
@@ -46,7 +48,7 @@ class InterpretingVisitorTest extends Specification {
 
 	def 'Should throw an exception when trying to retrieve value not present'() {
 		given:
-		var visitor = new InterpretingVisitor(errorHandler, System.out)
+		var visitor = new InterpretingVisitor(errorHandler, System.out, program)
 
 		and:
 		new IntegerExpression(1, null).accept(visitor)
@@ -60,7 +62,7 @@ class InterpretingVisitorTest extends Specification {
 
 	def 'Should throw an exception when result is empty'() {
 		given:
-		var visitor = new InterpretingVisitor(errorHandler, System.out)
+		var visitor = new InterpretingVisitor(errorHandler, System.out, program)
 
 		when:
 		visitor.retrieveResult()

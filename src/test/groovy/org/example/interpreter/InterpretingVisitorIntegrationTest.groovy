@@ -25,8 +25,8 @@ class InterpretingVisitorIntegrationTest extends Specification {
 		var output = new ByteArrayOutputStream()
 		final String utf8 = StandardCharsets.UTF_8.name()
 		try (var out = new PrintStream(output, true, utf8)) {
-			var visitor = new InterpretingVisitor(errorHandler, out)
-			visitor.execute(program)
+			var visitor = new InterpretingVisitor(errorHandler, out, program)
+			visitor.execute()
 		}
 		return output.toString(utf8)
 	}
