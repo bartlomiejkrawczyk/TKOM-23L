@@ -8,7 +8,35 @@ Bartłomiej Krawczyk - 310774
 
 # Funkcjonalność Języka
 
-[//]: # (TODO: rewrite task description)
+Tworzony obecnie język programowania ma wbudowany typ danych - słownik,
+który umożliwia przechowywanie i manipulowanie danymi w formie par klucz-wartość.
+W tym języku możemy wykonywać podstawowe operacje na słowniku, takie jak dodawanie,
+usuwanie, wyszukiwanie elementów na podstawie klucza oraz sprawdzanie, czy dany
+klucz znajduje się w słowniku.
+
+Ważnym aspektem języka jest możliwość iterowania po elementach słownika
+w określonej kolejności. Ta kolejność jest ustalana za pomocą funkcji przekazywanej
+jako dodatkowy parametr metody, dzięki czemu możemy kontrolować, w jakiej sekwencji
+elementy zostaną zwrócone. To umożliwia bardziej precyzyjne zarządzanie
+i przetwarzanie danych w słowniku.
+
+Ponadto, język oferuje możliwość wykonywania zapytań w stylu LINQ (Language Integrated Query)
+na słownikach. LINQ jest potężnym narzędziem programistycznym, które pozwala na wyszukiwanie,
+filtrowanie i transformację danych w sposób deklaratywny. Dzięki integracji LINQ w języku,
+możemy skorzystać z tych zaawansowanych technik przetwarzania danych bez konieczności
+pisania dużej ilości kodu.
+
+Język ten jest statycznie typowany. Oznacza to, że wszystkie typy danych muszą być zadeklarowane
+przez programistę, co pozwala na wykrywanie błędów związanych z typowaniem.
+
+Język ten posiada silne typowanie, co oznacza, że konwersje między różnymi typami danych wymagają
+jawnego określenia i nie są wykonywane automatycznie. To zwiększa bezpieczeństwo
+i czytelność kodu, eliminując niejednoznaczne zachowania i nieoczekiwane wyniki.
+
+Interpreter dla tego języka programowania jest realizowany w języku Java 17.
+Wybór Javy jako języka realizacji interpretera pozwala na korzystanie z bogatej
+i rozwiniętej ekosystemu Javy oraz wykorzystanie silnego typowania i możliwości
+statycznej analizy kodu.
 
 # Konstrukcje językowe
 
@@ -170,23 +198,34 @@ b = tmp;
 
 Semantyka przekazywania argumentów do funkcji:
 
-- obiekty przekazywane przez **referencję**
+- Przekazywanie argumentów do funkcji w tym języku odbywa się przez **referencję**
+- Oznacza to, że obiekty są przekazywane do funkcji poprzez referencję do ich miejsca w pamięci,
+  a nie przez kopiowanie ich wartości
+- Dzięki temu zmiany dokonane na obiekcie wewnątrz funkcji są widoczne poza nią
 
 Semantyka obsługi zmiennych:
 
 - **typowanie statyczne**
-	- typy zmiennych są stałe i muszą być ustalone poprzez deklarację.
+	- typy zmiennych są ustalone i muszą być zadeklarowane przed użyciem
+	- nie ma możliwości dynamicznego zmieniania typu zmiennej w trakcie działania programu
+	- to zapewnia większą pewność typów i pomaga wykrywać błędy w trakcie kompilacji
 - **typowanie silne**
 	- każde wyrażenie ma ustalony typ i nie można go używać w kontekście przeznaczonym dla innych typów
+	- nie ma automatycznej konwersji między różnymi typami danych
+	- pomaga to uniknąć niejednoznaczności i nieoczekiwanych wyników
 - **mutowalność**
-	- do zmiennych może być przypisywana nowa wartość, tego samego typu
+	- do zmiennych może być przypisywana nowa wartość, pod warunkiem że jest tego samego typu
 
 **Rekursywność wywoływania funkcji:**
 
 [Przykładowy program](./src/test/resources/error-recursion-limit.txt)
 
-- funkcje mogą być wołane rekursywnie
-	- ustalone jest ograniczenie na zagłębione wywołania (można ten parametr konfigurować)
+- funkcje mogą być wywoływane rekursywnie
+	- funkcja może bezpośrednio lub pośrednio wywołać samą siebie w trakcie swojego wykonywania
+	- istnieje ustalone ograniczenie na maksymalną liczbę zagłębionych wywołań rekurencyjnych
+	- ograniczenie to ma na celu zapobieganie nieskończonym rekursjom i przekroczeniu dostępnej pamięci
+	- parametr określający to ograniczenie może być skonfigurowany i dostosowany do konkretnych wymagań programu lub
+	  środowiska
 
 ```
 fun fibbonaci(n: int): int {
@@ -213,29 +252,31 @@ fun fibbonaci(n: int): int {
 **Proste typy danych:**
 
 - `int`
-	- liczby całkowite z zakresu `[-2147483648; 2147483647]`
+	- reprezentuje liczby całkowite z zakresu `[-2147483648; 2147483647]`
 	- np. `123`, `4`, `56`
 - `double`
-	- liczby zmienno przecinkowe z zakresu `(-2147483649; 2147483648)` mieszczące się na 64 bitach
+	- reprezentuje liczby zmienno przecinkowe o podwójnej precyzji
+	  z zakresu `(-2147483649; 2147483648)` mieszczące się na 64 bitach
 	- np. `123.456`, `0.78`, `9.0`
 - `boolean`
 	- wartość reprezentująca prawdę lub fałsz
 	- np. `true`, `false`
 
-Dla typów prostych są zdefiniowane operacje matematyczne oraz operacje logiczne / porówniania.
+Dla typów prostych są zdefiniowane operacje matematyczne oraz operacje logiczne i porówniania.
 
 **Złożone typy danych:**
 
 - `String`
-	- sekwencja znaków, reprezentująca tekst
+	- reprezentuje sekwencję znaków, czyli tekst
+	- może zawierać dowolne znaki
 	- np. `'Hello, World!''`, `"Olek pisze w papierowym zeszycie,\na Ala ma kota o imieniu \"Puszek\"!""`
 - `Map<key, value>`
-	- słownik klucz - wartość
-	- `key` oraz `value` to mogą być dowolne inne typy występujące w języku
+	- słownik, gdzie każdemu kluczowi przypisana jest wartość
+	- zarówno klucz, jak i wartość mogą być dowolnego innego typu występującego w języku
 	- np. `["a": 1, "b": 2, "c": 3]`
 - `Tuple<value, ...>`
-	- nie-mutowalna krotka
-	- krotka może składać się z wielu wartości różnego typu
+	- reprezentuje niezmienialną krotkę, czyli sekwencję wartości różnych typów
+	- krotka może składać się z dowolnej liczby wartości
 	- np. `|value1 AS name1, value2 AS name2|`
 - `Comparator<value>`
 	- funkcja, która pozwala na porównanie dwóch wartości
@@ -570,63 +611,15 @@ Język udostępnia kilka konfigurowalnych parametórw:
                             Default: 100
 ```
 
-## Komunikaty
-
-Błędy występujące w kodzie są zbierane i ostatecznie wyświetlane użytkownikowi.
-
-Każda linia zawierająca błędy jest najpierw printowana z numerem lini,
-a następnie w kolejnych liniach wyświetlane są błędy znalezione przez program.
-
-**Błędny kod:**
-
-```groovy
-String 🙁 = "Ala ma kota";
-```
-
-**Rezultat:**
-
-```bash
-[INFO]    1: String đź™? = "Ala ma kota";
-[ERROR] Unexpected character ™ at position line 1, character 10
-[ERROR] Unexpected character ? at position line 1, character 11
-```
-
-Podobnie w przypadku błędów interpretacji, program jest zatrzymywany,
-a następnie printowane są kolejne błędy dotyczące danej lini kodu.
-Dodatkowo interpreter wykonuje zrzut stosu wywołań funkcji oraz miejsca wywołania w kodzie.
-
-Przykładowy kod:
-
-```kotlin
-#!/mnt/c/Users/Public/Documents/TKOM/interpreter
-
-fun recursive() {
-	print("recursion");
-	recursive();
-}
-
-fun main() {
-	recursive();
-}
-```
-
-Rezultat wywołania programu:
-
-```shell
-$ ./src/test/resources/error-recursion-limit.txt --function 5 
-recursion
-recursion
-[INFO]    4:    print("recursion");
-[ERROR] MaxFunctionStackSizeReachedException(super=CriticalInterpreterException(position=Position(line=4, characterNumber=8), contextStack=[~~main~~: Position(line=1, characterNumber=1), main: Position(line=1, characterNumber=1), recursive: Position(line=9, characterNumber=2), recursive: Position(line=5, characterNumber=2), recursive: Position(line=5, characterNumber=2), print: Position(line=4, characterNumber=2)])) - org.example.interpreter.error.MaxFunctionStackSizeReachedException:
-~~main~~: Position(line=1, characterNumber=1)
-main: Position(line=1, characterNumber=1)
-recursive: Position(line=9, characterNumber=2)
-recursive: Position(line=5, characterNumber=2)
-recursive: Position(line=5, characterNumber=2)
-print: Position(line=4, characterNumber=2)
-```
-
 # Realizacja
+
+## Moduły
+
+1. [Wrapper źródła](./src/main/java/org/example/lexer/PositionalReaderImpl.java)
+1. [Analizator leksykalny](./src/main/java/org/example/lexer/LexerImpl.java)
+1. [Analizator składniowy](./src/main/java/org/example/parser/ParserImpl.java)
+1. [Interpreter](./src/main/java/org/example/interpreter/InterpretingVisitor.java)
+1. [Obsługa błędów](./src/main/java/org/example/error/ErrorHandlerImpl.java)
 
 ## Analizator leksykalny
 
@@ -637,6 +630,24 @@ public interface Lexer {
 	Token nextToken();
 }
 ```
+
+Lexer jest kluczowym elementem w procesie analizy leksykalnej.
+Jego głównym zadaniem jest przetworzenie ciągu znaków na sekwencję tokenów,
+które reprezentują dozwolone wyrazy w języku.
+
+Podczas tworzenia instancji Lexera, jako argument przekazywany jest Reader,
+który dostarcza strumień znaków do analizy. Lexer udostępnia metodę umożliwiającą
+odczyt kolejnych tokenów.
+
+Ważną cechą Lexera jest tryb leniwy (lazy). Oznacza to, że lexer czyta kolejne znaki
+dopiero wtedy, gdy zostanie poproszony o dostarczenie nowego tokenu.
+To umożliwia wydajne przetwarzanie strumienia danych, ponieważ nie wymaga
+wczytywania i analizowania całego tekstu na raz.
+
+Kiedy metoda do odczytu kolejnych tokenów jest wywoływana, Lexer pobiera odpowiednią
+liczbę znaków ze strumienia wejściowego i dokonuje analizy leksykalnej.
+Na podstawie tych znaków, Lexer generuje i zwraca kolejny token reprezentujący
+zidentyfikowany wyraz w języku.
 
 Implementacja dostępna: [lexer](./src/main/java/org/example/lexer/LexerImpl.java)
 
@@ -731,6 +742,38 @@ public enum TokenType {
 
 ### Testy
 
+Testy Lexera polegają głównie na przygotowaniu ciągu znaków
+przekazywanego do Lexera oraz sprawdzeniu czy wygenerowane
+tokeny zgadzają się z oczekiwanymi.
+
+Przykład:
+
+```groovy
+def 'Should detect all the boolean tokens correctly'() {
+	given:
+	var lexer = toLexer(content)
+
+	expect:
+	var token = lexer.nextToken()
+	token.getType() == type
+	token.<Boolean> getValue() == value
+
+	where:
+	content   || value | type
+	" true "  || true  | TokenType.BOOLEAN_TRUE
+	" false " || false | TokenType.BOOLEAN_FALSE
+}
+```
+
+Testy dla innych rodzajów tokenów są opracowane na podobnej zasadzie,
+dostosowując wartości oczekiwane do danego rodzaju tokenów, takich jak liczby,
+ciągi znaków, identyfikatory, itp.
+
+Więcej przykładów testów jest dostępne [tutaj](./src/test/groovy/org/example/lexer/LexerTest.groovy).
+Tam są dostępne różne scenariusze testowe, które sprawdzają różne przypadki analizy leksykalnej
+i porównują wyniki z oczekiwanymi tokenami. Testy te są pomocne w zapewnieniu,
+że Lexer działa zgodnie z oczekiwaniami i poprawnie rozpoznaje różne wyrazy w języku.
+
 ## Analizator składniowy
 
 ### Interfejs
@@ -741,7 +784,65 @@ public interface Parser {
 }
 ```
 
+Analizator składniowy (parser) to kluczowy komponent w procesie interpretacji języka programowania.
+Jego głównym zadaniem jest analiza struktury syntaktycznej tekstu źródłowego i generowanie drzewa składniowego
+(abstract syntax tree - AST).
+
+Drzewo składniowe jest hierarchicznym modelem struktury języka programowania. Składa się z węzłów,
+które reprezentują różne konstrukcje językowe, takie jak instrukcje, wyrażenia, deklaracje, itp.
+Węzły są połączone relacjami rodzic-dziecko, które odzwierciedlają zależności między nimi.
+
+Drzewo składniowe jest ważne, ponieważ pozwala na reprezentację struktury języka w sposób uporządkowany
+i zrozumiały dla interpretera. Jest również łatwiejsze do analizy i manipulacji niż sam tekst źródłowy.
+
+Implementacja dostępna: [parser](./src/main/java/org/example/parser/ParserImpl.java)
+
 ### Testy
+
+Testy parsera mają na celu sprawdzenie, czy parser poprawnie analizuje prawidłowe konstrukcje językowe
+i generuje oczekiwane drzewo AST.
+
+Jeśli wygenerowane drzewo AST jest zgodne z oczekiwanym, to test jest uważany za zaliczony.
+W przeciwnym przypadku, jeśli istnieje rozbieżność między wygenerowanym a oczekiwanym drzewem AST, test jest uznawany
+za niepowodzenie.
+
+Testy parsera obejmują różne konstrukcje językowe, takie jak instrukcje, wyrażenia, deklaracje, wywołania funkcji,
+operatory, kontrola przepływu, itp. Dla każdej konstrukcji dostarcza się prawidłowy kod jako dane wejściowe
+i oczekiwane drzewo AST jako wynik.
+
+Dodatkowo występują testy sytuacji wyjątkowych, takich jak błędy składniowe w programie.
+One są równie istotne jak testy poprawnych konstrukcji. Mają one na celu sprawdzenie,
+czy parser poprawnie obsługuje sytuacje, w których program zawiera błędy składniowe lub niezgodności.
+
+Przykład:
+
+```groovy
+    def 'Should be able to parse single expression statement'() {
+	given:
+	var parser = toParser(program)
+
+	expect:
+	parser.parseProgram() == result
+
+	where:
+	program                                       || result
+	"fun main() {functionCall();}"                || wrapStatements(List.of(new FunctionCallExpression("functionCall", List.of(), position)))
+	"fun main() {i[mapCall];}"                    || wrapStatements(List.of(new MethodCallExpression(new IdentifierExpression("i", position), new FunctionCallExpression("operator[]", List.of(new IdentifierExpression("mapCall", position)), position), position)))
+	"fun main() {i[mapCall1][mapCall2];}"         || wrapStatements(List.of(new MethodCallExpression(new MethodCallExpression(new IdentifierExpression("i", position), new FunctionCallExpression("operator[]", List.of(new IdentifierExpression("mapCall1", position)), position), position), new FunctionCallExpression("operator[]", List.of(new IdentifierExpression("mapCall2", position)), position), position)))
+	"fun main() {i[mapCall1].methodCall();}"      || wrapStatements(List.of(new MethodCallExpression(new MethodCallExpression(new IdentifierExpression("i", position), new FunctionCallExpression("operator[]", List.of(new IdentifierExpression("mapCall1", position)), position), position), new FunctionCallExpression("methodCall", List.of(), position), position)))
+	"fun main() {i.methodCall();}"                || wrapStatements(List.of(new MethodCallExpression(new IdentifierExpression("i", position), new FunctionCallExpression("methodCall", List.of(), position), position)))
+	"fun main() {i.methodCall1().methodCall2();}" || wrapStatements(List.of(new MethodCallExpression(new MethodCallExpression(new IdentifierExpression("i", position), new FunctionCallExpression("methodCall1", List.of(), position), position), new FunctionCallExpression("methodCall2", List.of(), position), position)))
+	"fun main() {i.methodCall1().tupleCall2;}"    || wrapStatements(List.of(new TupleCallExpression(new MethodCallExpression(new IdentifierExpression("i", position), new FunctionCallExpression("methodCall1", List.of(), position), position), "tupleCall2", position)))
+	"fun main() {i.tupleCall1.methodCall2();}"    || wrapStatements(List.of(new MethodCallExpression(new TupleCallExpression(new IdentifierExpression("i", position), "tupleCall1", position), new FunctionCallExpression("methodCall2", List.of(), position), position)))
+	"fun main() {i.tupleCall;}"                   || wrapStatements(List.of(new TupleCallExpression(new IdentifierExpression("i", position), "tupleCall", position)))
+	"fun main() {i.tupleCall1.tupleCall2;}"       || wrapStatements(List.of(new TupleCallExpression(new TupleCallExpression(new IdentifierExpression("i", position), "tupleCall1", position), "tupleCall2", position)))
+}
+```
+
+Więcej testów dostępne jest [tutaj](src/test/groovy/org/example/parser/ParserIntegrationTest.groovy)
+Tam znajdują się różne scenariusze testowe, które sprawdzają różne przypadki analizy składniowej
+i porównują wyniki z oczekiwanymi drzewami AST. Testy te pomagają w zapewnieniu, że parser działa zgodnie
+z oczekiwaniami i poprawnie analizuje różne konstrukcje językowe.
 
 ## Interpreter
 
@@ -815,8 +916,12 @@ public interface Visitor {
 }
 ```
 
-Docelowa implementacja interpretera implementowała dwa interfejsy - `Interpreter` do wykonywania programów
-oraz `Visitor`
+`InterpretingVisitor` implementuje interfejs `Visitor`, który zawiera metody do odwiedzania różnych typów węzłów
+w drzewie AST. Każda metoda `visit()` odpowiada za interpretację danego typu węzła.
+
+Dodatkowo, `InterpretingVisitor` implementuje interfejs `Interpreter`, który zawiera metodę `interpret()`
+służącą do rozpoczęcia interpretacji programu. Metoda `interpret()` przekazuje korzeń drzewa AST do metody `accept()`
+w celu rozpoczęcia procesu interpretacji.
 
 ```java
 public class InterpretingVisitor implements Visitor, Interpreter {
@@ -824,11 +929,151 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 }
 ```
 
+Dzięki zastosowaniu wzorca projektowego Visitor, interpreter może łatwo przechodzić po strukturze drzewa AST
+i interpretować kolejne węzły zgodnie z ich typami. Każdy typ węzła może mieć inną logikę interpretacji,
+co umożliwia elastyczne przetwarzanie różnych konstrukcji językowych.
+
+Implementacja dostępna: [interpreter](./src/main/java/org/example/interpreter/InterpretingVisitor.java)
+
 ### Testy
+
+Testy interpretera polegają na przeprowadzeniu automatycznych testów, które polegają na wczytaniu przykładowego
+programu, wykonaniu go przy użyciu interpretera, a następnie porównaniu standardowego wyjścia programu
+z oczekiwanym standardowym wyjściem.
+
+Przykładowy program:
+
+```kotlin
+#!/mnt/c/Users/Public/Documents/TKOM/interpreter
+
+fun main() {
+	print("Hello, World!");
+}
+```
+
+Przykładowy test:
+
+```groovy
+def 'Should evaluate program correctly'() {
+	expect:
+	transform(interpret(program)) == result
+
+	where:
+	program     || result
+	"hello.txt" || "Hello, World!\n"
+}
+```
+
+Więcej testów dostępne jest [tutaj](src/test/groovy/org/example/interpreter/InterpretingVisitorIntegrationTest.groovy)
+Te testy sprawdzają różne aspekty interpretacji, takie jak operacje matematyczne, instrukcje warunkowe,
+pętle, obsługę zmiennych itp. Dzięki tym testom można zweryfikować poprawność działania interpretera
+dla różnych przypadków i upewnić się, że interpretuje programy zgodnie z oczekiwaniami.
+
+## Obsługa błędów
+
+Obsługa błędów w implementacji interpretera obejmuje różne aspekty i ma na celu zapewnienie odpowiedniej
+obsługi sytuacji awaryjnych oraz informowanie użytkownika o wystąpieniu błędów. Oto opis sposobu obsługi
+błędów w poszczególnych komponentach:
+
+**Źródło**
+
+- Jeżeli wystąpi błąd, użytkownikowi wyświetlany jest odpowiedni komunikat błędu
+- Program interpretera kończy się po wystąpieniu błędu
+
+**Lexer**
+
+- Ogólnie, błędy są przekazywane do wydzielonego obiektu obsługującego błędy
+- W przypadku napotkania długich identyfikatorów, komentarzy lub stringów, identyfikator jest przycinany do maksymalnej
+  długości
+- Jeśli napotkana liczba całkowita jest zbyt długa, pomijana jest jej wykraczająca część
+- Jeśli napotkana liczba zmienno przecinkowa ma zbyt długą część ułamkową, zignorowane są nadmiarowe cyfry po przecinku
+- Jeżeli napotkany znak nie jest rozpoznawany, jest pomijany
+
+**Parser**
+
+- Błędy są przekazywane do wydzielonego obiektu obsługującego błędy
+- W parserze wyróżnia się dwa rodzaje błędów: krytyczne i niekrytyczne
+- Błędy krytyczne powodują zakończenie programu
+- Niekrytyczne błędy, takie jak pominięcie średnika, są zgłaszane do ErrorHandlera
+
+**Interpreter**
+
+- Wszystkie błędy interpretera są krytyczne
+- Błędy interpretera są zgłaszane do ErrorHandlera
+
+Dzięki temu podejściu, błędy w różnych komponentach są odpowiednio obsługiwane, co pozwala na wykrycie
+i raportowanie błędów użytkownikowi oraz umożliwia kontrolowane zakończenie programu w przypadku wystąpienia
+błędów krytycznych.
+
+### Komunikaty o błędach
+
+Komunikaty o błędach są zbierane i wyświetlane użytkownikowi w czytelnej formie.
+Każda linia zawierająca błędy jest poprzedzona numerem linii, a następnie wyświetlane są konkretne komunikaty
+błędów znalezione przez program.
+
+Taki format komunikatów o błędach ułatwia użytkownikowi zidentyfikowanie miejsc, w których występują błędy
+i umożliwia skoncentrowanie się na ich rozwiązaniu. Numeracja linii pozwala na precyzyjne lokalizowanie błędów w kodzie,
+co jest szczególnie przydatne w przypadku większych programów.
+
+**Przykładowy kod:**
+
+```groovy
+String 🙁 = "Ala ma kota";
+```
+
+**Rezultat:**
+
+```bash
+[INFO]    1: String đź™? = "Ala ma kota";
+[ERROR] Unexpected character ™ at position line 1, character 10
+[ERROR] Unexpected character ? at position line 1, character 11
+```
+
+**Przykładowy kod:**
+
+```kotlin
+#!/mnt/c/Users/Public/Documents/TKOM/interpreter
+
+fun recursive() {
+	print("recursion");
+	recursive();
+}
+
+fun main() {
+	recursive();
+}
+```
+
+**Rezultat:**
+
+```shell
+$ ./src/test/resources/error-recursion-limit.txt --function 5 
+recursion
+recursion
+[INFO]    4:    print("recursion");
+[ERROR] MaxFunctionStackSizeReachedException(super=CriticalInterpreterException(position=Position(line=4, characterNumber=8), contextStack=[~~main~~: Position(line=1, characterNumber=1), main: Position(line=1, characterNumber=1), recursive: Position(line=9, characterNumber=2), recursive: Position(line=5, characterNumber=2), recursive: Position(line=5, characterNumber=2), print: Position(line=4, characterNumber=2)])) - org.example.interpreter.error.MaxFunctionStackSizeReachedException:
+~~main~~: Position(line=1, characterNumber=1)
+main: Position(line=1, characterNumber=1)
+recursive: Position(line=9, characterNumber=2)
+recursive: Position(line=5, characterNumber=2)
+recursive: Position(line=5, characterNumber=2)
+print: Position(line=4, characterNumber=2)
+```
+
+W przypadku błędów interpretacji program jest zatrzymywany, a następnie wyświetlane są kolejne błędy związane z daną
+linią kodu.
+
+Dodatkowo, interpreter wykonuje zrzut stosu wywołań funkcji, co oznacza, że wyświetlane są informacje
+o kolejnych funkcjach, które zostały wywołane przed wystąpieniem błędu. Jest to przydatne
+w celu zrozumienia kontekstu, w którym błąd wystąpił. Dodatkowo, interpreter również podaje miejsce wywołania
+w kodzie, co ułatwia zlokalizowanie konkretnego fragmentu kodu, który jest powiązany z błędem.
+
+Dzięki tym informacjom użytkownik ma pełniejszy obraz o błędach i może skoncentrować się
+na ich naprawie w odpowiednich miejscach kodu.
 
 # Biblioteki
 
-- **Vavr core** - to biblioteka dla Javy, która pomaga zmniejszyć ilość kodu oraz zwiększyć niezawodność.\
+- **Vavr core** - to biblioteka dla Javy, która pomaga zmniejszyć ilość kodu oraz zwiększyć niezawodność.
 - **Apache Commons Lang** - to biblioteka, która udostępnia pre-definiowane operacje na Stringach.
 - **Simple Logging Facade for Java** - biblioteka, która umożliwia logowanie komunikatów w jednakowy sposób nie zależny
   od implementacji.

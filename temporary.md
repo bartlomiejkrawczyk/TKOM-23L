@@ -76,13 +76,6 @@ String 🙁 = "Ala ma kota";
 
 # Realizacja
 
-## Moduły
-
-1. [Analizator leksykalny](./src/main/java/org/example/lexer)
-1. [Analizator składniowy](./src/main/java/org/example/parser)
-1. [Interpreter](./src/main/java/org/example/interpreter)
-1. [Obsługa błędów](./src/main/java/org/example/error)
-
 ## Obiekty
 
 **Obsługa błędów:** [error handler](./src/main/java/org/example/error/ErrorHandler.java)
