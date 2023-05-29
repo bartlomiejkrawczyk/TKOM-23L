@@ -971,6 +971,20 @@ dla różnych przypadków i upewnić się, że interpretuje programy zgodnie z o
 
 ## Obsługa błędów
 
+```java
+public interface ErrorHandler {
+	void handleLexerException(LexerException exception);
+
+	void handleParserException(ParserException exception);
+
+	void handleInterpreterException(InterpreterException exception);
+
+	void showExceptions(Reader reader) throws IOException;
+}
+```
+
+Implementacja dostępna: [error handler](./src/main/java/org/example/error/ErrorHandlerImpl.java)
+
 Obsługa błędów w implementacji interpretera obejmuje różne aspekty i ma na celu zapewnienie odpowiedniej
 obsługi sytuacji awaryjnych oraz informowanie użytkownika o wystąpieniu błędów. Oto opis sposobu obsługi
 błędów w poszczególnych komponentach:
