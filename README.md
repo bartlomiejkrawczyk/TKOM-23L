@@ -1,3 +1,5 @@
+![](https://github.com/bartlomiejkrawczyk/TKOM-23L/actions/workflows/gradle.yml/badge.svg)
+
 # Techniki Kompilacji
 
 Student:
