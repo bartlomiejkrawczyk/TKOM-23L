@@ -1,0 +1,15 @@
+#!/mnt/c/Users/Public/Documents/TKOM/interpreter
+
+
+fun getInteger(): int {
+	return 1;
+}
+
+fun getVoid() {
+	print("void");
+}
+
+fun main() {
+	print(@String getInteger());
+	print(@String getVoid());
+}

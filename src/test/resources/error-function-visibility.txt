@@ -1,0 +1,15 @@
+#!/mnt/c/Users/Public/Documents/TKOM/interpreter
+
+fun test1() {
+	int a = 10;
+	test2();
+}
+
+fun test2() {
+	print(@String a);
+}
+
+
+fun main() {
+	test1();
+}
