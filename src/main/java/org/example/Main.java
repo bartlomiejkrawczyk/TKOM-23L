@@ -25,6 +25,8 @@ public class Main {
 		if (args.length > 0) {
 			var file = args[0];
 			run(file);
+		} else {
+			run("./src/main/resources/query.txt");
 		}
 	}
 
