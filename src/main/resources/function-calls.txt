@@ -1,0 +1,33 @@
+#!/mnt/c/Users/Public/Documents/TKOM/interpreter
+
+fun getInteger(): int {
+	return 1;
+}
+
+fun getDouble(): double {
+	return 1.0;
+}
+
+fun getString(): String {
+	return "Hello";
+}
+
+fun getTuple(): Tuple<String> {
+	return |"tuple" as tuple|;
+}
+
+fun getMap(): Map<String, String> {
+	return [
+		"map": "map"
+	];
+}
+
+fun main() {
+	print(@String getInteger());
+	print(@String getDouble());
+	print(@String getString());
+	print(@String getTuple().tuple);
+	print(@String getMap()["map"]);
+	int a = getInteger();
+	print(@String a);
+}
