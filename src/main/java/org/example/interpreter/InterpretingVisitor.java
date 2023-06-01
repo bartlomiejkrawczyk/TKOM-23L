@@ -456,6 +456,7 @@ public class InterpretingVisitor implements Visitor, Interpreter {
 			result = Result.empty();
 		} else if (result.isReturned()) {
 			validateType(result.getValue().getType(), declaration.getReturnType());
+			result = result.toBuilder().returned(false).build();
 		} else {
 			throw new ReturnValueExpectedException();
 		}
