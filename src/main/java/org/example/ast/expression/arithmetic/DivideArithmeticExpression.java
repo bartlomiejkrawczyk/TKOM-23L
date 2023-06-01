@@ -4,6 +4,7 @@ import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import lombok.Value;
 import org.example.ast.Expression;
+import org.example.interpreter.error.ZeroDivisionException;
 import org.example.token.Position;
 
 @ToString(exclude = {"left", "right"})
@@ -18,11 +19,17 @@ public class DivideArithmeticExpression implements BinaryArithmeticExpression {
 
 	@Override
 	public int evaluate(int first, int second) {
+		if (second == 0) {
+			throw new ZeroDivisionException();
+		}
 		return first / second;
 	}
 
 	@Override
 	public double evaluate(double first, double second) {
+		if (second == 0.0) {
+			throw new ZeroDivisionException();
+		}
 		return first / second;
 	}
 }

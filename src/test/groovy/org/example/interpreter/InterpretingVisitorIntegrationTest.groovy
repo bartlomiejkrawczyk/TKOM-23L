@@ -87,6 +87,8 @@ class InterpretingVisitorIntegrationTest extends Specification {
 				"error-iterable-called-on-non-iterable-type.txt",
 				"error-assign-different-type-value-to-variable.txt",
 				"error-no-such-tuple-element.txt",
+				"error-zero-division.txt",
+				"error-zero-division-double.txt",
 		]
 	}
 }
