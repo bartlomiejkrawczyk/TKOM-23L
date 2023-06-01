@@ -1,4 +1,4 @@
-#!/mnt/c/Users/Public/Documents/TKOM/doubleerpreter
+#!/mnt/c/Users/Public/Documents/TKOM/interpreter
 
 fun iterable1(table1: Map<String, double>, table2: Map<String, double>): Iterable<Tuple<String, double, double>> {
 	return SELECT
